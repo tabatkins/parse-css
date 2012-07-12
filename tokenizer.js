@@ -131,7 +131,7 @@ function tokenize(str, options) {
 				else switchto("identifier") && reconsume();
 			}
 			else if(namestartchar(code)) switchto("identifier") && reconsume();
-			else if(eof()) return tokens;
+			else if(eof()) { emit(new EOFToken); return tokens; }
 			else emit(new DelimToken(code));
 			break;
 
@@ -499,6 +499,10 @@ OpenParenToken.prototype.tokenType = "(";
 function CloseParenToken() { return this; }
 CloseParenToken.prototype = new CSSParserToken;
 CloseParenToken.prototype.tokenType = ")";
+
+function EOFToken() { return this; }
+EOFToken.prototype = new CSSParserToken;
+EOFToken.prototype.tokenType = "EOF";
 
 function DelimToken(code) {
 	this.value = String.fromCharCode(code);
