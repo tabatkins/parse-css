@@ -23,13 +23,12 @@ function tokenize(str, options) {
 	var code;
 	var currtoken;
 
-	var char = function() { return str.charCodeAt(i); };
 	var next = function(num) { if(num === undefined) num = 1; return str.charCodeAt(i+num); };
 	var consume = function(num) { 
 		if(num === undefined) 
 			num = 1; 
 		i += num; 
-		code = char(); 
+		code = str.charCodeAt(i); 
 		//console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16)); 
 		return true; 
 	};
