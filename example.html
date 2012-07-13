@@ -1,28 +1,45 @@
 <!doctype html>
-<textarea id='css'>u+5 u+a?</textarea>
-<button onclick='parseStuff()'>Parse</button>
-<textarea id='json'></textarea>
+<div>
+	<textarea id='css'>foo { bar: baz; }</textarea>
+	<button onclick='parseStuff()'>Parse</button>
+	<textarea id='tokens'></textarea>
+</div>
+<textarea id='tree'></textarea>
 <style>
 html,body { height: 100%; margin: 0; padding: 0; }
-body {
+body > div {
+	height: 50%;
 	display: -webkit-flex;
 	-webkit-align-items: center;
 }
-textarea {
+#css, #tokens {
 	-webkit-flex: 1;
 	-webkit-align-self: stretch;
 	height: 100%;
 }
+#tree {
+	width: 99%;
+	height: 45%;
+}
+
 </style>
 <script>
 var debug;
 function parseStuff() {
+	AtRule.registry.foo = 'decl';
+
 	var css = document.querySelector('#css').value;
-	var tokens = tokenize(css);
-	debug = tokens;
-	console.log(tokens);
-	var txt = document.querySelector('#json');
-	txt.value = tokens.join(' ');
+	var tokenlist = tokenize(css);
+	var sheet = parse(tokenlist);
+	console.log(tokenlist);
+	console.log(sheet);
+	debug = sheet;
+	var txt = document.querySelector('#tokens');
+	txt.value = tokenlist.join(' ');
+	var tree = document.querySelector('#tree');
+	tree.value = sheet.toString('  ');
+
 }
 </script>
 <script src="tokenizer.js"></script>
+<script src="parser.js"></script>

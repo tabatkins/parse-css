@@ -445,6 +445,7 @@ function stringFromCodeArray(arr) {
 function CSSParserToken() { return this; }
 CSSParserToken.prototype.finish = function() { return this; }
 CSSParserToken.prototype.toString = function() { return this.tokenType; }
+CSSParserToken.prototype.toJSON = function() { return this.toString(); }
 
 function BadStringToken() { return this; }
 BadStringToken.prototype = new CSSParserToken;
