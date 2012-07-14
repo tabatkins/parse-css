@@ -564,6 +564,28 @@ AtKeywordToken.prototype.finish = function() {
 	return this;
 }
 
+function HashToken(val) {
+	this.value = [];
+	this.append(val);
+}
+HashToken.prototype = new CSSParserToken;
+HashToken.prototype.tokenType = "HASH";
+HashToken.prototype.toString = function() { return "HASH("+this.value+")"; }
+HashToken.prototype.append = function(val) {
+	if(val instanceof Array) {
+		for(var i = 0; i < val.length; i++) {
+			this.value.push(val[i]);
+		}
+	} else {
+		this.value.push(val);
+	}
+	return true;
+}
+HashToken.prototype.finish = function() {
+	this.value = stringFromCodeArray(this.value);
+	return this;
+}
+
 function StringToken(val) {
 	this.value = [];
 	this.append(val);
