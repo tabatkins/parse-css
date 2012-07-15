@@ -341,7 +341,7 @@ function Function(name) {
 }
 Function.prototype = new CSSParserRule;
 Function.prototype.ruleType = "FUNCTION";
-FunctionArg.prototype.toJSON = function() {
+Function.prototype.toJSON = function() {
 	return {type:'func', name:this.name, value:this.value.map(function(e){return e.toJSON();})};
 }
 
