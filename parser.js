@@ -195,7 +195,9 @@ function parse(tokens) {
 			break;
 
 		default:
+			// If you hit this, it's because one of the switch() calls is typo'd.
 			console.log('Unknown parsing mode: ' + mode);
+			return;
 		}
 	}
 
