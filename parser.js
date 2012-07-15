@@ -354,3 +354,9 @@ FunctionArg.prototype.ruleType = "FUNCTION-ARG";
 FunctionArg.prototype.toJSON = function() {
 	return this.value.map(function(e){return e.toJSON();});
 }
+
+// Make this usable from NodeJS
+// TODO: also export the various rule objects?
+if (typeof(exports) != 'undefined') {
+    exports.parse = parse;
+}

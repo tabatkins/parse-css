@@ -721,3 +721,10 @@ UnicodeRangeToken.prototype.toString = function() {
 UnicodeRangeToken.prototype.contains = function(code) {
 	return code >= this.start && code < this.end;
 }
+
+
+// Make this usable from NodeJS
+// TODO: also export the various tokens objects?
+if (typeof(exports) != 'undefined') {
+    exports.tokenize = tokenize;
+}
