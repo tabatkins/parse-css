@@ -96,7 +96,7 @@ function parse(tokens) {
 				break;
 			case "[":
 			case "(": rule.appendPrelude(consumeASimpleBlock(token)); break;
-			case "FUNCTION": rule.appendPrelude(consumeAFunction(token)); break;
+			case "FUNCTION": rule.appendPrelude(consumeAFunc(token)); break;
 			default: rule.appendPrelude(token);
 			}
 			break;
@@ -117,7 +117,7 @@ function parse(tokens) {
 			case "{": switchto('declaration'); break;
 			case "[":
 			case "(": rule.appendSelector(consumeASimpleBlock(token)); break;
-			case "FUNCTION": rule.appendSelector(consumeAFunction(token)); break;
+			case "FUNCTION": rule.appendSelector(consumeAFunc(token)); break;
 			default: rule.appendSelector(token); 
 			}
 			break;
@@ -147,7 +147,7 @@ function parse(tokens) {
 			case "{":
 			case "[":
 			case "(": decl.append(consumeASimpleBlock(token)); break;
-			case "FUNCTION": decl.append(consumeAFunction(token)); break;
+			case "FUNCTION": decl.append(consumeAFunc(token)); break;
 			case "DELIM":
 				if(token.value == "!" && next().tokenType == 'IDENTIFIER' && next().value.toLowerCase() == "important") {
 					consume();
@@ -177,7 +177,7 @@ function parse(tokens) {
 			case "{": consumeASimpleBlock(token) && switchto(); break;
 			case "[":
 			case "(": consumeASimpleBlock(token); break;
-			case "FUNCTION": consumeAFunction(token); break;
+			case "FUNCTION": consumeAFunc(token); break;
 			default: break;
 			}
 			break;
@@ -189,7 +189,7 @@ function parse(tokens) {
 			case "{":
 			case "[":
 			case "(": consumeASimpleBlock(token); break;
-			case "FUNCTION": consumeAFunction(token); break;
+			case "FUNCTION": consumeAFunc(token); break;
 			default: break;
 			}
 			break;
@@ -213,15 +213,15 @@ function parse(tokens) {
 			case "{":
 			case "[":
 			case "(": block.append(consumeASimpleBlock(token)); break;
-			case "FUNCTION": block.append(consumeAFunction(token)); break;
+			case "FUNCTION": block.append(consumeAFunc(token)); break;
 			default: block.append(token);
 			}
 		}
 	}
 
-	function consumeAFunction(startToken) {
-		var func = new Function(startToken.value);
-		var arg = new FunctionArg();
+	function consumeAFunc(startToken) {
+		var func = new Func(startToken.value);
+		var arg = new FuncArg();
 
 		for(;;) {
 			consume();
@@ -231,7 +231,7 @@ function parse(tokens) {
 			case "DELIM":
 				if(token.value == ",") {
 					func.append(arg);
-					arg = new FunctionArg();
+					arg = new FuncArg();
 				} else {
 					arg.append(token);
 				}
@@ -239,7 +239,7 @@ function parse(tokens) {
 			case "{":
 			case "[":
 			case "(": arg.append(consumeASimpleBlock(token)); break;
-			case "FUNCTION": arg.append(consumeAFunction(token)); break;
+			case "FUNCTION": arg.append(consumeAFunc(token)); break;
 			default: arg.append(token);
 			}
 		}
@@ -336,24 +336,24 @@ SimpleBlock.prototype.toJSON = function() {
 	return {type:'block', type:this.type, value:this.value.map(function(e){return e.toJSON();})};
 }
 
-function Function(name) {
+function Func(name) {
 	this.name = name;
 	this.value = [];
 	return this;
 }
-Function.prototype = new CSSParserRule;
-Function.prototype.ruleType = "FUNCTION";
-Function.prototype.toJSON = function() {
+Func.prototype = new CSSParserRule;
+Func.prototype.ruleType = "FUNCTION";
+Func.prototype.toJSON = function() {
 	return {type:'func', name:this.name, value:this.value.map(function(e){return e.toJSON();})};
 }
 
-function FunctionArg() {
+function FuncArg() {
 	this.value = [];
 	return this;
 }
-FunctionArg.prototype = new CSSParserRule;
-FunctionArg.prototype.ruleType = "FUNCTION-ARG";
-FunctionArg.prototype.toJSON = function() {
+FuncArg.prototype = new CSSParserRule;
+FuncArg.prototype.ruleType = "FUNCTION-ARG";
+FuncArg.prototype.toJSON = function() {
 	return this.value.map(function(e){return e.toJSON();});
 }
 
