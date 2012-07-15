@@ -104,6 +104,7 @@ function parse(tokens) {
 
 		case "rule":
 			switch(token.tokenType) {
+			case "WHITESPACE": break;
 			case "BADSTRING":
 			case "BADURL": parseerror() && switchto('next-block'); break;
 			case "}": pop() && switchto(); break;
