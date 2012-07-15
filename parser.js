@@ -83,7 +83,7 @@ function parse(tokens) {
 			case "WHITESPACE": break;
 			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
 			case "{": parseerror("Attempt to open a curly-block at top-level.") && consumeASimpleBlock(token); break;
-			default: push(new SelectorRule) && switchto('selector') && reprocess();
+			default: push(new StyleRule) && switchto('selector') && reprocess();
 			}
 			break;
 
@@ -108,7 +108,7 @@ function parse(tokens) {
 			case "BADURL": parseerror("Use of BADSTRING or BADURL token in selector.") && switchto('next-block'); break;
 			case "}": pop() && switchto(); break;
 			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
-			default: push(new SelectorRule) && switchto('selector') && reprocess();
+			default: push(new StyleRule) && switchto('selector') && reprocess();
 			}
 			break;
 
@@ -297,18 +297,18 @@ AtRule.registry = {
 	'region-style': 'rule'
 };
 
-function SelectorRule() {
+function StyleRule() {
 	this.selector = [];
 	this.value = [];
 	return this;
 }
-SelectorRule.prototype = new CSSParserRule;
-SelectorRule.prototype.ruleType = "SELECTOR-RULE";
-SelectorRule.prototype.appendSelector = function(val) {
+StyleRule.prototype = new CSSParserRule;
+StyleRule.prototype.ruleType = "SELECTOR-RULE";
+StyleRule.prototype.appendSelector = function(val) {
 	this.selector.push(val);
 	return this;
 }
-SelectorRule.prototype.toJSON = function() {
+StyleRule.prototype.toJSON = function() {
 	return {type:'selector', selector:this.selector.map(function(e){return e.toJSON();}), value:this.value.map(function(e){return e.toJSON();})};
 }
 
