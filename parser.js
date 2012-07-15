@@ -24,9 +24,9 @@ function parse(tokens) {
 	var next = function() {
 		return tokens[i+1];
 	};
-	var switchto = function(newmode) {
+	var switchto = function(newmode) { // not sure but: why not a mode stack? current solution seems tedious.
 		if(newmode === undefined) {
-			if(rule.ruleType == 'SELECTOR-RULE' || (rule.ruleType == 'AT-RULE' && rule.fillType == 'decl'))
+			if(rule.ruleType == 'SELECTOR-RULE' || (rule.ruleType == 'AT-RULE' && rule.fillType == 'decl')) // again, why not standardize fillType==mode?
 				mode = 'declaration';
 			else if(rule.ruleType == 'AT-RULE' && rule.fillType == 'rule')
 				mode = 'rule';
@@ -38,7 +38,7 @@ function parse(tokens) {
 		}
 		return true;
 	}
-	var create = function(newRule) {
+	var create = function(newRule) { // or 'push(newRule)'?
 		rule = newRule;
 		stack.push(rule);
 		return true;
@@ -52,7 +52,7 @@ function parse(tokens) {
 		return true;
 	}
 	var parseerror = function() {
-		console.log("Parse error at token " + i + ": " + token);
+		console.log("Parse error at token " + i + ": " + token); // should have an ERR_ID argument, and a ERROR_NAMES dictionnary to map them to friendly error names
 		return true;
 	}
 	var pop = function() {
@@ -92,7 +92,7 @@ function parse(tokens) {
 			case ";": pop() && switchto(); break;
 			case "{":
 				if(rule.fillType == 'rule') switchto('rule');
-				else if(rule.fillType == 'decl') switchto('declaration');
+				else if(rule.fillType == 'decl') switchto('declaration'); // why such a difference here? if(rule.fillType) { switchto(rule.fillType); } else { ... }
 				else parseerror() && switchto('next-block') && reprocess();
 				break;
 			case "[":
@@ -196,11 +196,11 @@ function parse(tokens) {
 			break;
 
 		default:
-			console.log('Unknown parsing mode: ' + mode);
+			console.log('Unknown parsing mode: ' + mode); // isn't that a parse error? shouldn't that terminate the function, to avoid long, unuseful loop?
 		}
 	}
 
-	function consumeASimpleBlock(startToken) {
+	function consumeASimpleBlock(startToken) { // instead of all those identical switches, maybe a "if(newBlock=tryCastAsBlock(token)) { ... } else { ... }" pattern is better for "{", "(", "[" & "FUNCTION"; editing could be tedious otherwhise.
 		var endingTokenType = {"(":")", "[":"]", "{":"}"}[startToken.tokenType];
 		var block = new SimpleBlock(startToken.tokenType);
 
