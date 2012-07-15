@@ -26,7 +26,7 @@ function parse(tokens) {
 	};
 	var switchto = function(newmode) {
 		if(newmode === undefined) {
-			if(rule.ruleType == 'SELECTOR-RULE' || (rule.ruleType == 'AT-RULE' && rule.fillType == 'decl'))
+			if(rule.ruleType == 'SELECTOR-RULE' || (rule.ruleType == 'AT-RULE' && rule.fillType == 'declaration'))
 				mode = 'declaration';
 			else if(rule.ruleType == 'AT-RULE' && rule.fillType == 'rule')
 				mode = 'rule';
@@ -91,8 +91,7 @@ function parse(tokens) {
 			switch(token.tokenType) {
 			case ";": pop() && switchto(); break;
 			case "{":
-				if(rule.fillType == 'rule') switchto('rule');
-				else if(rule.fillType == 'decl') switchto('declaration');
+				if(rule.fillType !== '') switchto(rule.fillType);
 				else parseerror() && switchto('next-block') && reprocess();
 				break;
 			case "[":
@@ -286,14 +285,14 @@ AtRule.prototype.toJSON = function() {
 AtRule.registry = {
 	'import': '',
 	'media': 'rule',
-	'font-face': 'decl',
-	'page': 'decl',
+	'font-face': 'declaration',
+	'page': 'declaration',
 	'keyframes': 'rule',
 	'namespace': '',
-	'counter-style': 'decl',
+	'counter-style': 'declaration',
 	'supports': 'rule',
 	'document': 'rule',
-	'font-feature-values': 'decl',
+	'font-feature-values': 'declaration',
 	'viewport': '',
 	'region-style': 'rule'
 };
@@ -321,7 +320,7 @@ function Declaration(name) {
 Declaration.prototype = new CSSParserRule;
 Declaration.prototype.ruleType = "DECLARATION";
 Declaration.prototype.toJSON = function() {
-	return {type:'decl', name:this.name, value:this.value.map(function(e){return e.toJSON();})};
+	return {type:'declaration', name:this.name, value:this.value.map(function(e){return e.toJSON();})};
 }
 
 function SimpleBlock(type) {
