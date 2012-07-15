@@ -26,7 +26,7 @@ function parse(tokens) {
 	};
 	var switchto = function(newmode) { //F// not sure but: why not a mode stack? current solution seems tedious.
 		if(newmode === undefined) {
-			if(rule.ruleType == 'SELECTOR-RULE' || (rule.ruleType == 'AT-RULE' && rule.fillType == 'decl')) // again, why not standardize fillType==mode?
+			if(rule.ruleType == 'SELECTOR-RULE' || (rule.ruleType == 'AT-RULE' && rule.fillType == 'decl')) //F/ again, why not standardize fillType==mode?
 				mode = 'declaration';
 			else if(rule.ruleType == 'AT-RULE' && rule.fillType == 'rule')
 				mode = 'rule';
