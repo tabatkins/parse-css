@@ -6,7 +6,6 @@ function parse(tokens) {
 	var stylesheet = new Stylesheet;
 	var stack = [stylesheet];
 	var rule = stack[0];
-	var decl;
 
 	var consume = function(advance) {
 		if(advance === undefined) advance = 1;
@@ -41,14 +40,6 @@ function parse(tokens) {
 		stack.push(rule);
 		return true;
 	}
-	var createdecl = function(name) {
-		decl = new Declaration(name);
-		return true;
-	}
-	var discarddecl = function() {
-		decl = undefined;
-		return true;
-	}
 	var parseerror = function(msg) {
 		console.log("Parse error at token " + i + ": " + token + ".\n" + msg);
 		return true;
@@ -57,6 +48,11 @@ function parse(tokens) {
 		var oldrule = stack.pop();
 		rule = stack[stack.length - 1];
 		rule.append(oldrule);
+		return true;
+	}
+	var discard = function() {
+		stack.pop();
+		rule = stack[stack.length - 1];
 		return true;
 	}
 	var finish = function() {
@@ -120,7 +116,7 @@ function parse(tokens) {
 			case ";": break;
 			case "}": pop() && switchto(); break;
 			case "AT-RULE": push(new AtRule(token.value)) && switchto('at-rule'); break;
-			case "IDENT": createdecl(token.value) && switchto('after-declaration-name'); break;
+			case "IDENT": push(new Declaration(token.value)) && switchto('after-declaration-name'); break;
 			default: parseerror() && switchto('next-declaration');
 			}
 			break;
@@ -129,8 +125,8 @@ function parse(tokens) {
 			switch(token.tokenType) {
 			case "WHITESPACE": break;
 			case ":": switchto('declaration-value'); break;
-			case ";": parseerror("Incomplete declaration - semicolon after property name.") && discarddecl() && switchto(); break;
-			default: parseerror("Invalid declaration - additional token after property name") && discarddecl() && switchto('next-declaration');
+			case ";": parseerror("Incomplete declaration - semicolon after property name.") && discard() && switchto(); break;
+			default: parseerror("Invalid declaration - additional token after property name") && discard() && switchto('next-declaration');
 			}
 			break;
 
@@ -139,14 +135,14 @@ function parse(tokens) {
 			case "DELIM":
 				if(token.value == "!" && next().tokenType == 'IDENTIFIER' && next().value.toLowerCase() == "important") {
 					consume();
-					decl.important = true;
+					rule.important = true;
 					switchto('declaration-end');
 				} else {
-					decl.append(token);
+					rule.append(token);
 				}
 				break;
-			case ";": rule.append(decl) && discarddecl() && switchto(); break;
-			case "}": rule.append(decl) && discarddecl() && pop() && switchto(); break;
+			case ";": pop() && switchto(); break;
+			case "}": pop() && switchto() && reprocess(); break;
 			default: decl.append(consumeAPrimitive());
 			}
 			break;
@@ -154,9 +150,9 @@ function parse(tokens) {
 		case "declaration-end":
 			switch(token.tokenType) {
 			case "WHITESPACE": break;
-			case ";": rule.append(decl) && discarddecl() && switchto(); break;
-			case "}": rule.append(decl) && discarddecl() && pop() && switchto(); break;
-			default: parseerror("Invalid declaration - additional token after !important.") && discarddecl() && switchto('next-declaration');
+			case ";": pop() && switchto(); break;
+			case "}": pop() && switchto() && reprocess(); break;
+			default: parseerror("Invalid declaration - additional token after !important.") && discard() && switchto('next-declaration');
 			}
 			break;
 
