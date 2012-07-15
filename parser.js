@@ -26,10 +26,8 @@ function parse(tokens) {
 	};
 	var switchto = function(newmode) {
 		if(newmode === undefined) {
-			if(rule.ruleType == 'SELECTOR-RULE' || (rule.ruleType == 'AT-RULE' && rule.fillType == 'declaration'))
-				mode = 'declaration';
-			else if(rule.ruleType == 'AT-RULE' && rule.fillType == 'rule')
-				mode = 'rule';
+			if(rule.fillType !== '')
+				mode = rule.fillType;
 			else if(rule.ruleType == 'STYLESHEET')
 				mode = 'top-level'
 			else { console.log("Unknown rule-type while switching to current rule's content mode: ",rule); mode = ''; }
@@ -247,6 +245,7 @@ function parse(tokens) {
 }
 
 function CSSParserRule() { return this; }
+CSSParserRule.prototype.fillType = '';
 CSSParserRule.prototype.toString = function(indent) {
 	return JSON.stringify(this.toJSON(),null,indent);
 }
@@ -271,8 +270,6 @@ function AtRule(name) {
 	this.value = [];
 	if(name in AtRule.registry)
 		this.fillType = AtRule.registry[name];
-	else 
-		this.fillType = '';
 	return this;
 }
 AtRule.prototype = new CSSParserRule;
@@ -306,6 +303,7 @@ function StyleRule() {
 }
 StyleRule.prototype = new CSSParserRule;
 StyleRule.prototype.ruleType = "SELECTOR-RULE";
+StyleRule.prototype.fillType = 'declaration';
 StyleRule.prototype.appendSelector = function(val) {
 	this.selector.push(val);
 	return this;
