@@ -1,27 +1,51 @@
 <!doctype html>
-<div>
-	<textarea id='css'>foo { bar: baz; }</textarea>
-	<button onclick='parseStuff()'>Parse</button>
-	<textarea id='tokens'></textarea>
-</div>
-<textarea id='tree'></textarea>
+<div><!--
+	--><textarea id='css'>foo { bar: baz; }</textarea><!--
+	--><button id="parse" onclick='parseStuff()'>Parse</button><!--
+	--><textarea id='tokens' readonly placeholder="RESULT OF CSS TOKENIZATION GOES HERE"></textarea><!--
+--></div>
+<textarea id='tree' readonly placeholder="RESULT OF THE CSS PARSING GOES HERE"></textarea>
 <style>
-html,body { height: 100%; margin: 0; padding: 0; }
+
+/* reset style */
+html,body { height: 100%; margin: 0px; padding: 0px; overflow: hidden; }
+* {
+	-o-box-sizing: border-box;
+	-ms-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+/* UI controls */
+textarea, button {
+	vertical-align: middle;
+	overflow: auto;
+	border: none;
+}
+
+button {
+	background: orange;
+	color: white;
+}
+
+/* layout */
 body > div {
 	height: 50%;
-	display: -webkit-flex;
-	-webkit-align-items: center;
 }
 #css, #tokens {
-	-webkit-flex: 1;
-	-webkit-align-self: stretch;
+	width: 45%;
+	height: 100%;
+}
+#parse {
+	width: 10%;
 	height: 100%;
 }
 #tree {
-	width: 99%;
-	height: 45%;
+	width: 100%;
+	height: 50%;
+	background: #fafaf0;
 }
-
 </style>
 <script>
 var debug;
