@@ -24,7 +24,7 @@ function parse(tokens) {
 	var next = function() {
 		return tokens[i+1];
 	};
-	var switchto = function(newmode) { // not sure but: why not a mode stack? current solution seems tedious.
+	var switchto = function(newmode) { //F// not sure but: why not a mode stack? current solution seems tedious.
 		if(newmode === undefined) {
 			if(rule.ruleType == 'SELECTOR-RULE' || (rule.ruleType == 'AT-RULE' && rule.fillType == 'decl')) // again, why not standardize fillType==mode?
 				mode = 'declaration';
@@ -38,7 +38,7 @@ function parse(tokens) {
 		}
 		return true;
 	}
-	var create = function(newRule) { // or 'push(newRule)'?
+	var create = function(newRule) { //F// or 'push(newRule)'?
 		rule = newRule;
 		stack.push(rule);
 		return true;
@@ -52,7 +52,7 @@ function parse(tokens) {
 		return true;
 	}
 	var parseerror = function() {
-		console.log("Parse error at token " + i + ": " + token); // should have an ERR_ID argument, and a ERROR_NAMES dictionnary to map them to friendly error names
+		console.log("Parse error at token " + i + ": " + token); //F// should have an ERR_ID argument, and a ERROR_NAMES dictionnary to map them to friendly error names
 		return true;
 	}
 	var pop = function() {
@@ -92,7 +92,7 @@ function parse(tokens) {
 			case ";": pop() && switchto(); break;
 			case "{":
 				if(rule.fillType == 'rule') switchto('rule');
-				else if(rule.fillType == 'decl') switchto('declaration'); // why such a difference here? if(rule.fillType) { switchto(rule.fillType); } else { ... }
+				else if(rule.fillType == 'decl') switchto('declaration'); //F// why such a difference here? if(rule.fillType) { switchto(rule.fillType); } else { ... }
 				else parseerror() && switchto('next-block') && reprocess();
 				break;
 			case "[":
@@ -196,11 +196,11 @@ function parse(tokens) {
 			break;
 
 		default:
-			console.log('Unknown parsing mode: ' + mode); // isn't that a parse error? shouldn't that terminate the function, to avoid long, unuseful loop?
+			console.log('Unknown parsing mode: ' + mode); //F// isn't that a parse error? shouldn't that terminate the function, to avoid long, unuseful loop?
 		}
 	}
 
-	function consumeASimpleBlock(startToken) { // instead of all those identical switches, maybe a "if(newBlock=tryCastAsBlock(token)) { ... } else { ... }" pattern is better for "{", "(", "[" & "FUNCTION"; editing could be tedious otherwhise.
+	function consumeASimpleBlock(startToken) { //F// instead of all those identical switches, maybe a "if(newBlock=tryCastAsBlock(token)) { ... } else { ... }" pattern is better for "{", "(", "[" & "FUNCTION"; editing could be tedious otherwhise.
 		var endingTokenType = {"(":")", "[":"]", "{":"}"}[startToken.tokenType];
 		var block = new SimpleBlock(startToken.tokenType);
 
