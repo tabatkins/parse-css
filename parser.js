@@ -38,7 +38,7 @@ function parse(tokens) {
 		}
 		return true;
 	}
-	var create = function(newRule) {
+	var push = function(newRule) {
 		rule = newRule;
 		stack.push(rule);
 		return true;
@@ -81,9 +81,9 @@ function parse(tokens) {
 			case "CDO":
 			case "CDC":
 			case "WHITESPACE": break;
-			case "AT-KEYWORD": create(new AtRule(token.value)) && switchto('at-rule'); break;
+			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
 			case "{": parseerror() && consumeASimpleBlock(token); break;
-			default: create(new SelectorRule) && switchto('selector') && reprocess();
+			default: push(new SelectorRule) && switchto('selector') && reprocess();
 			}
 			break;
 
@@ -108,8 +108,8 @@ function parse(tokens) {
 			case "BADSTRING":
 			case "BADURL": parseerror() && switchto('next-block'); break;
 			case "}": pop() && switchto(); break;
-			case "AT-KEYWORD": create(new AtRule(token.value)) && switchto('at-rule'); break;
-			default: create(new SelectorRule) && switchto('selector') && reprocess();
+			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
+			default: push(new SelectorRule) && switchto('selector') && reprocess();
 			}
 			break;
 
@@ -128,7 +128,7 @@ function parse(tokens) {
 			case "WHITESPACE":
 			case ";": break;
 			case "}": pop() && switchto(); break;
-			case "AT-RULE": create(new AtRule(token.value)) && switchto('at-rule'); break;
+			case "AT-RULE": push(new AtRule(token.value)) && switchto('at-rule'); break;
 			case "IDENT": createdecl(token.value) && switchto('after-declaration-name'); break;
 			default: parseerror() && switchto('next-declaration');
 			}
