@@ -51,8 +51,8 @@ function parse(tokens) {
 		decl = undefined;
 		return true;
 	}
-	var parseerror = function() {
-		console.log("Parse error at token " + i + ": " + token);
+	var parseerror = function(msg) {
+		console.log("Parse error at token " + i + ": " + token + ".\n" + msg);
 		return true;
 	}
 	var pop = function() {
@@ -82,7 +82,7 @@ function parse(tokens) {
 			case "CDC":
 			case "WHITESPACE": break;
 			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
-			case "{": parseerror() && consumeASimpleBlock(token); break;
+			case "{": parseerror("Attempt to open a curly-block at top-level.") && consumeASimpleBlock(token); break;
 			default: push(new SelectorRule) && switchto('selector') && reprocess();
 			}
 			break;
@@ -92,7 +92,7 @@ function parse(tokens) {
 			case ";": pop() && switchto(); break;
 			case "{":
 				if(rule.fillType !== '') switchto(rule.fillType);
-				else parseerror() && switchto('next-block') && reprocess();
+				else parseerror("Attempt to open a curly-block in a statement-type at-rule.") && switchto('next-block') && reprocess();
 				break;
 			case "[":
 			case "(": rule.appendPrelude(consumeASimpleBlock(token)); break;
@@ -105,7 +105,7 @@ function parse(tokens) {
 			switch(token.tokenType) {
 			case "WHITESPACE": break;
 			case "BADSTRING":
-			case "BADURL": parseerror() && switchto('next-block'); break;
+			case "BADURL": parseerror("Use of BADSTRING or BADURL token in selector.") && switchto('next-block'); break;
 			case "}": pop() && switchto(); break;
 			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
 			default: push(new SelectorRule) && switchto('selector') && reprocess();
@@ -137,8 +137,8 @@ function parse(tokens) {
 			switch(token.tokenType) {
 			case "WHITESPACE": break;
 			case ":": switchto('declaration-value'); break;
-			case ";": parseerror() && discarddecl() && switchto(); break;
-			default: parseerror() && discarddecl() && switchto('next-declaration');
+			case ";": parseerror("Incomplete declaration - semicolon after property name.") && discarddecl() && switchto(); break;
+			default: parseerror("Invalid declaration - additional token after property name") && discarddecl() && switchto('next-declaration');
 			}
 			break;
 
@@ -168,7 +168,7 @@ function parse(tokens) {
 			case "WHITESPACE": break;
 			case ";": rule.append(decl) && discarddecl() && switchto(); break;
 			case "}": rule.append(decl) && discarddecl() && pop() && switchto(); break;
-			default: parseerror() && discarddecl() && switchto('next-declaration');
+			default: parseerror("Invalid declaration - additional token after !important.") && discarddecl() && switchto('next-declaration');
 			}
 			break;
 
