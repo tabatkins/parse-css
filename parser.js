@@ -64,11 +64,6 @@ function parse(tokens) {
 	for(;;) {
 		consume();
 
-		if(token.tokenType == 'EOF') {
-			finish();
-			return stylesheet;
-		}
-
 		switch(mode) {
 		case "top-level":
 			switch(token.tokenType) {
@@ -77,6 +72,7 @@ function parse(tokens) {
 			case "WHITESPACE": break;
 			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
 			case "{": parseerror("Attempt to open a curly-block at top-level.") && consumeAPrimitive(); break;
+			case "EOF": finish(); return stylesheet;
 			default: push(new StyleRule) && switchto('selector') && reprocess();
 			}
 			break;
@@ -88,6 +84,7 @@ function parse(tokens) {
 				if(rule.fillType !== '') switchto(rule.fillType);
 				else parseerror("Attempt to open a curly-block in a statement-type at-rule.") && switchto('next-block') && reprocess();
 				break;
+			case "EOF": finish(); return stylesheet;
 			default: rule.appendPrelude(consumeAPrimitive());
 			}
 			break;
@@ -99,6 +96,7 @@ function parse(tokens) {
 			case "BADURL": parseerror("Use of BADSTRING or BADURL token in selector.") && switchto('next-block'); break;
 			case "}": pop() && switchto(); break;
 			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
+			case "EOF": finish(); return stylesheet;
 			default: push(new StyleRule) && switchto('selector') && reprocess();
 			}
 			break;
@@ -106,6 +104,7 @@ function parse(tokens) {
 		case "selector":
 			switch(token.tokenType) {
 			case "{": switchto('declaration'); break;
+			case "EOF": discard() && finish(); return stylesheet;
 			default: rule.appendSelector(consumeAPrimitive()); 
 			}
 			break;
@@ -117,6 +116,7 @@ function parse(tokens) {
 			case "}": pop() && switchto(); break;
 			case "AT-RULE": push(new AtRule(token.value)) && switchto('at-rule'); break;
 			case "IDENT": push(new Declaration(token.value)) && switchto('after-declaration-name'); break;
+			case "EOF": finish(); return stylesheet;
 			default: parseerror() && switchto('next-declaration');
 			}
 			break;
@@ -126,6 +126,7 @@ function parse(tokens) {
 			case "WHITESPACE": break;
 			case ":": switchto('declaration-value'); break;
 			case ";": parseerror("Incomplete declaration - semicolon after property name.") && discard() && switchto(); break;
+			case "EOF": discard() && finish(); return stylesheet;
 			default: parseerror("Invalid declaration - additional token after property name") && discard() && switchto('next-declaration');
 			}
 			break;
@@ -143,6 +144,7 @@ function parse(tokens) {
 				break;
 			case ";": pop() && switchto(); break;
 			case "}": pop() && switchto() && reprocess(); break;
+			case "EOF": finish(); return stylesheet;
 			default: decl.append(consumeAPrimitive());
 			}
 			break;
@@ -152,6 +154,7 @@ function parse(tokens) {
 			case "WHITESPACE": break;
 			case ";": pop() && switchto(); break;
 			case "}": pop() && switchto() && reprocess(); break;
+			case "EOF": finish(); return stylesheet;
 			default: parseerror("Invalid declaration - additional token after !important.") && discard() && switchto('next-declaration');
 			}
 			break;
@@ -159,6 +162,7 @@ function parse(tokens) {
 		case "next-block":
 			switch(token.tokenType) {
 			case "{": consumeAPrimitive() && switchto(); break;
+			case "EOF": finish(); return stylesheet;
 			default: consumeAPrimitive(); break;
 			}
 			break;
@@ -167,12 +171,13 @@ function parse(tokens) {
 			switch(token.tokenType) {
 			case ";": switchto('declaration'); break;
 			case "}": switchto('declaration') && reprocess(); break;
+			case "EOF": finish(); return stylesheet;
 			default: consumeAPrimitive(); break;
 			}
 			break;
 
 		default:
-			// If you hit this, it's because one of the switch() calls is typo'd.
+			// If you hit this, it's because one of the switchto() calls is typo'd.
 			console.log('Unknown parsing mode: ' + mode);
 			return;
 		}
