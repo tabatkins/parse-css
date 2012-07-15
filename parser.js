@@ -80,7 +80,7 @@ function parse(tokens) {
 			case "CDC":
 			case "WHITESPACE": break;
 			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
-			case "{": parseerror("Attempt to open a curly-block at top-level.") && consumeASimpleBlock(token); break;
+			case "{": parseerror("Attempt to open a curly-block at top-level.") && consumeAPrimitive(); break;
 			default: push(new StyleRule) && switchto('selector') && reprocess();
 			}
 			break;
@@ -92,10 +92,7 @@ function parse(tokens) {
 				if(rule.fillType !== '') switchto(rule.fillType);
 				else parseerror("Attempt to open a curly-block in a statement-type at-rule.") && switchto('next-block') && reprocess();
 				break;
-			case "[":
-			case "(": rule.appendPrelude(consumeASimpleBlock(token)); break;
-			case "FUNCTION": rule.appendPrelude(consumeAFunc(token)); break;
-			default: rule.appendPrelude(token);
+			default: rule.appendPrelude(consumeAPrimitive());
 			}
 			break;
 
@@ -113,10 +110,7 @@ function parse(tokens) {
 		case "selector":
 			switch(token.tokenType) {
 			case "{": switchto('declaration'); break;
-			case "[":
-			case "(": rule.appendSelector(consumeASimpleBlock(token)); break;
-			case "FUNCTION": rule.appendSelector(consumeAFunc(token)); break;
-			default: rule.appendSelector(token); 
+			default: rule.appendSelector(consumeAPrimitive()); 
 			}
 			break;
 
@@ -142,10 +136,6 @@ function parse(tokens) {
 
 		case "declaration-value":
 			switch(token.tokenType) {
-			case "{":
-			case "[":
-			case "(": decl.append(consumeASimpleBlock(token)); break;
-			case "FUNCTION": decl.append(consumeAFunc(token)); break;
 			case "DELIM":
 				if(token.value == "!" && next().tokenType == 'IDENTIFIER' && next().value.toLowerCase() == "important") {
 					consume();
@@ -157,7 +147,7 @@ function parse(tokens) {
 				break;
 			case ";": rule.append(decl) && discarddecl() && switchto(); break;
 			case "}": rule.append(decl) && discarddecl() && pop() && switchto(); break;
-			default: decl.append(token);
+			default: decl.append(consumeAPrimitive());
 			}
 			break;
 
@@ -172,11 +162,8 @@ function parse(tokens) {
 
 		case "next-block":
 			switch(token.tokenType) {
-			case "{": consumeASimpleBlock(token) && switchto(); break;
-			case "[":
-			case "(": consumeASimpleBlock(token); break;
-			case "FUNCTION": consumeAFunc(token); break;
-			default: break;
+			case "{": consumeAPrimitive() && switchto(); break;
+			default: consumeAPrimitive(); break;
 			}
 			break;
 
@@ -184,11 +171,7 @@ function parse(tokens) {
 			switch(token.tokenType) {
 			case ";": switchto('declaration'); break;
 			case "}": switchto('declaration') && reprocess(); break;
-			case "{":
-			case "[":
-			case "(": consumeASimpleBlock(token); break;
-			case "FUNCTION": consumeAFunc(token); break;
-			default: break;
+			default: consumeAPrimitive(); break;
 			}
 			break;
 
@@ -199,26 +182,32 @@ function parse(tokens) {
 		}
 	}
 
-	function consumeASimpleBlock(startToken) {
-		var endingTokenType = {"(":")", "[":"]", "{":"}"}[startToken.tokenType];
-		var block = new SimpleBlock(startToken.tokenType);
+	function consumeAPrimitive() {
+		switch(token.tokenType) {
+		case "{":
+		case "[":
+		case "{": return consumeASimpleBlock();
+		case "FUNCTION": return consumeAFunc();
+		default: return token;
+		}
+	}
+
+	function consumeASimpleBlock() {
+		var endingTokenType = {"(":")", "[":"]", "{":"}"}[token.tokenType];
+		var block = new SimpleBlock(token.tokenType);
 
 		for(;;) {
 			consume();
 			switch(token.tokenType) {
 			case "EOF":
 			case endingTokenType: return block;
-			case "{":
-			case "[":
-			case "(": block.append(consumeASimpleBlock(token)); break;
-			case "FUNCTION": block.append(consumeAFunc(token)); break;
-			default: block.append(token);
+			default: block.append(consumeAPrimitive());
 			}
 		}
 	}
 
-	function consumeAFunc(startToken) {
-		var func = new Func(startToken.value);
+	function consumeAFunc() {
+		var func = new Func(token.value);
 		var arg = new FuncArg();
 
 		for(;;) {
@@ -234,11 +223,7 @@ function parse(tokens) {
 					arg.append(token);
 				}
 				break;
-			case "{":
-			case "[":
-			case "(": arg.append(consumeASimpleBlock(token)); break;
-			case "FUNCTION": arg.append(consumeAFunc(token)); break;
-			default: arg.append(token);
+			default: arg.append(consumeAPrimitive());
 			}
 		}
 	}
