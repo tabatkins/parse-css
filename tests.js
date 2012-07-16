@@ -16,7 +16,7 @@ var TESTS = [
         "selector": ["IDENT(foo)", "WS"],
         "value": [
           {
-            "type": "decl",
+            "type": "declaration",
             "name": "bar",
             "value": ["WS", "IDENT(baz)"]}]}]
     }
@@ -28,7 +28,7 @@ var TESTS = [
         "selector": ["IDENT(foo)", "WS"],
         "value": [
           {
-            "type": "decl",
+            "type": "declaration",
             "name": "bar",
             "value": ["WS", {"type": "func", "name": "rgb", "value": [
                 ["INT(255)"], ["WS", "INT(0)"], ["WS", "INT(127)"]]}]}]}]
