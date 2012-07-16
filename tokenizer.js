@@ -629,6 +629,7 @@ DimensionToken.prototype.append = function(val) {
 }
 DimensionToken.prototype.finish = function() {
 	this.unit = stringFromCodeArray(this.unit);
+	this.repr += this.unit;
 	return this;
 }
 
