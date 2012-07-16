@@ -512,14 +512,9 @@ DelimToken.prototype = new CSSParserToken;
 DelimToken.prototype.tokenType = "DELIM";
 DelimToken.prototype.toString = function() { return "DELIM("+this.value+")"; }
 
-function IdentifierToken(val) {
-	this.value = [];
-	this.append(val);
-}
-IdentifierToken.prototype = new CSSParserToken;
-IdentifierToken.prototype.tokenType = "IDENT";
-IdentifierToken.prototype.toString = function() { return "IDENT("+this.value+")"; }
-IdentifierToken.prototype.append = function(val) {
+function StringValuedToken() { return this; }
+StringValuedtoken.prototype = new CSSParserToken;
+StringValuedToken.append = function(val) {
 	if(val instanceof Array) {
 		for(var i = 0; i < val.length; i++) {
 			this.value.push(val[i]);
@@ -529,10 +524,18 @@ IdentifierToken.prototype.append = function(val) {
 	}
 	return true;
 }
-IdentifierToken.prototype.finish = function() {
+StringValuedToken.prototype.finish = function() {
 	this.value = stringFromCodeArray(this.value);
 	return this;
 }
+
+function IdentifierToken(val) {
+	this.value = [];
+	this.append(val);
+}
+IdentifierToken.prototype = new StringValuedToken;
+IdentifierToken.prototype.tokenType = "IDENT";
+IdentifierToken.prototype.toString = function() { return "IDENT("+this.value+")"; }
 
 function FunctionToken(val) {
 	// These are always constructed by passing an IdentifierToken
@@ -546,111 +549,45 @@ function AtKeywordToken(val) {
 	this.value = [];
 	this.append(val);
 }
-AtKeywordToken.prototype = new CSSParserToken;
+AtKeywordToken.prototype = new StringValuedToken;
 AtKeywordToken.prototype.tokenType = "AT-KEYWORD";
 AtKeywordToken.prototype.toString = function() { return "AT("+this.value+")"; }
-AtKeywordToken.prototype.append = function(val) {
-	if(val instanceof Array) {
-		for(var i = 0; i < val.length; i++) {
-			this.value.push(val[i]);
-		}
-	} else {
-		this.value.push(val);
-	}
-	return true;
-}
-AtKeywordToken.prototype.finish = function() {
-	this.value = stringFromCodeArray(this.value);
-	return this;
-}
 
 function HashToken(val) {
 	this.value = [];
 	this.append(val);
 }
-HashToken.prototype = new CSSParserToken;
+HashToken.prototype = new StringValuedToken;
 HashToken.prototype.tokenType = "HASH";
 HashToken.prototype.toString = function() { return "HASH("+this.value+")"; }
-HashToken.prototype.append = function(val) {
-	if(val instanceof Array) {
-		for(var i = 0; i < val.length; i++) {
-			this.value.push(val[i]);
-		}
-	} else {
-		this.value.push(val);
-	}
-	return true;
-}
-HashToken.prototype.finish = function() {
-	this.value = stringFromCodeArray(this.value);
-	return this;
-}
 
 function StringToken(val) {
 	this.value = [];
 	this.append(val);
 }
-StringToken.prototype = new CSSParserToken;
+StringToken.prototype = new StringValuedToken;
 StringToken.prototype.tokenType = "STRING";
 StringToken.prototype.toString = function() { return "\""+this.value+"\""; }
-StringToken.prototype.append = function(val) {
-	if(val instanceof Array) {
-		for(var i = 0; i < val.length; i++) {
-			this.value.push(val[i]);
-		}
-	} else {
-		this.value.push(val);
-	}
-	return true;
-}
-StringToken.prototype.finish = function() {
-	this.value = stringFromCodeArray(this.value);
-	return this;
-}
 
 function URLToken(val) {
 	this.value = [];
 	this.append(val);
 }
-URLToken.prototype = new CSSParserToken;
+URLToken.prototype = new StringValuedToken;
 URLToken.prototype.tokenType = "URL";
 URLToken.prototype.toString = function() { return "URL("+this.value+")"; }
-URLToken.prototype.append = function(val) {
-	if(val instanceof Array) {
-		for(var i = 0; i < val.length; i++) {
-			this.value.push(val[i]);
-		}
-	} else {
-		this.value.push(val);
-	}
-	return true;
-}
-URLToken.prototype.finish = function() {
-	this.value = stringFromCodeArray(this.value);
-	return this;
-}
 
 function NumberToken(val) {
 	this.value = [];
 	this.append(val);
 	this.type = "integer";
 }
-NumberToken.prototype = new CSSParserToken;
+NumberToken.prototype = new StringValuedToken;
 NumberToken.prototype.tokenType = "NUMBER";
 NumberToken.prototype.toString = function() { 
 	if(this.type == "integer")
 		return "INT("+this.value+")";
 	return "NUMBER("+this.value+")"; 
-}
-NumberToken.prototype.append = function(val) {
-	if(val instanceof Array) {
-		for(var i = 0; i < val.length; i++) {
-			this.value.push(val[i]);
-		}
-	} else {
-		this.value.push(val);
-	}
-	return true;
 }
 NumberToken.prototype.finish = function() {
 	this.repr = stringFromCodeArray(this.value);
@@ -672,7 +609,7 @@ PercentageToken.prototype.toString = function() { return "PERCENTAGE("+this.valu
 function DimensionToken(val,unit) {
 	// These are always created by passing a NumberToken as the val
 	val.finish();
-	this.value = val.value;
+	this.num = val.value;
 	this.unit = [];
 	this.repr = val.repr;
 	this.append(unit);
