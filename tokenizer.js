@@ -513,8 +513,8 @@ DelimToken.prototype.tokenType = "DELIM";
 DelimToken.prototype.toString = function() { return "DELIM("+this.value+")"; }
 
 function StringValuedToken() { return this; }
-StringValuedtoken.prototype = new CSSParserToken;
-StringValuedToken.append = function(val) {
+StringValuedToken.prototype = new CSSParserToken;
+StringValuedToken.prototype.append = function(val) {
 	if(val instanceof Array) {
 		for(var i = 0; i < val.length; i++) {
 			this.value.push(val[i]);
