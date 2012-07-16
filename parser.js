@@ -288,7 +288,7 @@ function StyleRule() {
 	return this;
 }
 StyleRule.prototype = new CSSParserRule;
-StyleRule.prototype.ruleType = "SELECTOR-RULE";
+StyleRule.prototype.ruleType = "STYLE-RULE";
 StyleRule.prototype.fillType = 'declaration';
 StyleRule.prototype.appendSelector = function(val) {
 	this.selector.push(val);
