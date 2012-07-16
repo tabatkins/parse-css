@@ -145,7 +145,7 @@ function parse(tokens) {
 			case ";": pop() && switchto(); break;
 			case "}": pop() && switchto() && reprocess(); break;
 			case "EOF": finish(); return stylesheet;
-			default: decl.append(consumeAPrimitive());
+			default: rule.append(consumeAPrimitive());
 			}
 			break;
 
