@@ -82,7 +82,7 @@ function parse(tokens) {
 			case ";": pop() && switchto(); break;
 			case "{":
 				if(rule.fillType !== '') switchto(rule.fillType);
-				else parseerror("Attempt to open a curly-block in a statement-type at-rule.") && switchto('next-block') && reprocess();
+				else parseerror("Attempt to open a curly-block in a statement-type at-rule.") && discard() && switchto('next-block') && reprocess();
 				break;
 			case "EOF": finish(); return stylesheet;
 			default: rule.appendPrelude(consumeAPrimitive());
@@ -92,8 +92,6 @@ function parse(tokens) {
 		case "rule":
 			switch(token.tokenType) {
 			case "WHITESPACE": break;
-			case "BADSTRING":
-			case "BADURL": parseerror("Use of BADSTRING or BADURL token in selector.") && switchto('next-block'); break;
 			case "}": pop() && switchto(); break;
 			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
 			case "EOF": finish(); return stylesheet;
@@ -117,7 +115,7 @@ function parse(tokens) {
 			case "AT-RULE": push(new AtRule(token.value)) && switchto('at-rule'); break;
 			case "IDENT": push(new Declaration(token.value)) && switchto('after-declaration-name'); break;
 			case "EOF": finish(); return stylesheet;
-			default: parseerror() && switchto('next-declaration');
+			default: parseerror() && discard() && switchto('next-declaration');
 			}
 			break;
 
@@ -143,7 +141,7 @@ function parse(tokens) {
 				}
 				break;
 			case ";": pop() && switchto(); break;
-			case "}": pop() && switchto() && reprocess(); break;
+			case "}": pop() && pop() && switchto(); break;
 			case "EOF": finish(); return stylesheet;
 			default: rule.append(consumeAPrimitive());
 			}
@@ -153,7 +151,7 @@ function parse(tokens) {
 			switch(token.tokenType) {
 			case "WHITESPACE": break;
 			case ";": pop() && switchto(); break;
-			case "}": pop() && switchto() && reprocess(); break;
+			case "}": pop() && pop() && switchto(); break;
 			case "EOF": finish(); return stylesheet;
 			default: parseerror("Invalid declaration - additional token after !important.") && discard() && switchto('next-declaration');
 			}
