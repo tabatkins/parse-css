@@ -616,7 +616,7 @@ function DimensionToken(val,unit) {
 }
 DimensionToken.prototype = new CSSParserToken;
 DimensionToken.prototype.tokenType = "DIMENSION";
-DimensionToken.prototype.toString = function() { return "DIM("+this.value+","+this.unit+")"; }
+DimensionToken.prototype.toString = function() { return "DIM("+this.num+","+this.unit+")"; }
 DimensionToken.prototype.append = function(val) {
 	if(val instanceof Array) {
 		for(var i = 0; i < val.length; i++) {
