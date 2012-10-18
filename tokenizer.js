@@ -1,13 +1,13 @@
-Number.prototype.between = function (first, last) { return this >= first && this <= last; }
-function digit(code) { return code.between(0x30,0x39); }
-function hexdigit(code) { return digit(code) || code.between(0x41,0x46) || code.between(0x61,0x66); }
-function uppercaseletter(code) { return code.between(0x41,0x5a); }
-function lowercaseletter(code) { return code.between(0x61,0x7a); }
+var between = function (num, first, last) { return num >= first && num <= last; }
+function digit(code) { return between(code, 0x30,0x39); }
+function hexdigit(code) { return digit(code) || between(code, 0x41,0x46) || between(code, 0x61,0x66); }
+function uppercaseletter(code) { return between(code, 0x41,0x5a); }
+function lowercaseletter(code) { return between(code, 0x61,0x7a); }
 function letter(code) { return uppercaseletter(code) || lowercaseletter(code); }
 function nonascii(code) { return code >= 0xa0; }
 function namestartchar(code) { return letter(code) || nonascii(code) || code == 0x5f; }
 function namechar(code) { return namestartchar(code) || digit(code) || code == 0x2d; }
-function nonprintable(code) { return code.between(0,8) || code.between(0xe,0x1f) || code.between(0x7f,0x9f); }
+function nonprintable(code) { return between(code, 0,8) || between(code, 0xe,0x1f) || between(code, 0x7f,0x9f); }
 function newline(code) { return code == 0xa || code == 0xc; }
 function whitespace(code) { return newline(code) || code == 9 || code == 0x20; }
 function badescape(code) { return newline(code) || isNaN(code); }
