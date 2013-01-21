@@ -315,7 +315,7 @@ function SimpleBlock(type) {
 SimpleBlock.prototype = new CSSParserRule;
 SimpleBlock.prototype.ruleType = "BLOCK";
 SimpleBlock.prototype.toJSON = function() {
-	return {type:'block', type:this.type, value:this.value.map(function(e){return e.toJSON();})};
+	return {type:'block', name:this.type, value:this.value.map(function(e){return e.toJSON();})};
 }
 
 function Func(name) {
