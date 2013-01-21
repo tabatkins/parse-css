@@ -183,7 +183,7 @@ function parse(tokens) {
 
 	function consumeAPrimitive() {
 		switch(token.tokenType) {
-		case "{":
+		case "(":
 		case "[":
 		case "{": return consumeASimpleBlock();
 		case "FUNCTION": return consumeAFunc();
