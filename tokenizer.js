@@ -237,7 +237,7 @@ function tokenize(str, options) {
 
 		case "transform-function-whitespace":
 			if(whitespace(code)) donothing();
-			else if(code == 0x28) emit(new FunctionToken(currtoken.value())) && switchto('data');
+			else if(code == 0x28) emit(new FunctionToken(currtoken)) && switchto('data');
 			else emit() && switchto('data') && reconsume();
 			break;
 
