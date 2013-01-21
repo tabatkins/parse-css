@@ -379,7 +379,7 @@ function tokenize(str, options) {
 				if(badescape(next())) parseerror() && switchto('bad-url');
 				else currtoken.append(consumeEscape());
 			}
-			else currtoken.append(consumeEscape());
+			else currtoken.append(code);
 			break;
 
 		case "bad-url":
