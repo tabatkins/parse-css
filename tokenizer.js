@@ -334,7 +334,7 @@ function tokenize(str, options) {
 			else if(code == 0x27) switchto('url-single-quote');
 			else if(code == 0x29) emit(new URLToken) && switchto('data');
 			else if(whitespace(code)) donothing();
-			else switchto('url-unquote') && reconsume();
+			else switchto('url-unquoted') && reconsume();
 			break;
 
 		case "url-double-quote":
