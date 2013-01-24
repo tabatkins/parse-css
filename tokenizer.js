@@ -1,3 +1,15 @@
+(function (root, factory) {
+    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
+    // Rhino, and plain browser loading.
+    if (typeof define === 'function' && define.amd) {
+        define(['exports'], factory);
+    } else if (typeof exports !== 'undefined') {
+        factory(exports);
+    } else {
+        factory(root);
+    }
+}(this, function (exports) {
+
 var between = function (num, first, last) { return num >= first && num <= last; }
 function digit(code) { return between(code, 0x30,0x39); }
 function hexdigit(code) { return digit(code) || between(code, 0x41,0x46) || between(code, 0x61,0x66); }
@@ -23,35 +35,53 @@ function tokenize(str, options) {
 	var code;
 	var currtoken;
 
-	var next = function(num) { if(num === undefined) num = 1; return str.charCodeAt(i+num); };
-	var consume = function(num) { 
-		if(num === undefined) 
-			num = 1; 
-		i += num; 
-		code = str.charCodeAt(i); 
-		//console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16)); 
-		return true; 
+	// Line number information.
+	var line = 0;
+	var column = 0;
+	var incrLineno = function() {
+	  line += 1;
+	  column = 0;
 	};
-	var reconsume = function() { i -= 1; return true; };
+	var locStart = {line:line, column:column};
+
+	var next = function(num) { if(num === undefined) num = 1; return str.charCodeAt(i+num); };
+	var consume = function(num) {
+		if(num === undefined)
+			num = 1;
+		i += num;
+		code = str.charCodeAt(i);
+		if (newline(code)) incrLineno();
+		else column += 1;
+		//console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16));
+		return true;
+	};
+	var reconsume = function() { i -= 1; column -= 1; return true; };
 	var eof = function() { return i >= str.length; };
 	var donothing = function() {};
-	var emit = function(token) { 
+	var emit = function(token) {
 		if(token) {
 			token.finish();
 		} else {
 			token = currtoken.finish();
 		}
+		if (options.loc === true) {
+			token.loc = {};
+			token.loc.start = {line:locStart.line, column:locStart.column - 1};
+			token.loc.end = {line:line, column:column - 1};
+		}
 		tokens.push(token);
 		//console.log('Emitting ' + token);
-		currtoken = undefined; 
+		currtoken = undefined;
 		return true;
 	};
 	var create = function(token) { currtoken = token; return true; };
 	var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + " in state " + state + ".");return true; };
-	var switchto = function(newstate) { 
-		state = newstate; 
-		//console.log('Switching to ' + state); 
-		return true; 
+	var switchto = function(newstate) {
+		state = newstate;
+		locStart.line = line;
+		locStart.column = column;
+		//console.log('Switching to ' + state);
+		return true;
 	};
 	var consumeEscape = function() {
 		// Assume the the current character is the \
@@ -84,7 +114,7 @@ function tokenize(str, options) {
 			if(whitespace(code)) {
 				emit(new WhitespaceToken);
 				while(whitespace(next())) consume();
-			} 
+			}
 			else if(code == 0x22) switchto("double-quote-string");
 			else if(code == 0x23) switchto("hash");
 			else if(code == 0x27) switchto("single-quote-string");
@@ -136,7 +166,7 @@ function tokenize(str, options) {
 
 		case "double-quote-string":
 			if(currtoken == undefined) create(new StringToken);
-			
+
 			if(code == 0x22) emit() && switchto("data");
 			else if(eof()) parseerror() && emit() && switchto("data");
 			else if(newline(code)) parseerror() && emit(new BadStringToken) && switchto("data") && reconsume();
@@ -150,7 +180,7 @@ function tokenize(str, options) {
 
 		case "single-quote-string":
 			if(currtoken == undefined) create(new StringToken);
-			
+
 			if(code == 0x27) emit() && switchto("data");
 			else if(eof()) parseerror() && emit() && switchto("data");
 			else if(newline(code)) parseerror() && emit(new BadStringToken) && switchto("data") && reconsume();
@@ -252,7 +282,7 @@ function tokenize(str, options) {
 			else if(code == 0x2b) {
 				if(digit(next())) consume() && currtoken.append([0x2b,code]) && switchto('number-rest');
 				else if(next(1) == 0x2e && digit(next(2))) consume(2) && currtoken.append([0x2b,0x2e,code]) && switchto('number-fraction');
-				else switchto('data') && reconsume();				
+				else switchto('data') && reconsume();
 			}
 			else if(digit(code)) currtoken.append(code) && switchto('number-rest');
 			else if(code == 0x2e) {
@@ -442,7 +472,7 @@ function stringFromCodeArray(arr) {
 	return String.fromCharCode.apply(null,arr.filter(function(e){return e;}));
 }
 
-function CSSParserToken() { return this; }
+function CSSParserToken(options) { return this; }
 CSSParserToken.prototype.finish = function() { return this; }
 CSSParserToken.prototype.toString = function() { return this.tokenType; }
 CSSParserToken.prototype.toJSON = function() { return this.toString(); }
@@ -539,7 +569,7 @@ IdentifierToken.prototype.toString = function() { return "IDENT("+this.value+")"
 
 function FunctionToken(val) {
 	// These are always constructed by passing an IdentifierToken
-	this.value = val.finish().value; 
+	this.value = val.finish().value;
 }
 FunctionToken.prototype = new CSSParserToken;
 FunctionToken.prototype.tokenType = "FUNCTION";
@@ -584,10 +614,10 @@ function NumberToken(val) {
 }
 NumberToken.prototype = new StringValuedToken;
 NumberToken.prototype.tokenType = "NUMBER";
-NumberToken.prototype.toString = function() { 
+NumberToken.prototype.toString = function() {
 	if(this.type == "integer")
 		return "INT("+this.value+")";
-	return "NUMBER("+this.value+")"; 
+	return "NUMBER("+this.value+")";
 }
 NumberToken.prototype.finish = function() {
 	this.repr = stringFromCodeArray(this.value);
@@ -649,7 +679,7 @@ function UnicodeRangeToken(start,end) {
 }
 UnicodeRangeToken.prototype = new CSSParserToken;
 UnicodeRangeToken.prototype.tokenType = "UNICODE-RANGE";
-UnicodeRangeToken.prototype.toString = function() { 
+UnicodeRangeToken.prototype.toString = function() {
 	if(this.start+1 == this.end)
 		return "UNICODE-RANGE("+this.start.toString(16).toUpperCase()+")";
 	if(this.start < this.end)
@@ -661,8 +691,8 @@ UnicodeRangeToken.prototype.contains = function(code) {
 }
 
 
-// Make this usable from NodeJS
+// Exportation.
 // TODO: also export the various tokens objects?
-if (typeof(exports) != 'undefined') {
-    exports.tokenize = tokenize;
-}
+exports.tokenize = tokenize;
+
+}));
