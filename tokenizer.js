@@ -1,3 +1,15 @@
+(function (root, factory) {
+    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
+    // Rhino, and plain browser loading.
+    if (typeof define === 'function' && define.amd) {
+        define(['exports'], factory);
+    } else if (typeof exports !== 'undefined') {
+        factory(exports);
+    } else {
+        factory(root);
+    }
+}(this, function (exports) {
+
 var between = function (num, first, last) { return num >= first && num <= last; }
 function digit(code) { return between(code, 0x30,0x39); }
 function hexdigit(code) { return digit(code) || between(code, 0x41,0x46) || between(code, 0x61,0x66); }
@@ -679,8 +691,8 @@ UnicodeRangeToken.prototype.contains = function(code) {
 }
 
 
-// Make this usable from NodeJS
+// Exportation.
 // TODO: also export the various tokens objects?
-if (typeof(exports) != 'undefined') {
-    exports.tokenize = tokenize;
-}
+exports.tokenize = tokenize;
+
+}));
