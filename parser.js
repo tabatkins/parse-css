@@ -1,3 +1,15 @@
+(function (root, factory) {
+    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
+    // Rhino, and plain browser loading.
+    if (typeof define === 'function' && define.amd) {
+        define(['exports'], factory);
+    } else if (typeof exports !== 'undefined') {
+        factory(exports);
+    } else {
+        factory(root);
+    }
+}(this, function (exports) {
+
 function parse(tokens) {
 	var mode = 'top-level';
 	var i = -1;
@@ -339,8 +351,8 @@ FuncArg.prototype.toJSON = function() {
 	return this.value.map(function(e){return e.toJSON();});
 }
 
-// Make this usable from NodeJS
+// Exportation.
 // TODO: also export the various rule objects?
-if (typeof(exports) != 'undefined') {
-    exports.parse = parse;
-}
+exports.parse = parse;
+
+}));
