@@ -38,9 +38,12 @@ function tokenize(str, options) {
 	// Line number information.
 	var line = 0;
 	var column = 0;
+	// The only use of lastLineLength is in reconsume().
+	var lastLineLength = 0;
 	var incrLineno = function() {
-	  line += 1;
-	  column = 0;
+		line += 1;
+		lastLineLength = column;
+		column = 0;
 	};
 	var locStart = {line:line, column:column};
 
@@ -51,11 +54,22 @@ function tokenize(str, options) {
 		i += num;
 		code = str.charCodeAt(i);
 		if (newline(code)) incrLineno();
-		else column += 1;
+		else column += num;
 		//console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16));
 		return true;
 	};
-	var reconsume = function() { i -= 1; column -= 1; return true; };
+	var reconsume = function() {
+		i -= 1;
+		if (newline(code)) {
+			line -= 1;
+			column = lastLineLength;
+		} else {
+			column -= 1;
+		}
+		locStart.line = line;
+		locStart.column = column;
+		return true;
+	};
 	var eof = function() { return i >= str.length; };
 	var donothing = function() {};
 	var emit = function(token) {
@@ -66,8 +80,9 @@ function tokenize(str, options) {
 		}
 		if (options.loc === true) {
 			token.loc = {};
-			token.loc.start = {line:locStart.line, column:locStart.column - 1};
-			token.loc.end = {line:line, column:column - 1};
+			token.loc.start = {line:locStart.line, column:locStart.column};
+			locStart = {line: line, column: column};
+			token.loc.end = locStart;
 		}
 		tokens.push(token);
 		//console.log('Emitting ' + token);
@@ -78,8 +93,6 @@ function tokenize(str, options) {
 	var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + " in state " + state + ".");return true; };
 	var switchto = function(newstate) {
 		state = newstate;
-		locStart.line = line;
-		locStart.column = column;
 		//console.log('Switching to ' + state);
 		return true;
 	};
