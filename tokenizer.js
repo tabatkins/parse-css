@@ -311,7 +311,7 @@ function tokenize(str, options) {
 				if(digit(next())) consume() && currtoken.append([0x2e,code]) && switchto('number-fraction');
 				else emit() && switchto('data') && reconsume();
 			}
-			else if(code == 0x25) emit(new PercentageToken(currtoken)) && switchto('data') && reconsume();
+			else if(code == 0x25) emit(new PercentageToken(currtoken)) && switchto('data');
 			else if(code == 0x45 || code == 0x65) {
 				if(!options.scientificNotation) create(new DimensionToken(currtoken,code)) && switchto('dimension');
 				else if(digit(next())) consume() && currtoken.append([0x25,code]) && switchto('sci-notation');
@@ -337,7 +337,7 @@ function tokenize(str, options) {
 
 			if(digit(code)) currtoken.append(code);
 			else if(code == 0x2e) emit() && switchto('data') && reconsume();
-			else if(code == 0x25) emit(new PercentageToken(currtoken)) && switchto('data') && reconsume();
+			else if(code == 0x25) emit(new PercentageToken(currtoken)) && switchto('data');
 			else if(code == 0x45 || code == 0x65) {
 				if(!options.scientificNotation) create(new DimensionToken(currtoken,code)) && switchto('dimension');
 				else if(digit(next())) consume() && currtoken.append([0x25,code]) && switchto('sci-notation');
