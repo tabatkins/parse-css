@@ -1,95 +1,91 @@
 <!DOCTYPE html>
-<html>
-<head>
-	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-	<link rel="stylesheet" media="all" href="docco.css" />
-</head>
-<body>
-	<div id="container">
-		<div id="background">
-		</div>
-		<table cellpadding="0" cellspacing="0">
-			<thead>
-				<tr>
-					<th class="docs"></th>
-					<th class="code"></th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr id="section-1">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-1">&#182;</a></div>
-						<p>/* </p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-2">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-2">&#182;</a></div>
-						<p><em>This illustrates the parsed tree created by<a href="https://github.com/tabatkins/css-parser">Tab Atkin's CSS Parser</a></em></p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre><span class="p">{</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-3">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-3">&#182;</a></div>
-						<p><em>based on the stylesheet shown below - in theory you could have a collection of these...</em></p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;stylesheet&quot;</span><span class="p">,</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-4">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-4">&#182;</a></div>
-						<p><em>This will be a collection of everything described in this sheet.</em></p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>    <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-5">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-5">&#182;</a></div>
-						<p><em>Each of these rule becomes an entry of some kind in this array.</em></p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-6">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-6">&#182;</a></div>
-						<p>*/</p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-7">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-7">&#182;</a></div>
-						<p>html,body { </p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>        <span class="p">{</span>
+<title>CSS Parsing Example</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" media="all" href="docco.css" />
+<div id="container">
+	<div id="background">
+	</div>
+	<table cellpadding="0" cellspacing="0">
+		<thead>
+			<tr>
+				<th class="docs"></th>
+				<th class="code"></th>
+			</tr>
+		</thead>
+		<tr id="section-1">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-1">&#182;</a></div>
+				<p>/* </p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-2">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-2">&#182;</a></div>
+				<p><em>This illustrates the parsed tree created by<a href="https://github.com/tabatkins/css-parser">Tab Atkin's CSS Parser</a></em></p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre><span class="p">{</span></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-3">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-3">&#182;</a></div>
+				<p><em>based on the stylesheet shown below - in theory you could have a collection of these...</em></p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;stylesheet&quot;</span><span class="p">,</span></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-4">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-4">&#182;</a></div>
+				<p><em>This will be a collection of everything described in this sheet.</em></p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>    <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-5">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-5">&#182;</a></div>
+				<p><em>Each of these rule becomes an entry of some kind in this array.</em></p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-6">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-6">&#182;</a></div>
+				<p>*/</p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-7">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-7">&#182;</a></div>
+				<p>html,body { </p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>        <span class="p">{</span>
             <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;selector&quot;</span><span class="p">,</span>
             <span class="s2">&quot;selector&quot;</span><span class="o">:</span> <span class="p">[</span>
                 <span class="s2">&quot;IDENT(html)&quot;</span><span class="p">,</span>
@@ -98,19 +94,19 @@
                 <span class="s2">&quot;WS&quot;</span>
             <span class="p">],</span>
             <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-8">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-8">&#182;</a></div>
-						<ul>
-							<li>height: 100%; </li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-8">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-8">&#182;</a></div>
+				<ul>
+					<li>height: 100%; </li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                <span class="p">{</span>
                     <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;declaration&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;height&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -118,19 +114,19 @@
                         <span class="s2">&quot;PERCENTAGE(100)&quot;</span>
                     <span class="p">]</span>
                 <span class="p">},</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-9">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-9">&#182;</a></div>
-						<ul>
-							<li>margin: 0px;</li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-9">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-9">&#182;</a></div>
+				<ul>
+					<li>margin: 0px;</li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                <span class="p">{</span>
                     <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;declaration&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;margin&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -138,19 +134,19 @@
                         <span class="s2">&quot;DIM(0,px)&quot;</span>
                     <span class="p">]</span>
                 <span class="p">},</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-10">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-10">&#182;</a></div>
-						<ul>
-							<li>padding: 0px; </li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-10">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-10">&#182;</a></div>
+				<ul>
+					<li>padding: 0px; </li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                <span class="p">{</span>
                     <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;declaration&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;padding&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -158,19 +154,19 @@
                         <span class="s2">&quot;DIM(0,px)&quot;</span>
                     <span class="p">]</span>
                 <span class="p">},</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-11">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-11">&#182;</a></div>
-						<ul>
-							<li>overflow: hidden;</li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-11">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-11">&#182;</a></div>
+				<ul>
+					<li>overflow: hidden;</li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                <span class="p">{</span>
                     <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;declaration&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;overflow&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -179,71 +175,71 @@
                     <span class="p">]</span>
                 <span class="p">}</span>
             <span class="p">]</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-12">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-12">&#182;</a></div>
-						<p>}</p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>        <span class="p">},</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-13">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-13">&#182;</a></div>
-						<p>/* <em>next rule: splat with unofficial but conforming properties</em> */</p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-14">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-14">&#182;</a></div>
-						<p>* {</p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>        <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-12">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-12">&#182;</a></div>
+				<p>}</p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>        <span class="p">},</span></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-13">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-13">&#182;</a></div>
+				<p>/* <em>next rule: splat with unofficial but conforming properties</em> */</p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-14">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-14">&#182;</a></div>
+				<p>* {</p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>        <span class="p">{</span>
             <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;selector&quot;</span><span class="p">,</span>
             <span class="s2">&quot;selector&quot;</span><span class="o">:</span> <span class="p">[</span>
                 <span class="s2">&quot;DELIM(*)&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;WS&quot;</span>
             <span class="p">],</span>
             <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-15">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-15">&#182;</a></div>
-						<ul>
-							<li>/* <em>No problem...</em> */</li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-16">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-16">&#182;</a></div>
-						<ul>
-							<li>-o-box-sizing: border-box;</li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-15">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-15">&#182;</a></div>
+				<ul>
+					<li>/* <em>No problem...</em> */</li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-16">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-16">&#182;</a></div>
+				<ul>
+					<li>-o-box-sizing: border-box;</li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                <span class="p">{</span>
                     <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;declaration&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;-o-box-sizing&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -252,39 +248,39 @@
                     <span class="p">]</span>
                 <span class="p">}</span>
             <span class="p">]</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-17">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-17">&#182;</a></div>
-						<p>}</p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>        <span class="p">},</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-18">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-18">&#182;</a></div>
-						<p>/* <em>next rule: @ rule with lots of tricky bits: note the prelude / func</em></p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-19">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-19">&#182;</a></div>
-						<p>@document url("http://www.w3.org/"),</p>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>        <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-17">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-17">&#182;</a></div>
+				<p>}</p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>        <span class="p">},</span></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-18">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-18">&#182;</a></div>
+				<p>/* <em>next rule: @ rule with lots of tricky bits: note the prelude / func</em></p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-19">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-19">&#182;</a></div>
+				<p>@document url("http://www.w3.org/"),</p>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>        <span class="p">{</span>
             <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;at&quot;</span><span class="p">,</span>
             <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;document&quot;</span><span class="p">,</span>
             <span class="s2">&quot;prelude&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -292,19 +288,19 @@
                 <span class="s2">&quot;URL(http://www.w3.org/)&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;DELIM(,)&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;WS&quot;</span><span class="p">,</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-20">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-20">&#182;</a></div>
-						<ul>
-							<li>url-prefix("http://www.w3.org/Style/"),</li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-20">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-20">&#182;</a></div>
+				<ul>
+					<li>url-prefix("http://www.w3.org/Style/"),</li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                <span class="p">{</span>
                     <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;func&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;url-prefix&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -315,19 +311,19 @@
                 <span class="p">},</span>
                 <span class="s2">&quot;DELIM(,)&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;WS&quot;</span><span class="p">,</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-21">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-21">&#182;</a></div>
-						<ul>
-							<li>domain("mozilla.org"),</li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-21">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-21">&#182;</a></div>
+				<ul>
+					<li>domain("mozilla.org"),</li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                <span class="p">{</span>
                     <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;func&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;domain&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -338,19 +334,19 @@
                 <span class="p">},</span>
                 <span class="s2">&quot;DELIM(,)&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;WS&quot;</span><span class="p">,</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-22">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-22">&#182;</a></div>
-						<ul>
-							<li>regexp("https:.*") {</li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-22">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-22">&#182;</a></div>
+				<ul>
+					<li>regexp("https:.*") {</li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                <span class="p">{</span>
                     <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;func&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;regexp&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -362,53 +358,53 @@
                 <span class="s2">&quot;WS&quot;</span>
             <span class="p">],</span>
             <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-23">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-23">&#182;</a></div>
-						<ul>
-							<li>/* <em>Now we'll have a collection of rules just like a sheet, but for the @ block...</em> */</li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                <span class="p">{</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-24">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-24">&#182;</a></div>
-						<ul>
-							<li>body {</li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;selector&quot;</span><span class="p">,</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-23">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-23">&#182;</a></div>
+				<ul>
+					<li>/* <em>Now we'll have a collection of rules just like a sheet, but for the @ block...</em> */</li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                <span class="p">{</span></pre>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-24">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-24">&#182;</a></div>
+				<ul>
+					<li>body {</li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                    <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;selector&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;selector&quot;</span><span class="o">:</span> <span class="p">[</span>
                         <span class="s2">&quot;IDENT(body)&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;WS&quot;</span>
                     <span class="p">],</span>
                     <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-25">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-25">&#182;</a></div>
-						<ul>
-							<li>
-						<ul>
-							<li>color: purple;</li>
-						</ul></li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                        <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-25">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-25">&#182;</a></div>
+				<ul>
+					<li>
+				<ul>
+					<li>color: purple;</li>
+				</ul></li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                        <span class="p">{</span>
                             <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;declaration&quot;</span><span class="p">,</span>
                             <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;color&quot;</span><span class="p">,</span>
                             <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -416,22 +412,22 @@
                                 <span class="s2">&quot;IDENT(purple)&quot;</span>
                             <span class="p">]</span>
                         <span class="p">},</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-26">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-26">&#182;</a></div>
-						<ul>
-							<li>
-						<ul>
-							<li>background: yellow;</li>
-						</ul></li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                        <span class="p">{</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-26">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-26">&#182;</a></div>
+				<ul>
+					<li>
+				<ul>
+					<li>background: yellow;</li>
+				</ul></li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                        <span class="p">{</span>
                             <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;declaration&quot;</span><span class="p">,</span>
                             <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;background&quot;</span><span class="p">,</span>
                             <span class="s2">&quot;value&quot;</span><span class="o">:</span> <span class="p">[</span>
@@ -440,28 +436,25 @@
                             <span class="p">]</span>
                         <span class="p">}</span>
                     <span class="p">]</span></pre>
-						</div>
-					</td>
-				</tr>
-				<tr id="section-27">
-					<td class="docs">
-						<div class="pilwrap"><a class="pilcrow" href="#section-27">&#182;</a></div>
-						<ul>
-							<li>}</li>
-						</ul>
-					</td>
-					<td class="code">
-						<div class="highlight">
-							<pre>                <span class="p">}</span>
+				</div>
+			</td>
+		</tr>
+		<tr id="section-27">
+			<td class="docs">
+				<div class="pilwrap"><a class="pilcrow" href="#section-27">&#182;</a></div>
+				<ul>
+					<li>}</li>
+				</ul>
+			</td>
+			<td class="code">
+				<div class="highlight">
+					<pre>                <span class="p">}</span>
             <span class="p">]</span>
         <span class="p">}</span>
     <span class="p">]</span>
 <span class="p">}</span></pre>
-						</div>
-					</td>
-				</tr>
-            </tbody>
-        </table>
-	</div>
-</body>
-</html>
+				</div>
+			</td>
+		</tr>
+	</table>
+</div>
