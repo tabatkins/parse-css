@@ -1,0 +1,31 @@
+{
+  "name": "css-parser",
+  "version": "0.1.0",
+  "description": "Standards-based CSS parser, based on the CSS Syntax spec.",
+  "keywords": ["css", "parser"],
+  "author": "Tab Atkins <jackalmage@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/tabatkins/css-parser.git"
+  },
+  "main": "index",
+  "homepage": "https://github.com/tabatkins/css-parser",
+  "contributors": [
+    {
+      "name": "Tab Atkins Jr."
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/tabatkins/css-parser/issues",
+    "email": "jackalmage@gmail.com"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "licenses": [
+    {
+      "type": "CC0",
+      "url": "http://github.com/tabatkins/css-parser/raw/master/LICENSE"
+    }
+  ],
+  "scripts": {}
+}
