@@ -39,7 +39,7 @@ function parse(tokens) {
 		if(newmode === undefined) {
 			if(rule.fillType !== '')
 				mode = rule.fillType;
-			else if(rule.ruleType == 'STYLESHEET')
+			else if(rule.type == 'STYLESHEET')
 				mode = 'top-level'
 			else { console.log("Unknown rule-type while switching to current rule's content mode: ",rule); mode = ''; }
 		} else {
@@ -255,7 +255,7 @@ function Stylesheet() {
 	return this;
 }
 Stylesheet.prototype = new CSSParserRule;
-Stylesheet.prototype.ruleType = "STYLESHEET";
+Stylesheet.prototype.type = "STYLESHEET";
 Stylesheet.prototype.toJSON = function() {
 	return {type:'stylesheet', value: this.value.map(function(e){return e.toJSON();})};
 }
@@ -269,7 +269,7 @@ function AtRule(name) {
 	return this;
 }
 AtRule.prototype = new CSSParserRule;
-AtRule.prototype.ruleType = "AT-RULE";
+AtRule.prototype.type = "AT-RULE";
 AtRule.prototype.appendPrelude = function(val) {
 	this.prelude.push(val);
 	return this;
@@ -298,7 +298,7 @@ function StyleRule() {
 	return this;
 }
 StyleRule.prototype = new CSSParserRule;
-StyleRule.prototype.ruleType = "STYLE-RULE";
+StyleRule.prototype.type = "STYLE-RULE";
 StyleRule.prototype.fillType = 'declaration';
 StyleRule.prototype.appendSelector = function(val) {
 	this.selector.push(val);
@@ -314,20 +314,20 @@ function Declaration(name) {
 	return this;
 }
 Declaration.prototype = new CSSParserRule;
-Declaration.prototype.ruleType = "DECLARATION";
+Declaration.prototype.type = "DECLARATION";
 Declaration.prototype.toJSON = function() {
 	return {type:'declaration', name:this.name, value:this.value.map(function(e){return e.toJSON();})};
 }
 
 function SimpleBlock(type) {
-	this.type = type;
+	this.name = type;
 	this.value = [];
 	return this;
 }
 SimpleBlock.prototype = new CSSParserRule;
-SimpleBlock.prototype.ruleType = "BLOCK";
+SimpleBlock.prototype.type = "BLOCK";
 SimpleBlock.prototype.toJSON = function() {
-	return {type:'block', name:this.type, value:this.value.map(function(e){return e.toJSON();})};
+	return {type:'block', name:this.name, value:this.value.map(function(e){return e.toJSON();})};
 }
 
 function Func(name) {
@@ -336,7 +336,7 @@ function Func(name) {
 	return this;
 }
 Func.prototype = new CSSParserRule;
-Func.prototype.ruleType = "FUNCTION";
+Func.prototype.type = "FUNCTION";
 Func.prototype.toJSON = function() {
 	return {type:'func', name:this.name, value:this.value.map(function(e){return e.toJSON();})};
 }
@@ -346,7 +346,7 @@ function FuncArg() {
 	return this;
 }
 FuncArg.prototype = new CSSParserRule;
-FuncArg.prototype.ruleType = "FUNCTION-ARG";
+FuncArg.prototype.type = "FUNCTION-ARG";
 FuncArg.prototype.toJSON = function() {
 	return this.value.map(function(e){return e.toJSON();});
 }
