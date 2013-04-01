@@ -35,4 +35,4 @@ Node Integration
 Simon Sapin added some CommonJS export statements to the bottom of tokenizer.js and parser.js
 exporting the tokenize and parse functions,
 so as far as I know it will Just Work(tm).
-I have no idea how to fix it if anything goes wrong, though. 
+I have no idea how to fix it if anything goes wrong, though.
