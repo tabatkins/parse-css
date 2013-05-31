@@ -19,21 +19,256 @@ function letter(code) { return uppercaseletter(code) || lowercaseletter(code); }
 function nonascii(code) { return code >= 0xa0; }
 function namestartchar(code) { return letter(code) || nonascii(code) || code == 0x5f; }
 function namechar(code) { return namestartchar(code) || digit(code) || code == 0x2d; }
-function nonprintable(code) { return between(code, 0,8) || between(code, 0xe,0x1f) || between(code, 0x7f,0x9f); }
-function newline(code) { return code == 0xa || code == 0xc; }
+function nonprintable(code) { return between(code, 0,8) || code == 0xb || between(code, 0xe,0x1f) || code == 0x7f; }
+function newline(code) { return code == 0xa; }
 function whitespace(code) { return newline(code) || code == 9 || code == 0x20; }
 function badescape(code) { return newline(code) || isNaN(code); }
+function numberFromString(str) {
+	//...
+}
+function startsAValidEscape(str) {
+	if(str instanceof CSSTokenizer)
+		str = str.chars(2);
+	//...
+}
+function startsAnIdent(str) {
+	if(str instanceof CSSTokenizer)
+		str = str.chars(3);
+	//...
+}
+function startsANumber(str) {
+	if(str instanceof CSSTokenizer)
+		str = str.chars(3);
+	//...
+}
 
 // Note: I'm not yet acting smart enough to actually handle astral characters.
 var maximumallowedcodepoint = 0x10ffff;
+var defaultOptions = {
+	loc: false,
+	verbose: false;
+}
 
-function tokenize(str, options) {
-	if(options == undefined) options = {transformFunctionWhitespace:false, scientificNotation:false};
+function mergeDefaults(default, newobject) {
+	var obj = {};
+	for(p in default) {
+		obj[p] = p in newobject ? newobject[p] : default[p];
+	}
+	return obj;
+}
+
+function isString(s) {
+	return s instanceof String || typeof s == "string";
+}
+
+function fixString(maybeStr) {
+	if( maybeStr instanceof CSSTokenizer ) {
+		return maybeStr;
+	}
+	if( isString(maybeStr) ) {
+		return new CSSTokenizer(maybeStr);
+	}
+	throw TypeError("Tokenizing function was passed neither a string nor a CSSTokenizer object.")
+}
+
+function CSSTokenizer(str, index, userOptions) {
+	if( index === undefined ) index = 0;
+	this.str = str;
+	this.i = index;
+	this.code = undefined;
+	this.token = undefined;
+	this.options = mergeDefaults(defaultOptions, userOptions);
+
+	/* Position tracking for error-reporting. */
+	this.line = 0;
+	this.column = 0;
+	this.startLine = 0;
+	this.startColumn = 0;
+	this.lastLineLength = 0;
+}
+CSSTokenizer.prototype.next = function(num) { if(num === undefined) num = 1; return this.str.charCodeAt(this.i+num); };
+CSSTokenizer.prototype.chars = function(num) { return this.str.slice(this.i, this.i+num); };
+CSSTokenizer.prototype.nextChars = function(num) { return this.str.slice(this.i+1, this.i+num+1); };
+CSSTokenizer.prototype.consume = function(num) {
+		if(num === undefined)
+			num = 1;
+		this.i += num;
+		this.code = str.charCodeAt(i);
+		/* Preprocess 0xC+0xA into just 0xA */
+		if( this.code == 0xC && this.str.charCodeAt(this.i+1) == 0xA ) {
+			this.i++;
+			this.str[i] = String.fromCharCode(0xA);
+			this.ode = 0xA;
+		}
+		/* Preprocess 0xC and 0xD into 0xA */
+		if( this.code == 0xC || this.code == 0xD ) {
+			this.str[i] = String.fromCharCode(0xA);
+			this.code = 0xA;
+		}
+		/* Preprocess 0x0 into 0xFFFD */
+		if( this.code == 0x0 ) {
+			this.str[i] = String.fromCharCode(0xFFFD);
+			this.code = 0xFFFD;
+		}
+		if( newline(code) ) this.incrLineno();
+		else this.column += this.num;
+		if( this.options.verbose ) console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16));
+		return true;
+	};
+CSSTokenizer.prototype.reconsume = function() {
+		this.i -= 1;
+		if (newline(code)) {
+			this.line -= 1;
+			this.column = this.lastLineLength;
+		} else {
+			this.column -= 1;
+		}
+		this.startLine = this.line;
+		this.startColumn = this.column;
+		return true;
+	};
+CSSTokenizer.prototype.eof = function() { return this.i >= this.str.length; };
+CSSTokenizer.prototype.donothing = function() {};
+CSSTokenizer.prototype.return = function(token) {
+		if(token) {
+			token.finish();
+		} else {
+			token = this.token.finish();
+		}
+		if( this.options.loc ) {
+			token.loc = {};
+			token.loc.start = {line:locStart.line, column:locStart.column};
+			locStart = {line: line, column: column};
+			token.loc.end = locStart;
+		}
+		if( this.options.verbose ) console.log('Emitting ' + token);
+		this.token = undefined;
+		return true;
+	};
+CSSTokenizer.prototype.create = function(token) { this.token = token; return true; };
+CSSTokenizer.prototype.parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + " in state " + state + ".");return true; };
+CSSTokenizer.prototype.catchfire = function(msg) { console.log("MAJOR SPEC ERROR: " + msg); return true;}
+CSSTokenizer.prototype.consumeEscape = function() {
+		// Assume the the current character is the \
+		consume();
+		if(hexdigit(this.code)) {
+			// Consume 1-6 hex digits
+			var digits = [];
+			for(var total = 0; total < 6; total++) {
+				if(hexdigit(this.code)) {
+					digits.push(this.code);
+					this.consume();
+				} else { break; }
+			}
+			var value = parseInt(digits.map(String.fromCharCode).join(''), 16);
+			if( value > maximumallowedcodepoint ) value = 0xfffd;
+			// If the current char is whitespace, cool, we'll just eat it.
+			// Otherwise, put it back.
+			if(!whitespace(this.code)) this.reconsume();
+			return value;
+		} else {
+			return this.code;
+		}
+	};
+CSSTokenizer.prototype.consumeAName = function() {
+		//...
+	};
+CSSTokenizer.prototype.consumeANumber = function() {
+		//...
+	};
+CSSTokenizer.prototype.consumeTheRemnantsOfABadUrl() {
+		//...
+	};
+CSSTokenizer.prototype.setTheUnicodeRangesRanges() {
+		//...
+	};
+CSSTokenizer.prototype.delim(code) {
+	if( code == undefined ) code = this.code;
+	return new DelimToken(code);
+}
+
+CSSTokenizer.consumeAToken(t) {
+	t = fixString(t);
+	t.consume();
+
+	switch(t.code) {
+	case 0x22: return CSSTokenizer.consumeAStringToken(t, 0x22);
+	case 0x23:
+		if( namechar(t.next()) || startsAValidEscape(t.nextChars(2)) ) {
+			var id = startsAnIdent(t.nextChars(3));
+			var hash = new HashToken(t.consumeAName(), id);
+			return hash.return();
+		} else {
+			return t.delim();
+		}
+	case 0x24: if(t.next() == 0x3d) return consume() && new SuffixMatchToken(); else return t.delim();
+	case 0x27: return CSSTokenizer.consumeAStringToken(t, 0x27);
+	case 0x28: return new OpenParenToken();
+	case 0x29: return new CloseParenToken();
+	case 0x2a: if(t.next() == 0x3d) return consume() && new SubstringMatchToken(); else return t.delim();
+	case 0x2b: if(startsWithANumber(t)) return reconsume() && t.consumeANumericToken(); else return t.delim();
+	case 0x2c: return new CSSCommaToken();
+	case 0x2d:
+		if(startsWithANumber(t)) return reconsume() && t.consumeANumericToken();
+		else if(startsWithAnIdent(t)) return reconsume() && t.consumeAnIdentlikeToken();
+		else if(t.nextChars(2) == "->") return consume(2) && new CDCToken();
+		else return t.delim();
+	case 0x2e: if(startsWithANumber(t)) return reconsume() && t.consumeANumericToken(); else return t.delim();
+	case 0x2f:
+		if(t.next() == 0x2a) {
+			consume();
+			/* Eat the entire comment */
+			while(true) {
+				if( t.nextChars(2) == "*/" ) { consume(2); break; }
+				if( t.eof() ) { break; }
+				consume();
+			}
+			return CSSTokenizer.consumeAToken(t);
+		} else return t.delim();
+	case 0x3a: return new ColonToken();
+	case 0x3b: return new SemicolonToken();
+	case 0x3c: if(t.nextChars(3) == "!--") return consume(3) && new CDOToken(); else return t.delim();
+	case 0x40: if(startsWithAnIdent(t.nextChars(3))) return new AtKeywordToken(t.consumeAName()); else return t.delim();
+	case 0x5b: return new OpenSquareToken();
+	case 0x5d: return new CloseSquareToken();
+	case 0x5e: if(t.next() == 0x3d) return consume() && new PrefixMatchToken(); else return t.delim();
+	case 0x7b: return new OpenCurlyToken();
+	case 0x7d: return new CloseCurlyToken();
+	case 0x55:
+	case 0x75:
+		if( t.next() == 0x2b && (hexdigit(t.next(2)) || t.next(2) == 0x3f) )
+			return consume() && consumeAUnicodeRangeToken();
+		else 
+			return reconsume() && consumeAnIdentlikeToken();
+	case 0x7c:
+		if( t.next() == 0x3d ) return consume() && new DashMatchToken();
+		else if ( t.next() == 0x7c ) return consume() && new ColumnToken();
+		else return t.delim();
+	case 0x7e: if(t.next() == 0x3d) return consume() && new IncludeMatchToken(); else return t.delim();
+	default:
+		if(whitespace(t.code)) {
+			...
+		} else if( digit(t.code) ) {
+			...
+		} else if( nameStartChar(t.code) ) {
+			...
+		} else if( t.eof() ) {
+			return new EOFToken();
+		} else
+			return t.delim();
+	}
+}
+
+
+
+
+
+function tokenize(str) {
 	var i = -1;
 	var tokens = [];
 	var state = "data";
 	var code;
-	var currtoken;
+	var this.token;
 
 	// Line number information.
 	var line = 0;
@@ -47,78 +282,9 @@ function tokenize(str, options) {
 	};
 	var locStart = {line:line, column:column};
 
-	var next = function(num) { if(num === undefined) num = 1; return str.charCodeAt(i+num); };
-	var consume = function(num) {
-		if(num === undefined)
-			num = 1;
-		i += num;
-		code = str.charCodeAt(i);
-		if (newline(code)) incrLineno();
-		else column += num;
-		//console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16));
-		return true;
-	};
-	var reconsume = function() {
-		i -= 1;
-		if (newline(code)) {
-			line -= 1;
-			column = lastLineLength;
-		} else {
-			column -= 1;
-		}
-		locStart.line = line;
-		locStart.column = column;
-		return true;
-	};
-	var eof = function() { return i >= str.length; };
-	var donothing = function() {};
-	var emit = function(token) {
-		if(token) {
-			token.finish();
-		} else {
-			token = currtoken.finish();
-		}
-		if (options.loc === true) {
-			token.loc = {};
-			token.loc.start = {line:locStart.line, column:locStart.column};
-			locStart = {line: line, column: column};
-			token.loc.end = locStart;
-		}
-		tokens.push(token);
-		//console.log('Emitting ' + token);
-		currtoken = undefined;
-		return true;
-	};
-	var create = function(token) { currtoken = token; return true; };
-	var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + " in state " + state + ".");return true; };
-	var catchfire = function(msg) { console.log("MAJOR SPEC ERROR: " + msg); return true;}
-	var switchto = function(newstate) {
-		state = newstate;
-		//console.log('Switching to ' + state);
-		return true;
-	};
-	var consumeEscape = function() {
-		// Assume the the current character is the \
-		consume();
-		if(hexdigit(code)) {
-			// Consume 1-6 hex digits
-			var digits = [];
-			for(var total = 0; total < 6; total++) {
-				if(hexdigit(code)) {
-					digits.push(code);
-					consume();
-				} else { break; }
-			}
-			var value = parseInt(digits.map(String.fromCharCode).join(''), 16);
-			if( value > maximumallowedcodepoint ) value = 0xfffd;
-			// If the current char is whitespace, cool, we'll just eat it.
-			// Otherwise, put it back.
-			if(!whitespace(code)) reconsume();
-			return value;
-		} else {
-			return code;
-		}
-	};
+	var next = 
+	var consume = 
+	var reconsume = 
 
 	for(;;) {
 		if(i > str.length*2) return "I'm infinite-looping!";
@@ -177,7 +343,7 @@ function tokenize(str, options) {
 			break;
 
 		case "double-quote-string":
-			if(currtoken == undefined) create(new StringToken);
+			if(this.token == undefined) create(new StringToken);
 
 			if(code == 0x22) emit() && switchto("data");
 			else if(eof()) parseerror() && emit() && switchto("data") && reconsume();
@@ -185,13 +351,13 @@ function tokenize(str, options) {
 			else if(code == 0x5c) {
 				if(badescape(next())) parseerror() && emit(new BadStringToken) && switchto("data");
 				else if(newline(next())) consume();
-				else currtoken.append(consumeEscape());
+				else this.token.append(consumeEscape());
 			}
-			else currtoken.append(code);
+			else this.token.append(code);
 			break;
 
 		case "single-quote-string":
-			if(currtoken == undefined) create(new StringToken);
+			if(this.token == undefined) create(new StringToken);
 
 			if(code == 0x27) emit() && switchto("data");
 			else if(eof()) parseerror() && emit() && switchto("data");
@@ -199,9 +365,9 @@ function tokenize(str, options) {
 			else if(code == 0x5c) {
 				if(badescape(next())) parseerror() && emit(new BadStringToken) && switchto("data");
 				else if(newline(next())) consume();
-				else currtoken.append(consumeEscape());
+				else this.token.append(consumeEscape());
 			}
-			else currtoken.append(code);
+			else this.token.append(code);
 			break;
 
 		case "hash":
@@ -214,10 +380,10 @@ function tokenize(str, options) {
 			break;
 
 		case "hash-rest":
-			if(namechar(code)) currtoken.append(code);
+			if(namechar(code)) this.token.append(code);
 			else if(code == 0x5c) {
 				if(badescape(next())) parseerror() && emit() && switchto("data") && reconsume();
-				else currtoken.append(consumeEscape());
+				else this.token.append(consumeEscape());
 			}
 			else emit() && switchto('data') && reconsume();
 			break;
@@ -246,10 +412,10 @@ function tokenize(str, options) {
 			break;
 
 		case "at-keyword-rest":
-			if(namechar(code)) currtoken.append(code);
+			if(namechar(code)) this.token.append(code);
 			else if(code == 0x5c) {
 				if(badescape(next())) parseerror() && emit() && switchto("data") && reconsume();
-				else currtoken.append(consumeEscape());
+				else this.token.append(consumeEscape());
 			}
 			else emit() && switchto('data') && reconsume();
 			break;
@@ -269,14 +435,14 @@ function tokenize(str, options) {
 			break;
 
 		case "ident-rest":
-			if(namechar(code)) currtoken.append(code);
+			if(namechar(code)) this.token.append(code);
 			else if(code == 0x5c) {
 				if(badescape(next())) parseerror() && emit() && switchto("data") && reconsume();
-				else currtoken.append(consumeEscape());
+				else this.token.append(consumeEscape());
 			}
 			else if(code == 0x28) {
-				if(currtoken.ASCIImatch('url')) switchto('url');
-				else emit(new FunctionToken(currtoken)) && switchto('data');
+				if(this.token.ASCIImatch('url')) switchto('url');
+				else emit(new FunctionToken(this.token)) && switchto('data');
 			} 
 			else if(whitespace(code) && options.transformFunctionWhitespace) switchto('transform-function-whitespace') && reconsume();
 			else emit() && switchto('data') && reconsume();
@@ -284,7 +450,7 @@ function tokenize(str, options) {
 
 		case "transform-function-whitespace":
 			if(whitespace(next())) donothing();
-			else if(code == 0x28) emit(new FunctionToken(currtoken)) && switchto('data');
+			else if(code == 0x28) emit(new FunctionToken(this.token)) && switchto('data');
 			else emit() && switchto('data') && reconsume();
 			break;
 
@@ -292,86 +458,86 @@ function tokenize(str, options) {
 			create(new NumberToken());
 
 			if(code == 0x2d) {
-				if(digit(next())) consume() && currtoken.append([0x2d,code]) && switchto('number-rest');
-				else if(next(1) == 0x2e && digit(next(2))) consume(2) && currtoken.append([0x2d,0x2e,code]) && switchto('number-fraction');
+				if(digit(next())) consume() && this.token.append([0x2d,code]) && switchto('number-rest');
+				else if(next(1) == 0x2e && digit(next(2))) consume(2) && this.token.append([0x2d,0x2e,code]) && switchto('number-fraction');
 				else switchto('data') && reconsume();
 			}
 			else if(code == 0x2b) {
-				if(digit(next())) consume() && currtoken.append([0x2b,code]) && switchto('number-rest');
-				else if(next(1) == 0x2e && digit(next(2))) consume(2) && currtoken.append([0x2b,0x2e,code]) && switchto('number-fraction');
+				if(digit(next())) consume() && this.token.append([0x2b,code]) && switchto('number-rest');
+				else if(next(1) == 0x2e && digit(next(2))) consume(2) && this.token.append([0x2b,0x2e,code]) && switchto('number-fraction');
 				else switchto('data') && reconsume();
 			}
-			else if(digit(code)) currtoken.append(code) && switchto('number-rest');
+			else if(digit(code)) this.token.append(code) && switchto('number-rest');
 			else if(code == 0x2e) {
-				if(digit(next())) consume() && currtoken.append([0x2e,code]) && switchto('number-fraction');
+				if(digit(next())) consume() && this.token.append([0x2e,code]) && switchto('number-fraction');
 				else switchto('data') && reconsume();
 			}
 			else switchto('data') && reconsume();
 			break;
 
 		case "number-rest":
-			if(digit(code)) currtoken.append(code);
+			if(digit(code)) this.token.append(code);
 			else if(code == 0x2e) {
-				if(digit(next())) consume() && currtoken.append([0x2e,code]) && switchto('number-fraction');
+				if(digit(next())) consume() && this.token.append([0x2e,code]) && switchto('number-fraction');
 				else emit() && switchto('data') && reconsume();
 			}
-			else if(code == 0x25) emit(new PercentageToken(currtoken)) && switchto('data');
+			else if(code == 0x25) emit(new PercentageToken(this.token)) && switchto('data');
 			else if(code == 0x45 || code == 0x65) {
-				if(digit(next())) consume() && currtoken.append([0x25,code]) && switchto('sci-notation');
-				else if((next(1) == 0x2b || next(1) == 0x2d) && digit(next(2))) currtoken.append([0x25,next(1),next(2)]) && consume(2) && switchto('sci-notation');
-				else create(new DimensionToken(currtoken,code)) && switchto('dimension');
+				if(digit(next())) consume() && this.token.append([0x25,code]) && switchto('sci-notation');
+				else if((next(1) == 0x2b || next(1) == 0x2d) && digit(next(2))) this.token.append([0x25,next(1),next(2)]) && consume(2) && switchto('sci-notation');
+				else create(new DimensionToken(this.token,code)) && switchto('dimension');
 			}
 			else if(code == 0x2d) {
-				if(namestartchar(next())) consume() && create(new DimensionToken(currtoken,[0x2d,code])) && switchto('dimension');
+				if(namestartchar(next())) consume() && create(new DimensionToken(this.token,[0x2d,code])) && switchto('dimension');
 				else if(next(1) == 0x5c && badescape(next(2))) parseerror() && emit() && switchto('data') && reconsume();
-				else if(next(1) == 0x5c) consume() && create(new DimensionToken(currtoken, [0x2d,consumeEscape()])) && switchto('dimension');
+				else if(next(1) == 0x5c) consume() && create(new DimensionToken(this.token, [0x2d,consumeEscape()])) && switchto('dimension');
 				else emit() && switchto('data') && reconsume();
 			}
-			else if(namestartchar(code)) create(new DimensionToken(currtoken, code)) && switchto('dimension');
+			else if(namestartchar(code)) create(new DimensionToken(this.token, code)) && switchto('dimension');
 			else if(code == 0x5c) {
 				if(badescape(next)) parseerror() && emit() && switchto('data') && reconsume();
-				else create(new DimensionToken(currtoken,consumeEscape)) && switchto('dimension');
+				else create(new DimensionToken(this.token,consumeEscape)) && switchto('dimension');
 			}
 			else emit() && switchto('data') && reconsume();
 			break;
 
 		case "number-fraction":
-			currtoken.type = "number";
+			this.token.type = "number";
 
-			if(digit(code)) currtoken.append(code);
-			else if(code == 0x25) emit(new PercentageToken(currtoken)) && switchto('data');
+			if(digit(code)) this.token.append(code);
+			else if(code == 0x25) emit(new PercentageToken(this.token)) && switchto('data');
 			else if(code == 0x45 || code == 0x65) {
-				if(digit(next())) consume() && currtoken.append([0x65,code]) && switchto('sci-notation');
-				else if((next(1) == 0x2b || next(1) == 0x2d) && digit(next(2))) currtoken.append([0x65,next(1),next(2)]) && consume(2) && switchto('sci-notation');
-				else create(new DimensionToken(currtoken,code)) && switchto('dimension');
+				if(digit(next())) consume() && this.token.append([0x65,code]) && switchto('sci-notation');
+				else if((next(1) == 0x2b || next(1) == 0x2d) && digit(next(2))) this.token.append([0x65,next(1),next(2)]) && consume(2) && switchto('sci-notation');
+				else create(new DimensionToken(this.token,code)) && switchto('dimension');
 			}
 			else if(code == 0x2d) {
-				if(namestartchar(next())) consume() && create(new DimensionToken(currtoken,[0x2d,code])) && switchto('dimension');
+				if(namestartchar(next())) consume() && create(new DimensionToken(this.token,[0x2d,code])) && switchto('dimension');
 				else if(next(1) == 0x5c && badescape(next(2))) parseerror() && emit() && switchto('data') && reconsume();
-				else if(next(1) == 0x5c) consume() && create(new DimensionToken(currtoken, [0x2d,consumeEscape()])) && switchto('dimension');
+				else if(next(1) == 0x5c) consume() && create(new DimensionToken(this.token, [0x2d,consumeEscape()])) && switchto('dimension');
 				else emit() && switchto('data') && reconsume();
 			}
-			else if(namestartchar(code)) create(new DimensionToken(currtoken, code)) && switchto('dimension');
+			else if(namestartchar(code)) create(new DimensionToken(this.token, code)) && switchto('dimension');
 			else if(code == 0x5c) {
 				if(badescape(next)) parseerror() && emit() && switchto('data') && reconsume();
-				else create(new DimensionToken(currtoken,consumeEscape())) && switchto('dimension');
+				else create(new DimensionToken(this.token,consumeEscape())) && switchto('dimension');
 			}
 			else emit() && switchto('data') && reconsume();
 			break;
 
 		case "dimension":
-			if(namechar(code)) currtoken.append(code);
+			if(namechar(code)) this.token.append(code);
 			else if(code == 0x5c) {
 				if(badescape(next())) parseerror() && emit() && switchto('data') && reconsume();
-				else currtoken.append(consumeEscape());
+				else this.token.append(consumeEscape());
 			}
 			else emit() && switchto('data') && reconsume();
 			break;
 
 		case "sci-notation":
-			currtoken.type = "number";
+			this.token.type = "number";
 
-			if(digit(code)) currtoken.append(code);
+			if(digit(code)) this.token.append(code);
 			else emit() && switchto('data') && reconsume();
 			break;
 
@@ -385,7 +551,7 @@ function tokenize(str, options) {
 			break;
 
 		case "url-double-quote":
-			if(! (currtoken instanceof URLToken)) create(new URLToken);
+			if(! (this.token instanceof URLToken)) create(new URLToken);
 
 			if(eof()) parseerror() && emit(new BadURLToken) && switchto('data');
 			else if(code == 0x22) switchto('url-end');
@@ -393,13 +559,13 @@ function tokenize(str, options) {
 			else if(code == 0x5c) {
 				if(newline(next())) consume();
 				else if(badescape(next())) parseerror() && emit(new BadURLToken) && switchto('data') && reconsume();
-				else currtoken.append(consumeEscape());
+				else this.token.append(consumeEscape());
 			}
-			else currtoken.append(code);
+			else this.token.append(code);
 			break;
 
 		case "url-single-quote":
-			if(! (currtoken instanceof URLToken)) create(new URLToken);
+			if(! (this.token instanceof URLToken)) create(new URLToken);
 
 			if(eof()) parseerror() && emit(new BadURLToken) && switchto('data');
 			else if(code == 0x27) switchto('url-end');
@@ -407,9 +573,9 @@ function tokenize(str, options) {
 			else if(code == 0x5c) {
 				if(newline(next())) consume();
 				else if(badescape(next())) parseerror() && emit(new BadURLToken) && switchto('data') && reconsume();
-				else currtoken.append(consumeEscape());
+				else this.token.append(consumeEscape());
 			}
-			else currtoken.append(code);
+			else this.token.append(code);
 			break;
 
 		case "url-end":
@@ -420,7 +586,7 @@ function tokenize(str, options) {
 			break;
 
 		case "url-unquoted":
-			if(! (currtoken instanceof URLToken)) create(new URLToken);
+			if(! (this.token instanceof URLToken)) create(new URLToken);
 
 			if(eof()) parseerror() && emit(new BadURLToken) && switchto('data');
 			else if(whitespace(code)) switchto('url-end');
@@ -428,9 +594,9 @@ function tokenize(str, options) {
 			else if(code == 0x22 || code == 0x27 || code == 0x28 || nonprintable(code)) parseerror() && switchto('bad-url');
 			else if(code == 0x5c) {
 				if(badescape(next())) parseerror() && switchto('bad-url');
-				else currtoken.append(consumeEscape());
+				else this.token.append(consumeEscape());
 			}
-			else currtoken.append(code);
+			else this.token.append(code);
 			break;
 
 		case "bad-url":
@@ -621,8 +787,9 @@ AtKeywordToken.prototype = new StringValuedToken;
 AtKeywordToken.prototype.tokenType = "AT-KEYWORD";
 AtKeywordToken.prototype.toString = function() { return "AT("+this.value+")"; }
 
-function HashToken(val) {
+function HashToken(val, id) {
 	this.value = [];
+	this.id = !!id;
 	this.append(val);
 }
 HashToken.prototype = new StringValuedToken;
