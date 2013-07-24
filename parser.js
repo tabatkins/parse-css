@@ -144,7 +144,7 @@ function parse(tokens) {
 		case "declaration-value":
 			switch(token.tokenType) {
 			case "DELIM":
-				if(token.value == "!" && next().tokenType == 'IDENTIFIER' && next().value.toLowerCase() == "important") {
+				if(token.value == "!" && next().tokenType == 'IDENT' && next().value.toLowerCase() == "important") {
 					consume();
 					rule.important = true;
 					switchto('declaration-end');
