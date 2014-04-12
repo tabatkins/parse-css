@@ -1,3 +1,14 @@
+Warning: Currently Unmaintained
+===============================
+
+This project is currently unmaintained,
+and the CSS Syntax spec has dramatically shifted since I last updated.
+If you would like to use the current parser,
+find the April 1 2013 commit, as it's the last good commit.
+
+I plan to update this to the current CSS Syntax spec soonish,
+but don't know exactly when that will be.
+
 Standards-Based CSS Parser
 ==========================
 
