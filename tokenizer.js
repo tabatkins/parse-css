@@ -16,7 +16,7 @@ function hexdigit(code) { return digit(code) || between(code, 0x41,0x46) || betw
 function uppercaseletter(code) { return between(code, 0x41,0x5a); }
 function lowercaseletter(code) { return between(code, 0x61,0x7a); }
 function letter(code) { return uppercaseletter(code) || lowercaseletter(code); }
-function nonascii(code) { return code >= 0xa0; }
+function nonascii(code) { return code >= 0x80; }
 function namestartchar(code) { return letter(code) || nonascii(code) || code == 0x5f; }
 function namechar(code) { return namestartchar(code) || digit(code) || code == 0x2d; }
 function nonprintable(code) { return between(code, 0,8) || code == 0xb || between(code, 0xe,0x1f) || code == 0x7f; }
@@ -238,7 +238,7 @@ CSSTokenizer.consumeAToken(t) {
 	case 0x75:
 		if( t.next() == 0x2b && (hexdigit(t.next(2)) || t.next(2) == 0x3f) )
 			return consume() && consumeAUnicodeRangeToken();
-		else 
+		else
 			return reconsume() && consumeAnIdentlikeToken();
 	case 0x7c:
 		if( t.next() == 0x3d ) return consume() && new DashMatchToken();
@@ -282,9 +282,9 @@ function tokenize(str) {
 	};
 	var locStart = {line:line, column:column};
 
-	var next = 
-	var consume = 
-	var reconsume = 
+	var next =
+	var consume =
+	var reconsume =
 
 	for(;;) {
 		if(i > str.length*2) return "I'm infinite-looping!";
@@ -443,7 +443,7 @@ function tokenize(str) {
 			else if(code == 0x28) {
 				if(this.token.ASCIImatch('url')) switchto('url');
 				else emit(new FunctionToken(this.token)) && switchto('data');
-			} 
+			}
 			else if(whitespace(code) && options.transformFunctionWhitespace) switchto('transform-function-whitespace') && reconsume();
 			else emit() && switchto('data') && reconsume();
 			break;
