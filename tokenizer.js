@@ -98,7 +98,7 @@ CSSTokenizer.prototype.consume = function(num) {
 		if( this.code == 0xC && this.str.charCodeAt(this.i+1) == 0xA ) {
 			this.i++;
 			this.str[i] = String.fromCharCode(0xA);
-			this.ode = 0xA;
+			this.code = 0xA;
 		}
 		/* Preprocess 0xC and 0xD into 0xA */
 		if( this.code == 0xC || this.code == 0xD ) {
