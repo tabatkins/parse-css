@@ -50,18 +50,15 @@ body > div {
 <script>
 var debug;
 function parseStuff() {
-
 	var css = document.querySelector('#css').value;
 	var tokenlist = tokenize(css);
-	var sheet = parse(tokenlist);
 	console.log(tokenlist);
-	console.log(sheet);
-	debug = sheet;
 	var txt = document.querySelector('#tokens');
 	txt.value = tokenlist.join(' ');
+	var sheet = parse(tokenlist);
+	console.log(sheet);
 	var tree = document.querySelector('#tree');
 	tree.value = sheet.toString('  ');
-
 }
 </script>
 <script src="tokenizer.js"></script>

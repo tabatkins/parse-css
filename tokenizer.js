@@ -16,10 +16,10 @@ function hexdigit(code) { return digit(code) || between(code, 0x41,0x46) || betw
 function uppercaseletter(code) { return between(code, 0x41,0x5a); }
 function lowercaseletter(code) { return between(code, 0x61,0x7a); }
 function letter(code) { return uppercaseletter(code) || lowercaseletter(code); }
-function nonascii(code) { return code >= 0xa0; }
+function nonascii(code) { return code >= 0x80; }
 function namestartchar(code) { return letter(code) || nonascii(code) || code == 0x5f; }
 function namechar(code) { return namestartchar(code) || digit(code) || code == 0x2d; }
-function nonprintable(code) { return between(code, 0,8) || between(code, 0xe,0x1f) || between(code, 0x7f,0x9f); }
+function nonprintable(code) { return between(code, 0,8) || code == 0xb || between(code, 0xe,0x1f) || code == 0x7f; }
 function newline(code) { return code == 0xa || code == 0xc; }
 function whitespace(code) { return newline(code) || code == 9 || code == 0x20; }
 function badescape(code) { return newline(code) || isNaN(code); }
@@ -27,13 +27,42 @@ function badescape(code) { return newline(code) || isNaN(code); }
 // Note: I'm not yet acting smart enough to actually handle astral characters.
 var maximumallowedcodepoint = 0x10ffff;
 
-function tokenize(str, options) {
-	if(options == undefined) options = {transformFunctionWhitespace:false, scientificNotation:false};
+function preprocess(str) {
+	// Turn a string into an array of code points,
+	// following the preprocessing cleanup rules.
+	var codepoints = [];
+	for(var i = 0; i < str.length; i++) {
+		var code = str.charCodeAt(i);
+		if(code == 0xd || code == 0xc) code = 0xa;
+		if(code == 0xd && str.charCodeAt(i+1) == 0xa) {
+			code = 0xa; i++;
+		}
+		if(code == 0x0) code = 0xfffd;
+		if(between(code, 0xd800, 0xdbff) && between(str.charCodeAt(i+1), 0xdc00, 0xdfff)) {
+			// Decode a surrogate pair into an astral codepoint.
+			var lead = code - 0xd800;
+			var trail = str.charCodeAt(i+1) - 0xdc00;
+			code = Math.pow(2, 21) + lead * Math.pow(2, 10) + trail;
+		}
+		codepoints.push(code);
+	}
+	return codepoints;
+}
+
+function stringFromCode(code) {
+	if(code <= 0xffff) return String.fromCharCode(code);
+	// Otherwise, encode astral char as surrogate pair.
+	code -= Math.pow(2, 21);
+	var lead = Math.floor(code/Math.pow(2, 10)) + 0xd800;
+	var trail = code % Math.pow(2, 10); + 0xdc00;
+	return String.fromCharCode(lead) + String.fromCharCode(trail);
+}
+
+function tokenize(str) {
+	str = preprocess(str);
 	var i = -1;
 	var tokens = [];
-	var state = "data";
 	var code;
-	var currtoken;
 
 	// Line number information.
 	var line = 0;
@@ -47,13 +76,19 @@ function tokenize(str, options) {
 	};
 	var locStart = {line:line, column:column};
 
-	var next = function(num) { if(num === undefined) num = 1; return str.charCodeAt(i+num); };
+	var codepoint = function(i) {
+		if(i >= str.length) {
+			return -1;
+		}
+		return str[i];
+	}
+	var next = function(num) { if(num === undefined) num = 1; return codepoint(i+num); };
 	var consume = function(num) {
 		if(num === undefined)
 			num = 1;
 		i += num;
-		code = str.charCodeAt(i);
-		if (newline(code)) incrLineno();
+		code = codepoint(i);
+		if(newline(code)) incrLineno();
 		else column += num;
 		//console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16));
 		return true;
@@ -70,667 +105,677 @@ function tokenize(str, options) {
 		locStart.column = column;
 		return true;
 	};
-	var eof = function() { return i >= str.length; };
+	var eof = function(codepoint) {
+		if(codepoint === undefined) codepoint = code;
+		return codepoint == -1;
+	};
 	var donothing = function() {};
-	var emit = function(token) {
-		if(token) {
-			token.finish();
-		} else {
-			token = currtoken.finish();
-		}
-		if (options.loc === true) {
-			token.loc = {};
-			token.loc.start = {line:locStart.line, column:locStart.column};
-			locStart = {line: line, column: column};
-			token.loc.end = locStart;
-		}
-		tokens.push(token);
-		//console.log('Emitting ' + token);
-		currtoken = undefined;
-		return true;
-	};
-	var create = function(token) { currtoken = token; return true; };
 	var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + " in state " + state + ".");return true; };
-	var catchfire = function(msg) { console.log("MAJOR SPEC ERROR: " + msg); return true;}
-	var switchto = function(newstate) {
-		state = newstate;
-		//console.log('Switching to ' + state);
-		return true;
+
+	var consumeAToken = function() {
+		consumeComments();
+		consume();
+		if(whitespace(code)) {
+			while(whitespace(next())) consume();
+			return new WhitespaceToken;
+		}
+		else if(code == 0x22) return consumeAStringToken();
+		else if(code == 0x23) {
+			if(namechar(next()) || areAValidEscape(next(1), next(2))) {
+				var token = new HashToken();
+				if(wouldStartAnIdentifier(next(1), next(2), next(3))) token.type = "id";
+				token.value = consumeAName();
+				return token;
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x24) {
+			if(next() == 0x3d) {
+				consume();
+				return new SuffixMatchToken();
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x27) return consumeAStringToken();
+		else if(code == 0x28) return new OpenParenToken();
+		else if(code == 0x29) return new CloseParenToken();
+		else if(code == 0x2a) {
+			if(next() == 0x3d) {
+				consume();
+				return new SubstringMatchToken();
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x2b) {
+			if(startsWithANumber()) {
+				reconsume();
+				return consumeANumericToken();
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x2c) return new CommaToken();
+		else if(code == 0x2d) {
+			if(startsWithANumber()) {
+				reconsume();
+				return consumeANumericToken();
+			} else if(next(1) == 0x2d && next(2) == 0x3e) {
+				consume(2);
+				return new CDCToken();
+			} else if(startsWithAnIdentifier()) {
+				reconsume();
+				return consumeAnIdentlikeToken();
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x2e) {
+			if(startsWithANumber()) {
+				reconsume();
+				return consumeANumericToken();
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x3a) return new ColonToken;
+		else if(code == 0x3b) return new SemicolonToken;
+		else if(code == 0x3c) {
+			if(next(1) == 0x21 && next(2) == 0x2d && next(3) == 0x2d) {
+				consume(3);
+				return new CDOToken();
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x40) {
+			if(wouldStartAnIdentifier(next(1), next(2), next(3))) {
+				return new AtKeywordToken(consumeAName());
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x5b) return new OpenSquareToken();
+		else if(code == 0x5c) {
+			if(startsWithAValidEscape()) {
+				reconsume();
+				return consumeAnIdentlikeToken();
+			} else {
+				parseerror();
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x5d) return new CloseSquareToken();
+		else if(code == 0x5e) {
+			if(next() == 0x3d) {
+				consume();
+				return new PrefixMatchToken();
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x7b) return new OpenCurlyToken();
+		else if(code == 0x7c) {
+			if(next() == 0x3d) {
+				consume();
+				return new DashMatchToken();
+			} else if(next() == 0x7c) {
+				consume();
+				return new ColumnToken();
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(code == 0x7d) return new CloseCurlyToken();
+		else if(code == 0x7e) {
+			if(next() == 0x3d) {
+				consume();
+				return new IncludeMatchToken();
+			} else {
+				return new DelimToken(code);
+			}
+		}
+		else if(digit(code)) {
+			reconsume();
+			return consumeANumericToken();
+		}
+		else if(namestartchar(code)) {
+			reconsume();
+			return consumeAnIdentlikeToken();
+		}
+		else if(eof()) return new EOFToken();
+		else return new DelimToken(code);
 	};
+
+	var consumeComments = function() {
+		while(next(1) == 0x2f && next(2) == 0x2a) {
+			consume(2);
+			while(true) {
+				consume();
+				if(code == 0x2a && next() == 0x2f) {
+					consume();
+					break;
+				} else if(eof()) {
+					parseerror();
+					return;
+				}
+			}
+		}
+	};
+
+	var consumeANumericToken = function() {
+		var num = consumeANumber();
+		if(wouldStartAnIdentifier(next(1), next(2), next(3))) {
+			var token = new DimensionToken();
+			console.log(num);
+			token.value = num.value;
+			token.repr = num.repr;
+			token.type = num.type;
+			token.unit = consumeAName();
+			return token;
+		} else if(next() == 0x25) {
+			consume();
+			var token = new PercentageToken();
+			token.value = num.value;
+			token.repr = num.repr;
+			return token;
+		} else {
+			var token = new NumberToken();
+			token.value = num.value;
+			token.repr = num.repr;
+			token.type = num.type;
+			return token;
+		}
+	};
+
+	var consumeAnIdentlikeToken = function() {
+		var str = consumeAName();
+		if(str.toLowerCase() == "url" && next() == 0x28) {
+			consume();
+			while(whitespace(next())) consume();
+			if(next() == 0x22 || next() == 0x27) {
+				reconsume();
+				return new FunctionToken(str);
+			} else {
+				return consumeAURLToken();
+			}
+		} else if(next() == 0x28) {
+			consume();
+			return new FunctionToken(str);
+		} else {
+			return new IdentToken(str);
+		}
+	};
+
+	var consumeAStringToken = function(endingCodePoint) {
+		if(endingCodePoint === undefined) endingCodePoint = code;
+		var token = new StringToken();
+		while(consume()) {
+			if(code == endingCodePoint || eof()) {
+				return token;
+			} else if(newline(code)) {
+				parseerror();
+				reconsume();
+				return new BadStringToken();
+			} else if(code == 0x5c) {
+				if(eof(next())) {
+					donothing();
+				} else if(newline(next())) {
+					consume();
+				} else {
+					token.value += stringFromCode(consumeEscape())
+				}
+			} else {
+				token.value += stringFromCode(code);
+			}
+		}
+	};
+
+	var consumeAURLToken = function() {
+		var token = new URLToken();
+		while(whitespace(next())) consume();
+		if(eof(next())) return token;
+		while(consume()) {
+			if(code == 0x29 || eof()) {
+				return token;
+			} else if(whitespace(code)) {
+				while(whitespace(next())) consume();
+				if(next() == 0x29 || eof(next())) {
+					consume();
+					return token;
+				} else {
+					consumeTheRemnantsOfABadURL();
+					return new BadURLToken();
+				}
+			} else if(code == 0x22 || code == 0x27 || code == 0x28 || nonprintable(code)) {
+				parseerror();
+				consumeTheRemnantsOfABadURL();
+				return new BadURLToken();
+			} else if(code == 0x5c) {
+				if(startsWithAValidEscape()) {
+					token.value += stringFromCode(consumeEscape());
+				} else {
+					parseerror();
+					consumeTheRemnantsOfABadURL();
+					return new BadURLToken();
+				}
+			} else {
+				token.value += stringFromCode(code);
+			}
+		}
+	};
+
 	var consumeEscape = function() {
 		// Assume the the current character is the \
+		// and the next code point is not a newline.
 		consume();
 		if(hexdigit(code)) {
 			// Consume 1-6 hex digits
-			var digits = [];
-			for(var total = 0; total < 6; total++) {
-				if(hexdigit(code)) {
-					digits.push(code);
+			var digits = [code];
+			for(var total = 0; total < 5; total++) {
+				if(hexdigit(next())) {
 					consume();
-				} else { break; }
+					digits.push(code);
+				} else {
+					break;
+				}
 			}
+			if(whitespace(next())) consume();
 			var value = parseInt(digits.map(String.fromCharCode).join(''), 16);
 			if( value > maximumallowedcodepoint ) value = 0xfffd;
-			// If the current char is whitespace, cool, we'll just eat it.
-			// Otherwise, put it back.
-			if(!whitespace(code)) reconsume();
 			return value;
+		} else if(eof()) {
+			return 0xfffd;
 		} else {
 			return code;
 		}
 	};
 
-	for(;;) {
-		if(i > str.length*2) return "I'm infinite-looping!";
-		consume();
-		switch(state) {
-		case "data":
-			if(whitespace(code)) {
-				emit(new WhitespaceToken);
-				while(whitespace(next())) consume();
-			}
-			else if(code == 0x22) switchto("double-quote-string");
-			else if(code == 0x23) switchto("hash");
-			else if(code == 0x27) switchto("single-quote-string");
-			else if(code == 0x28) emit(new OpenParenToken);
-			else if(code == 0x29) emit(new CloseParenToken);
-			else if(code == 0x2b) {
-				if(digit(next()) || (next() == 0x2e && digit(next(2)))) switchto("number") && reconsume();
-				else emit(new DelimToken(code));
-			}
-			else if(code == 0x2d) {
-				if(next(1) == 0x2d && next(2) == 0x3e) consume(2) && emit(new CDCToken);
-				else if(digit(next()) || (next(1) == 0x2e && digit(next(2)))) switchto("number") && reconsume();
-				else switchto('ident') && reconsume();
-			}
-			else if(code == 0x2e) {
-				if(digit(next())) switchto("number") && reconsume();
-				else emit(new DelimToken(code));
-			}
-			else if(code == 0x2f) {
-				if(next() == 0x2a) consume() && switchto("comment");
-				else emit(new DelimToken(code));
-			}
-			else if(code == 0x3a) emit(new ColonToken);
-			else if(code == 0x3b) emit(new SemicolonToken);
-			else if(code == 0x3c) {
-				if(next(1) == 0x21 && next(2) == 0x2d && next(3) == 0x2d) consume(3) && emit(new CDOToken);
-				else emit(new DelimToken(code));
-			}
-			else if(code == 0x40) switchto("at-keyword");
-			else if(code == 0x5b) emit(new OpenSquareToken);
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && emit(new DelimToken(code));
-				else switchto('ident') && reconsume();
-			}
-			else if(code == 0x5d) emit(new CloseSquareToken);
-			else if(code == 0x7b) emit(new OpenCurlyToken);
-			else if(code == 0x7d) emit(new CloseCurlyToken);
-			else if(digit(code)) switchto("number") && reconsume();
-			else if(code == 0x55 || code == 0x75) {
-				if(next(1) == 0x2b && hexdigit(next(2))) consume() && switchto("unicode-range");
-				else switchto('ident') && reconsume();
-			}
-			else if(namestartchar(code)) switchto('ident') && reconsume();
-			else if(eof()) { emit(new EOFToken); return tokens; }
-			else emit(new DelimToken(code));
-			break;
+	var areAValidEscape = function(c1, c2) {
+		if(c1 != 0x5c) return false;
+		if(newline(c2)) return false;
+		return true;
+	};
+	var startsWithAValidEscape = function() {
+		return areAValidEscape(code, next());
+	};
 
-		case "double-quote-string":
-			if(currtoken == undefined) create(new StringToken);
-
-			if(code == 0x22) emit() && switchto("data");
-			else if(eof()) parseerror() && emit() && switchto("data") && reconsume();
-			else if(newline(code)) parseerror() && emit(new BadStringToken) && switchto("data") && reconsume();
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && emit(new BadStringToken) && switchto("data");
-				else if(newline(next())) consume();
-				else currtoken.append(consumeEscape());
-			}
-			else currtoken.append(code);
-			break;
-
-		case "single-quote-string":
-			if(currtoken == undefined) create(new StringToken);
-
-			if(code == 0x27) emit() && switchto("data");
-			else if(eof()) parseerror() && emit() && switchto("data");
-			else if(newline(code)) parseerror() && emit(new BadStringToken) && switchto("data") && reconsume();
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && emit(new BadStringToken) && switchto("data");
-				else if(newline(next())) consume();
-				else currtoken.append(consumeEscape());
-			}
-			else currtoken.append(code);
-			break;
-
-		case "hash":
-			if(namechar(code)) create(new HashToken(code)) && switchto("hash-rest");
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && emit(new DelimToken(0x23)) && switchto("data") && reconsume();
-				else create(new HashToken(consumeEscape())) && switchto('hash-rest');
-			}
-			else emit(new DelimToken(0x23)) && switchto('data') && reconsume();
-			break;
-
-		case "hash-rest":
-			if(namechar(code)) currtoken.append(code);
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && emit() && switchto("data") && reconsume();
-				else currtoken.append(consumeEscape());
-			}
-			else emit() && switchto('data') && reconsume();
-			break;
-
-		case "comment":
-			if(code == 0x2a) {
-				if(next() == 0x2f) consume() && switchto('data');
-				else donothing();
-			}
-			else if(eof()) parseerror() && switchto('data') && reconsume();
-			else donothing();
-			break;
-
-		case "at-keyword":
-			if(code == 0x2d) {
-				if(namestartchar(next())) create(new AtKeywordToken(0x2d)) && switchto('at-keyword-rest');
-				else if(next(1) == 0x5c && !badescape(next(2))) create(new AtKeywordtoken(0x2d)) && switchto('at-keyword-rest');
-				else parseerror() && emit(new DelimToken(0x40)) && switchto('data') && reconsume();
-			}
-			else if(namestartchar(code)) create(new AtKeywordToken(code)) && switchto('at-keyword-rest');
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && emit(new DelimToken(0x23)) && switchto("data") && reconsume();
-				else create(new AtKeywordToken(consumeEscape())) && switchto('at-keyword-rest');
-			}
-			else emit(new DelimToken(0x40)) && switchto('data') && reconsume();
-			break;
-
-		case "at-keyword-rest":
-			if(namechar(code)) currtoken.append(code);
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && emit() && switchto("data") && reconsume();
-				else currtoken.append(consumeEscape());
-			}
-			else emit() && switchto('data') && reconsume();
-			break;
-
-		case "ident":
-			if(code == 0x2d) {
-				if(namestartchar(next())) create(new IdentifierToken(code)) && switchto('ident-rest');
-				else if(next(1) == 0x5c && !badescape(next(2))) create(new IdentifierToken(code)) && switchto('ident-rest');
-				else emit(new DelimToken(0x2d)) && switchto('data');
-			}
-			else if(namestartchar(code)) create(new IdentifierToken(code)) && switchto('ident-rest');
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && switchto("data") && reconsume();
-				else create(new IdentifierToken(consumeEscape())) && switchto('ident-rest');
-			}
-			else catchfire("Hit the generic 'else' clause in ident state.") && switchto('data') && reconsume();
-			break;
-
-		case "ident-rest":
-			if(namechar(code)) currtoken.append(code);
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && emit() && switchto("data") && reconsume();
-				else currtoken.append(consumeEscape());
-			}
-			else if(code == 0x28) {
-				if(currtoken.ASCIImatch('url')) switchto('url');
-				else emit(new FunctionToken(currtoken)) && switchto('data');
-			} 
-			else if(whitespace(code) && options.transformFunctionWhitespace) switchto('transform-function-whitespace') && reconsume();
-			else emit() && switchto('data') && reconsume();
-			break;
-
-		case "transform-function-whitespace":
-			if(whitespace(next())) donothing();
-			else if(code == 0x28) emit(new FunctionToken(currtoken)) && switchto('data');
-			else emit() && switchto('data') && reconsume();
-			break;
-
-		case "number":
-			create(new NumberToken());
-
-			if(code == 0x2d) {
-				if(digit(next())) consume() && currtoken.append([0x2d,code]) && switchto('number-rest');
-				else if(next(1) == 0x2e && digit(next(2))) consume(2) && currtoken.append([0x2d,0x2e,code]) && switchto('number-fraction');
-				else switchto('data') && reconsume();
-			}
-			else if(code == 0x2b) {
-				if(digit(next())) consume() && currtoken.append([0x2b,code]) && switchto('number-rest');
-				else if(next(1) == 0x2e && digit(next(2))) consume(2) && currtoken.append([0x2b,0x2e,code]) && switchto('number-fraction');
-				else switchto('data') && reconsume();
-			}
-			else if(digit(code)) currtoken.append(code) && switchto('number-rest');
-			else if(code == 0x2e) {
-				if(digit(next())) consume() && currtoken.append([0x2e,code]) && switchto('number-fraction');
-				else switchto('data') && reconsume();
-			}
-			else switchto('data') && reconsume();
-			break;
-
-		case "number-rest":
-			if(digit(code)) currtoken.append(code);
-			else if(code == 0x2e) {
-				if(digit(next())) consume() && currtoken.append([0x2e,code]) && switchto('number-fraction');
-				else emit() && switchto('data') && reconsume();
-			}
-			else if(code == 0x25) emit(new PercentageToken(currtoken)) && switchto('data');
-			else if(code == 0x45 || code == 0x65) {
-				if(digit(next())) consume() && currtoken.append([0x25,code]) && switchto('sci-notation');
-				else if((next(1) == 0x2b || next(1) == 0x2d) && digit(next(2))) currtoken.append([0x25,next(1),next(2)]) && consume(2) && switchto('sci-notation');
-				else create(new DimensionToken(currtoken,code)) && switchto('dimension');
-			}
-			else if(code == 0x2d) {
-				if(namestartchar(next())) consume() && create(new DimensionToken(currtoken,[0x2d,code])) && switchto('dimension');
-				else if(next(1) == 0x5c && badescape(next(2))) parseerror() && emit() && switchto('data') && reconsume();
-				else if(next(1) == 0x5c) consume() && create(new DimensionToken(currtoken, [0x2d,consumeEscape()])) && switchto('dimension');
-				else emit() && switchto('data') && reconsume();
-			}
-			else if(namestartchar(code)) create(new DimensionToken(currtoken, code)) && switchto('dimension');
-			else if(code == 0x5c) {
-				if(badescape(next)) parseerror() && emit() && switchto('data') && reconsume();
-				else create(new DimensionToken(currtoken,consumeEscape)) && switchto('dimension');
-			}
-			else emit() && switchto('data') && reconsume();
-			break;
-
-		case "number-fraction":
-			currtoken.type = "number";
-
-			if(digit(code)) currtoken.append(code);
-			else if(code == 0x25) emit(new PercentageToken(currtoken)) && switchto('data');
-			else if(code == 0x45 || code == 0x65) {
-				if(digit(next())) consume() && currtoken.append([0x65,code]) && switchto('sci-notation');
-				else if((next(1) == 0x2b || next(1) == 0x2d) && digit(next(2))) currtoken.append([0x65,next(1),next(2)]) && consume(2) && switchto('sci-notation');
-				else create(new DimensionToken(currtoken,code)) && switchto('dimension');
-			}
-			else if(code == 0x2d) {
-				if(namestartchar(next())) consume() && create(new DimensionToken(currtoken,[0x2d,code])) && switchto('dimension');
-				else if(next(1) == 0x5c && badescape(next(2))) parseerror() && emit() && switchto('data') && reconsume();
-				else if(next(1) == 0x5c) consume() && create(new DimensionToken(currtoken, [0x2d,consumeEscape()])) && switchto('dimension');
-				else emit() && switchto('data') && reconsume();
-			}
-			else if(namestartchar(code)) create(new DimensionToken(currtoken, code)) && switchto('dimension');
-			else if(code == 0x5c) {
-				if(badescape(next)) parseerror() && emit() && switchto('data') && reconsume();
-				else create(new DimensionToken(currtoken,consumeEscape())) && switchto('dimension');
-			}
-			else emit() && switchto('data') && reconsume();
-			break;
-
-		case "dimension":
-			if(namechar(code)) currtoken.append(code);
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && emit() && switchto('data') && reconsume();
-				else currtoken.append(consumeEscape());
-			}
-			else emit() && switchto('data') && reconsume();
-			break;
-
-		case "sci-notation":
-			currtoken.type = "number";
-
-			if(digit(code)) currtoken.append(code);
-			else emit() && switchto('data') && reconsume();
-			break;
-
-		case "url":
-			if(eof()) parseerror() && emit(new BadURLToken) && switchto('data');
-			else if(code == 0x22) switchto('url-double-quote');
-			else if(code == 0x27) switchto('url-single-quote');
-			else if(code == 0x29) emit(new URLToken) && switchto('data');
-			else if(whitespace(code)) donothing();
-			else switchto('url-unquoted') && reconsume();
-			break;
-
-		case "url-double-quote":
-			if(! (currtoken instanceof URLToken)) create(new URLToken);
-
-			if(eof()) parseerror() && emit(new BadURLToken) && switchto('data');
-			else if(code == 0x22) switchto('url-end');
-			else if(newline(code)) parseerror() && switchto('bad-url');
-			else if(code == 0x5c) {
-				if(newline(next())) consume();
-				else if(badescape(next())) parseerror() && emit(new BadURLToken) && switchto('data') && reconsume();
-				else currtoken.append(consumeEscape());
-			}
-			else currtoken.append(code);
-			break;
-
-		case "url-single-quote":
-			if(! (currtoken instanceof URLToken)) create(new URLToken);
-
-			if(eof()) parseerror() && emit(new BadURLToken) && switchto('data');
-			else if(code == 0x27) switchto('url-end');
-			else if(newline(code)) parseerror() && switchto('bad-url');
-			else if(code == 0x5c) {
-				if(newline(next())) consume();
-				else if(badescape(next())) parseerror() && emit(new BadURLToken) && switchto('data') && reconsume();
-				else currtoken.append(consumeEscape());
-			}
-			else currtoken.append(code);
-			break;
-
-		case "url-end":
-			if(eof()) parseerror() && emit(new BadURLToken) && switchto('data');
-			else if(whitespace(code)) donothing();
-			else if(code == 0x29) emit() && switchto('data');
-			else parseerror() && switchto('bad-url') && reconsume();
-			break;
-
-		case "url-unquoted":
-			if(! (currtoken instanceof URLToken)) create(new URLToken);
-
-			if(eof()) parseerror() && emit(new BadURLToken) && switchto('data');
-			else if(whitespace(code)) switchto('url-end');
-			else if(code == 0x29) emit() && switchto('data');
-			else if(code == 0x22 || code == 0x27 || code == 0x28 || nonprintable(code)) parseerror() && switchto('bad-url');
-			else if(code == 0x5c) {
-				if(badescape(next())) parseerror() && switchto('bad-url');
-				else currtoken.append(consumeEscape());
-			}
-			else currtoken.append(code);
-			break;
-
-		case "bad-url":
-			if(eof()) parseerror() && emit(new BadURLToken) && switchto('data');
-			else if(code == 0x29) emit(new BadURLToken) && switchto('data');
-			else if(code == 0x5c) {
-				if(badescape(next())) donothing();
-				else consumeEscape();
-			}
-			else donothing();
-			break;
-
-		case "unicode-range":
-			// We already know that the current code is a hexdigit.
-
-			var start = [code], end = [code];
-
-			for(var total = 1; total < 6; total++) {
-				if(hexdigit(next())) {
-					consume();
-					start.push(code);
-					end.push(code);
-				}
-				else break;
-			}
-
-			if(next() == 0x3f) {
-				for(;total < 6; total++) {
-					if(next() == 0x3f) {
-						consume();
-						start.push("0".charCodeAt(0));
-						end.push("f".charCodeAt(0));
-					}
-					else break;
-				}
-				emit(new UnicodeRangeToken(start,end)) && switchto('data');
-			}
-			else if(next(1) == 0x2d && hexdigit(next(2))) {
-				consume();
-				consume();
-				end = [code];
-				for(var total = 1; total < 6; total++) {
-					if(hexdigit(next())) {
-						consume();
-						end.push(code);
-					}
-					else break;
-				}
-				emit(new UnicodeRangeToken(start,end)) && switchto('data');
-			}
-			else emit(new UnicodeRangeToken(start)) && switchto('data');
-			break;
-
-		default:
-			catchfire("Unknown state '" + state + "'");
+	var wouldStartAnIdentifier = function(c1, c2, c3) {
+		if(c1 == 0x2d) {
+			return namestartchar(c2) || c2 == 0x2d || areAValidEscape(c2, c3);
+		} else if(namestartchar(c1)) {
+			return true;
+		} else if(c1 == 0x5c) {
+			return areAValidEscape(c1, c2);
+		} else {
+			return false;
 		}
+	};
+	var startsWithAnIdentifier = function() {
+		return wouldStartAnIdentifier(code, next(1), next(2));
+	};
+
+	var wouldStartANumber = function(c1, c2, c3) {
+		if(c1 == 0x2b || c1 == 0x2d) {
+			if(digit(c2)) return true;
+			if(c2 == 0x2e && digit(c3)) return true;
+			return false;
+		} else if(c1 == 0x2e) {
+			if(digit(c2)) return true;
+			return false;
+		} else if(digit(c1)) {
+			return true;
+		} else {
+			return false;
+		}
+	};
+	var startsWithANumber = function() {
+		return wouldStartANumber(code, next(1), next(2));
+	};
+
+	var consumeAName = function() {
+		var result = "";
+		while(consume()) {
+			if(namechar(code)) {
+				result += stringFromCode(code);
+			} else if(startsWithAValidEscape()) {
+				result += stringFromCode(consumeEscape());
+			} else {
+				reconsume();
+				return result;
+			}
+		}
+	};
+
+	var consumeANumber = function() {
+		var repr = [];
+		var type = "integer";
+		if(next() == 0x2b || next() == 0x2d) {
+			consume();
+			repr += stringFromCode(code);
+		}
+		while(digit(next())) {
+			consume();
+			repr += stringFromCode(code);
+		}
+		if(next(1) == 0x2e && digit(next(2))) {
+			consume();
+			repr += stringFromCode(code);
+			consume();
+			repr += stringFromCode(code);
+			type = "number";
+			while(digit(next())) {
+				consume();
+				repr += stringFromCode(code);
+			}
+		}
+		var c1 = next(1), c2 = next(2), c3 = next(3);
+		if((c1 == 0x45 || c1 == 0x65) && digit(c2)) {
+			consume();
+			repr += stringFromCode(code);
+			consume();
+			repr += stringFromCode(code);
+			type = "number";
+			while(digit(next())) {
+				consume();
+				repr += stringFromCode(code);
+			}
+		} else if((c1 == 0x45 || c1 == 0x65) && (c2 == 0x2b || c2 == 0x2d) && digit(c3)) {
+			consume();
+			repr += stringFromCode(code);
+			consume();
+			repr += stringFromCode(code);
+			consume();
+			repr += stringFromCode(code);
+			type = "number";
+			while(digit(next())) {
+				consume();
+				repr += stringFromCode(code);
+			}
+		}
+		var value = convertAStringToANumber(repr);
+		return {type:type, value:value, repr:repr};
+	};
+
+	var convertAStringToANumber = function(string) {
+		// CSS's number rules are identical to JS, afaik.
+		return +string;
+	};
+
+	var consumeTheRemnantsOfABadURL = function() {
+		while(consume()) {
+			if(code == 0x2d || eof()) {
+				return;
+			} else if(startsWithAValidEscape()) {
+				consumeEscape();
+				donothing();
+			} else {
+				donothing();
+			}
+		}
+	};
+
+
+
+	var iterationCount = 0;
+	while(!eof()) {
+		tokens.push(consumeAToken());
+		iterationCount++;
+		if(iterationCount > str.length*2) return "I'm infinite-looping!";
 	}
+	return tokens;
 }
 
-function stringFromCodeArray(arr) {
-	return String.fromCharCode.apply(null,arr.filter(function(e){return e;}));
+function CSSParserToken() { throw "Abstract Base Class"; }
+CSSParserToken.prototype.toJSON = function() {
+	return {token: this.tokenType};
 }
-
-function CSSParserToken(options) { return this; }
-CSSParserToken.prototype.finish = function() { return this; }
 CSSParserToken.prototype.toString = function() { return this.tokenType; }
-CSSParserToken.prototype.toJSON = function() { return this.toString(); }
 
 function BadStringToken() { return this; }
-BadStringToken.prototype = new CSSParserToken;
+BadStringToken.prototype = Object.create(CSSParserToken.prototype);
 BadStringToken.prototype.tokenType = "BADSTRING";
 
 function BadURLToken() { return this; }
-BadURLToken.prototype = new CSSParserToken;
+BadURLToken.prototype = Object.create(CSSParserToken.prototype);
 BadURLToken.prototype.tokenType = "BADURL";
 
 function WhitespaceToken() { return this; }
-WhitespaceToken.prototype = new CSSParserToken;
+WhitespaceToken.prototype = Object.create(CSSParserToken.prototype);
 WhitespaceToken.prototype.tokenType = "WHITESPACE";
 WhitespaceToken.prototype.toString = function() { return "WS"; }
 
 function CDOToken() { return this; }
-CDOToken.prototype = new CSSParserToken;
+CDOToken.prototype = Object.create(CSSParserToken.prototype);
 CDOToken.prototype.tokenType = "CDO";
 
 function CDCToken() { return this; }
-CDCToken.prototype = new CSSParserToken;
+CDCToken.prototype = Object.create(CSSParserToken.prototype);
 CDCToken.prototype.tokenType = "CDC";
 
 function ColonToken() { return this; }
-ColonToken.prototype = new CSSParserToken;
+ColonToken.prototype = Object.create(CSSParserToken.prototype);
 ColonToken.prototype.tokenType = ":";
 
 function SemicolonToken() { return this; }
-SemicolonToken.prototype = new CSSParserToken;
+SemicolonToken.prototype = Object.create(CSSParserToken.prototype);
 SemicolonToken.prototype.tokenType = ";";
 
+function CommaToken() { return this; }
+CommaToken.prototype = Object.create(CSSParserToken.prototype);
+CommaToken.prototype.tokenType = ",";
+
 function OpenCurlyToken() { return this; }
-OpenCurlyToken.prototype = new CSSParserToken;
+OpenCurlyToken.prototype = Object.create(CSSParserToken.prototype);
 OpenCurlyToken.prototype.tokenType = "{";
 
 function CloseCurlyToken() { return this; }
-CloseCurlyToken.prototype = new CSSParserToken;
+CloseCurlyToken.prototype = Object.create(CSSParserToken.prototype);
 CloseCurlyToken.prototype.tokenType = "}";
 
 function OpenSquareToken() { return this; }
-OpenSquareToken.prototype = new CSSParserToken;
+OpenSquareToken.prototype = Object.create(CSSParserToken.prototype);
 OpenSquareToken.prototype.tokenType = "[";
 
 function CloseSquareToken() { return this; }
-CloseSquareToken.prototype = new CSSParserToken;
+CloseSquareToken.prototype = Object.create(CSSParserToken.prototype);
 CloseSquareToken.prototype.tokenType = "]";
 
 function OpenParenToken() { return this; }
-OpenParenToken.prototype = new CSSParserToken;
+OpenParenToken.prototype = Object.create(CSSParserToken.prototype);
 OpenParenToken.prototype.tokenType = "(";
 
 function CloseParenToken() { return this; }
-CloseParenToken.prototype = new CSSParserToken;
+CloseParenToken.prototype = Object.create(CSSParserToken.prototype);
 CloseParenToken.prototype.tokenType = ")";
 
+function IncludeMatchToken() { return this; }
+IncludeMatchToken.prototype = Object.create(CSSParserToken.prototype);
+IncludeMatchToken.prototype.tokenType = "~=";
+
+function DashMatchToken() { return this; }
+DashMatchToken.prototype = Object.create(CSSParserToken.prototype);
+DashMatchToken.prototype.tokenType = "|=";
+
+function PrefixMatchToken() { return this; }
+PrefixMatchToken.prototype = Object.create(CSSParserToken.prototype);
+PrefixMatchToken.prototype.tokenType = "^=";
+
+function SuffixMatchToken() { return this; }
+SuffixMatchToken.prototype = Object.create(CSSParserToken.prototype);
+SuffixMatchToken.prototype.tokenType = "$=";
+
+function SubstringMatchToken() { return this; }
+SubstringMatchToken.prototype = Object.create(CSSParserToken.prototype);
+SubstringMatchToken.prototype.tokenType = "*=";
+
+function ColumnToken() { return this; }
+ColumnToken.prototype = Object.create(CSSParserToken.prototype);
+ColumnToken.prototype.tokenType = "||";
+
 function EOFToken() { return this; }
-EOFToken.prototype = new CSSParserToken;
+EOFToken.prototype = Object.create(CSSParserToken.prototype);
 EOFToken.prototype.tokenType = "EOF";
 
 function DelimToken(code) {
-	this.value = String.fromCharCode(code);
+	this.value = stringFromCode(code);
 	return this;
 }
-DelimToken.prototype = new CSSParserToken;
+DelimToken.prototype = Object.create(CSSParserToken.prototype);
 DelimToken.prototype.tokenType = "DELIM";
 DelimToken.prototype.toString = function() { return "DELIM("+this.value+")"; }
+DelimToken.prototype.toJSON = function() {
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.value = this.value;
+	return json;
+}
 
-function StringValuedToken() { return this; }
-StringValuedToken.prototype = new CSSParserToken;
-StringValuedToken.prototype.append = function(val) {
-	if(val instanceof Array) {
-		for(var i = 0; i < val.length; i++) {
-			this.value.push(val[i]);
-		}
-	} else {
-		this.value.push(val);
-	}
-	return true;
-}
-StringValuedToken.prototype.finish = function() {
-	this.value = this.valueAsString();
-	return this;
-}
+function StringValuedToken() { throw "Abstract Base Class"; }
+StringValuedToken.prototype = Object.create(CSSParserToken.prototype);
 StringValuedToken.prototype.ASCIImatch = function(str) {
 	return this.valueAsString().toLowerCase() == str.toLowerCase();
 }
-StringValuedToken.prototype.valueAsString = function() {
-	if(typeof this.value == 'string') return this.value;
-	return stringFromCodeArray(this.value);
-}
-StringValuedToken.prototype.valueAsCodes = function() {
-	if(typeof this.value == 'string') {
-		var ret = [];
-		for(var i = 0; i < this.value.length; i++)
-			ret.push(this.value.charCodeAt(i));
-		return ret;
-	}
-	return this.value.filter(function(e){return e;});
+StringValuedToken.prototype.toJSON = function() {
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.value = this.value;
+	return json;
 }
 
-function IdentifierToken(val) {
-	this.value = [];
-	this.append(val);
+function IdentToken(val) {
+	this.value = val;
 }
-IdentifierToken.prototype = new StringValuedToken;
-IdentifierToken.prototype.tokenType = "IDENT";
-IdentifierToken.prototype.toString = function() { return "IDENT("+this.value+")"; }
+IdentToken.prototype = Object.create(StringValuedToken.prototype);
+IdentToken.prototype.tokenType = "IDENT";
+IdentToken.prototype.toString = function() { return "IDENT("+this.value+")"; }
 
 function FunctionToken(val) {
-	// These are always constructed by passing an IdentifierToken
-	this.value = val.finish().value;
+	this.value = val;
 }
-FunctionToken.prototype = new StringValuedToken;
+FunctionToken.prototype = Object.create(StringValuedToken.prototype);
 FunctionToken.prototype.tokenType = "FUNCTION";
 FunctionToken.prototype.toString = function() { return "FUNCTION("+this.value+")"; }
 
 function AtKeywordToken(val) {
-	this.value = [];
-	this.append(val);
+	this.value = val;
 }
-AtKeywordToken.prototype = new StringValuedToken;
+AtKeywordToken.prototype = Object.create(StringValuedToken.prototype);
 AtKeywordToken.prototype.tokenType = "AT-KEYWORD";
 AtKeywordToken.prototype.toString = function() { return "AT("+this.value+")"; }
 
 function HashToken(val) {
-	this.value = [];
-	this.append(val);
+	this.value = val;
+	this.type = "unrestricted";
 }
-HashToken.prototype = new StringValuedToken;
+HashToken.prototype = Object.create(StringValuedToken.prototype);
 HashToken.prototype.tokenType = "HASH";
 HashToken.prototype.toString = function() { return "HASH("+this.value+")"; }
+HashToken.prototype.toJSON = function() {
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.value = this.value;
+	json.type = this.type;
+	return json;
+}
 
 function StringToken(val) {
-	this.value = [];
-	this.append(val);
+	this.value = val;
 }
-StringToken.prototype = new StringValuedToken;
+StringToken.prototype = Object.create(StringValuedToken.prototype);
 StringToken.prototype.tokenType = "STRING";
 StringToken.prototype.toString = function() { return "\""+this.value+"\""; }
 
 function URLToken(val) {
-	this.value = [];
-	this.append(val);
+	this.value = val;
 }
-URLToken.prototype = new StringValuedToken;
+URLToken.prototype = Object.create(StringValuedToken.prototype);
 URLToken.prototype.tokenType = "URL";
 URLToken.prototype.toString = function() { return "URL("+this.value+")"; }
 
-function NumberToken(val) {
-	this.value = [];
-	this.append(val);
+function NumberToken() {
+	this.value = null;
 	this.type = "integer";
+	this.repr = "";
 }
-NumberToken.prototype = new StringValuedToken;
+NumberToken.prototype = Object.create(CSSParserToken.prototype);
 NumberToken.prototype.tokenType = "NUMBER";
 NumberToken.prototype.toString = function() {
 	if(this.type == "integer")
 		return "INT("+this.value+")";
 	return "NUMBER("+this.value+")";
 }
-NumberToken.prototype.finish = function() {
-	this.repr = this.valueAsString();
-	this.value = this.repr * 1;
-	if(Math.abs(this.value) % 1 != 0) this.type = "number";
-	return this;
+NumberToken.prototype.toJSON = function() {
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.value = this.value;
+	json.type = this.type;
+	json.repr = this.repr;
+	return json;
 }
 
-function PercentageToken(val) {
-	// These are always created by passing a NumberToken as val
-	val.finish();
-	this.value = val.value;
-	this.repr = val.repr;
+function PercentageToken() {
+	this.value = null;
+	this.repr = "";
 }
-PercentageToken.prototype = new CSSParserToken;
+PercentageToken.prototype = Object.create(CSSParserToken.prototype);
 PercentageToken.prototype.tokenType = "PERCENTAGE";
 PercentageToken.prototype.toString = function() { return "PERCENTAGE("+this.value+")"; }
-
-function DimensionToken(val,unit) {
-	// These are always created by passing a NumberToken as the val
-	val.finish();
-	this.num = val.value;
-	this.unit = [];
-	this.repr = val.repr;
-	this.append(unit);
+NumberToken.prototype.toJSON = function() {
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.value = this.value;
+	json.repr = this.repr;
+	return json;
 }
-DimensionToken.prototype = new CSSParserToken;
+
+function DimensionToken() {
+	this.value = null;
+	this.type = "integer";
+	this.repr = "";
+	this.unit = "";
+}
+DimensionToken.prototype = Object.create(CSSParserToken.prototype);
 DimensionToken.prototype.tokenType = "DIMENSION";
-DimensionToken.prototype.toString = function() { return "DIM("+this.num+","+this.unit+")"; }
-DimensionToken.prototype.append = function(val) {
-	if(val instanceof Array) {
-		for(var i = 0; i < val.length; i++) {
-			this.unit.push(val[i]);
-		}
-	} else {
-		this.unit.push(val);
-	}
-	return true;
+DimensionToken.prototype.toString = function() { return "DIM("+this.value+","+this.unit+")"; }
+NumberToken.prototype.toJSON = function() {
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.value = this.value;
+	json.type = this.type;
+	json.repr = this.repr;
+	json.unit = this.unit;
+	return json;
 }
-DimensionToken.prototype.finish = function() {
-	this.unit = stringFromCodeArray(this.unit);
-	this.repr += this.unit;
-	return this;
-}
-
-function UnicodeRangeToken(start,end) {
-	// start and end are array of char codes, completely finished
-	start = parseInt(stringFromCodeArray(start),16);
-	if(end === undefined) end = start + 1;
-	else end = parseInt(stringFromCodeArray(end),16);
-
-	if(start > maximumallowedcodepoint) end = start;
-	if(end < start) end = start;
-	if(end > maximumallowedcodepoint) end = maximumallowedcodepoint;
-
-	this.start = start;
-	this.end = end;
-	return this;
-}
-UnicodeRangeToken.prototype = new CSSParserToken;
-UnicodeRangeToken.prototype.tokenType = "UNICODE-RANGE";
-UnicodeRangeToken.prototype.toString = function() {
-	if(this.start+1 == this.end)
-		return "UNICODE-RANGE("+this.start.toString(16).toUpperCase()+")";
-	if(this.start < this.end)
-		return "UNICODE-RANGE("+this.start.toString(16).toUpperCase()+"-"+this.end.toString(16).toUpperCase()+")";
-	return "UNICODE-RANGE()";
-}
-UnicodeRangeToken.prototype.contains = function(code) {
-	return code >= this.start && code < this.end;
-}
-
 
 // Exportation.
-// TODO: also export the various tokens objects?
 exports.tokenize = tokenize;
+exports.IdentToken = IdentToken;
+exports.FunctionToken = FunctionToken;
+exports.AtKeywordToken = AtKeywordToken;
+exports.HashToken = HashToken;
+exports.StringToken = StringToken;
+exports.BadStringToken = BadStringToken;
+exports.URLToken = URLToken;
+exports.BadURLToken = BadURLToken;
+exports.DelimToken = DelimToken;
+exports.NumberToken = NumberToken;
+exports.PercentageToken = PercentageToken;
+exports.DimensionToken = DimensionToken;
+exports.IncludeMatchToken = IncludeMatchToken;
+exports.DashMatchToken = DashMatchToken;
+exports.PrefixMatchToken = PrefixMatchToken;
+exports.SuffixMatchToken = SuffixMatchToken;
+exports.SubstringMatchToken = SubstringMatchToken;
+exports.ColumnToken = ColumnToken;
+exports.WhitespaceToken = WhitespaceToken;
+exports.CDOToken = CDOToken;
+exports.CDCToken = CDCToken;
+exports.ColonToken = ColonToken;
+exports.SemicolonToken = SemicolonToken;
+exports.CommaToken = CommaToken;
+exports.OpenParenToken = OpenParenToken;
+exports.CloseParenToken = CloseParenToken;
+exports.OpenSquareToken = OpenSquareToken;
+exports.CloseSquareToken = CloseSquareToken;
+exports.OpenCurlyToken = OpenCurlyToken;
+exports.CloseCurlyToken = CloseCurlyToken;
+exports.EOFToken = EOFToken;
 
 }));

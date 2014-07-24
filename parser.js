@@ -25,7 +25,7 @@ function parse(tokens) {
 		if(i < tokens.length)
 			token = tokens[i];
 		else
-			token = new EOFToken;
+			token = new EOFToken();
 		return true;
 	};
 	var reprocess = function() {
@@ -115,7 +115,7 @@ function parse(tokens) {
 			switch(token.tokenType) {
 			case "{": switchto('declaration'); break;
 			case "EOF": discard() && finish(); return stylesheet;
-			default: rule.appendSelector(consumeAPrimitive()); 
+			default: rule.appendSelector(consumeAPrimitive());
 			}
 			break;
 
