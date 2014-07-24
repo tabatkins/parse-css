@@ -82,7 +82,13 @@ function tokenize(str) {
 		}
 		return str[i];
 	}
-	var next = function(num) { if(num === undefined) num = 1; return codepoint(i+num); };
+	var next = function(num) {
+		if(num === undefined)
+			num = 1;
+		if(num > 3)
+			throw "Spec Error: no more than three codepoints of lookahead.";
+		return codepoint(i+num);
+	};
 	var consume = function(num) {
 		if(num === undefined)
 			num = 1;
