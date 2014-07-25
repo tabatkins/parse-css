@@ -51,11 +51,13 @@ body > div {
 var debug;
 function parseStuff() {
 	var css = document.querySelector('#css').value;
+
 	var tokenlist = tokenize(css);
 	console.log(tokenlist);
 	var txt = document.querySelector('#tokens');
 	txt.value = tokenlist.join(' ');
-	var sheet = parse(tokenlist);
+
+	var sheet = parseAStylesheet(tokenlist);
 	console.log(sheet);
 	var tree = document.querySelector('#tree');
 	tree.value = sheet.toString('  ');

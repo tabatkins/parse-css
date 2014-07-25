@@ -10,302 +10,323 @@
     }
 }(this, function (exports) {
 
-function parse(tokens) {
-	var mode = 'top-level';
-	var i = -1;
-	var token;
+function TokenStream(tokens) {
+	// Assume that tokens is an array.
+	this.tokens = tokens;
+	this.i = -1;
+}
+TokenStream.prototype.tokenAt = function(i) {
+	if(i < this.tokens.length)
+		return this.tokens[i];
+	return new EOFToken();
+}
+TokenStream.prototype.consume = function(num) {
+	if(num === undefined) num = 1;
+	this.i += num;
+	this.token = this.tokenAt(this.i);
+	//console.log(this.i, this.token);
+	return true;
+}
+TokenStream.prototype.next = function() {
+	return this.tokenAt(this.i+1);
+}
+TokenStream.prototype.reconsume = function() {
+	this.i--;
+}
 
-	var stylesheet = new Stylesheet;
-	var stack = [stylesheet];
-	var rule = stack[0];
+function parseerror(s, msg) {
+	console.log("Parse error at token " + s.i + ": " + s.token + ".\n" + msg);
+	return true;
+}
+function donothing(){ return true; };
 
-	var consume = function(advance) {
-		if(advance === undefined) advance = 1;
-		i += advance;
-		if(i < tokens.length)
-			token = tokens[i];
-		else
-			token = new EOFToken();
-		return true;
-	};
-	var reprocess = function() {
-		i--;
-		return true;
-	}
-	var next = function() {
-		return tokens[i+1];
-	};
-	var switchto = function(newmode) {
-		if(newmode === undefined) {
-			if(rule.fillType !== '')
-				mode = rule.fillType;
-			else if(rule.type == 'STYLESHEET')
-				mode = 'top-level'
-			else { console.log("Unknown rule-type while switching to current rule's content mode: ",rule); mode = ''; }
+function consumeAListOfRules(s, topLevel) {
+	rules = [];
+	var rule;
+	while(s.consume()) {
+		if(s.token instanceof WhitespaceToken) {
+			continue;
+		} else if(s.token instanceof EOFToken) {
+			return rules;
+		} else if(s.token instanceof CDOToken || s.token instanceof CDCToken) {
+			if(topLevel == "top-level") continue;
+			s.reconsume();
+			if(rule = consumeAQualifiedRule(s)) rules.push(rule);
+		} else if(s.token instanceof AtKeywordToken) {
+			s.reconsume();
+			if(rule = consumeAnAtRule(s)) rules.push(rule);
 		} else {
-			mode = newmode;
-		}
-		return true;
-	}
-	var push = function(newRule) {
-		rule = newRule;
-		stack.push(rule);
-		return true;
-	}
-	var parseerror = function(msg) {
-		console.log("Parse error at token " + i + ": " + token + ".\n" + msg);
-		return true;
-	}
-	var pop = function() {
-		var oldrule = stack.pop();
-		rule = stack[stack.length - 1];
-		rule.append(oldrule);
-		return true;
-	}
-	var discard = function() {
-		stack.pop();
-		rule = stack[stack.length - 1];
-		return true;
-	}
-	var finish = function() {
-		while(stack.length > 1) {
-			pop();
+			s.reconsume();
+			if(rule = consumeAQualifiedRule(s)) rules.push(rule);
 		}
 	}
+}
 
-	for(;;) {
-		consume();
+function consumeAnAtRule(s) {
+	s.consume();
+	var rule = new AtRule(s.token.value);
+	while(s.consume()) {
+		if(s.token instanceof SemicolonToken || s.token instanceof EOFToken) {
+			return rule;
+		} else if(s.token instanceof OpenCurlyToken) {
+			rule.value = consumeASimpleBlock(s);
+			return rule;
+		} else if(s.token instanceof SimpleBlock && s.token.name == "{") {
+			rule.value = s.token;
+			return rule;
+		} else {
+			s.reconsume();
+			rule.prelude.push(consumeAComponentValue(s));
+		}
+	}
+}
 
-		switch(mode) {
-		case "top-level":
-			switch(token.tokenType) {
-			case "CDO":
-			case "CDC":
-			case "WHITESPACE": break;
-			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
-			case "{": parseerror("Attempt to open a curly-block at top-level.") && consumeAPrimitive(); break;
-			case "EOF": finish(); return stylesheet;
-			default: push(new StyleRule) && switchto('selector') && reprocess();
-			}
-			break;
-
-		case "at-rule":
-			switch(token.tokenType) {
-			case ";": pop() && switchto(); break;
-			case "{":
-				if(rule.fillType !== '') switchto(rule.fillType);
-				else parseerror("Attempt to open a curly-block in a statement-type at-rule.") && discard() && switchto('next-block') && reprocess();
-				break;
-			case "EOF": finish(); return stylesheet;
-			default: rule.appendPrelude(consumeAPrimitive());
-			}
-			break;
-
-		case "rule":
-			switch(token.tokenType) {
-			case "WHITESPACE": break;
-			case "}": pop() && switchto(); break;
-			case "AT-KEYWORD": push(new AtRule(token.value)) && switchto('at-rule'); break;
-			case "EOF": finish(); return stylesheet;
-			default: push(new StyleRule) && switchto('selector') && reprocess();
-			}
-			break;
-
-		case "selector":
-			switch(token.tokenType) {
-			case "{": switchto('declaration'); break;
-			case "EOF": discard() && finish(); return stylesheet;
-			default: rule.appendSelector(consumeAPrimitive());
-			}
-			break;
-
-		case "declaration":
-			switch(token.tokenType) {
-			case "WHITESPACE":
-			case ";": break;
-			case "}": pop() && switchto(); break;
-			case "AT-RULE": push(new AtRule(token.value)) && switchto('at-rule'); break;
-			case "IDENT": push(new Declaration(token.value)) && switchto('after-declaration-name'); break;
-			case "EOF": finish(); return stylesheet;
-			default: parseerror() && discard() && switchto('next-declaration');
-			}
-			break;
-
-		case "after-declaration-name":
-			switch(token.tokenType) {
-			case "WHITESPACE": break;
-			case ":": switchto('declaration-value'); break;
-			case ";": parseerror("Incomplete declaration - semicolon after property name.") && discard() && switchto(); break;
-			case "EOF": discard() && finish(); return stylesheet;
-			default: parseerror("Invalid declaration - additional token after property name") && discard() && switchto('next-declaration');
-			}
-			break;
-
-		case "declaration-value":
-			switch(token.tokenType) {
-			case "DELIM":
-				if(token.value == "!" && next().tokenType == 'IDENTIFIER' && next().value.toLowerCase() == "important") {
-					consume();
-					rule.important = true;
-					switchto('declaration-end');
-				} else {
-					rule.append(token);
-				}
-				break;
-			case ";": pop() && switchto(); break;
-			case "}": pop() && pop() && switchto(); break;
-			case "EOF": finish(); return stylesheet;
-			default: rule.append(consumeAPrimitive());
-			}
-			break;
-
-		case "declaration-end":
-			switch(token.tokenType) {
-			case "WHITESPACE": break;
-			case ";": pop() && switchto(); break;
-			case "}": pop() && pop() && switchto(); break;
-			case "EOF": finish(); return stylesheet;
-			default: parseerror("Invalid declaration - additional token after !important.") && discard() && switchto('next-declaration');
-			}
-			break;
-
-		case "next-block":
-			switch(token.tokenType) {
-			case "{": consumeAPrimitive() && switchto(); break;
-			case "EOF": finish(); return stylesheet;
-			default: consumeAPrimitive(); break;
-			}
-			break;
-
-		case "next-declaration":
-			switch(token.tokenType) {
-			case ";": switchto('declaration'); break;
-			case "}": switchto('declaration') && reprocess(); break;
-			case "EOF": finish(); return stylesheet;
-			default: consumeAPrimitive(); break;
-			}
-			break;
-
-		default:
-			// If you hit this, it's because one of the switchto() calls is typo'd.
-			console.log('Unknown parsing mode: ' + mode);
+function consumeAQualifiedRule(s) {
+	var rule = new QualifiedRule();
+	while(s.consume()) {
+		if(s.token instanceof EOFToken) {
+			parseerror(s, "Hit EOF when trying to parse the prelude of a qualified rule.");
 			return;
+		} else if(s.token instanceof OpenCurlyToken) {
+			rule.value = consumeASimpleBlock(s);
+			return rule;
+		} else if(s.token instanceof SimpleBlock && s.token.name == "{") {
+			rule.value = token;
+			return rule;
+		} else {
+			s.reconsume();
+			rule.prelude.push(consumeAComponentValue(s));
 		}
 	}
+}
 
-	function consumeAPrimitive() {
-		switch(token.tokenType) {
-		case "(":
-		case "[":
-		case "{": return consumeASimpleBlock();
-		case "FUNCTION": return consumeAFunc();
-		default: return token;
+function consumeAListOfDeclarations(s) {
+	var decls = [];
+	while(s.consume()) {
+		if(s.token instanceof WhitespaceToken || s.token instanceof SemicolonToken) {
+			donothing();
+		} else if(s.token instanceof EOFToken) {
+			return decls;
+		} else if(s.token instanceof AtKeywordToken) {
+			s.reconsume();
+			decls.push(consumeAnAtRule(s));
+		} else if(s.token instanceof IdentToken) {
+			var temp = [token];
+			while(!(s.next() instanceof SemicolonToken || s.next() instanceof EOFToken))
+				temp.push(consumeAComponentValue(s));
+			var decl;
+			if(decl = consumeADeclaration(new TokenStream(temp))) decls.push(decl);
+		} else {
+			parseerror(s);
+			reconsume();
+			while(!(s.next() instanceof SemicolonToken || s.next() instanceof EOFToken))
+				consumeAComponentValue(s);
 		}
 	}
+}
 
-	function consumeASimpleBlock() {
-		var endingTokenType = {"(":")", "[":"]", "{":"}"}[token.tokenType];
-		var block = new SimpleBlock(token.tokenType);
-
-		for(;;) {
-			consume();
-			switch(token.tokenType) {
-			case "EOF":
-			case endingTokenType: return block;
-			default: block.append(consumeAPrimitive());
-			}
+function consumeADeclaration(s) {
+	// Assumes that the next input token will be an ident token.
+	s.consume();
+	var decl = new Declaration(s.token.value);
+	while(s.next() instanceof WhitespaceToken) s.consume();
+	if(!(s.next() instanceof ColonToken)) {
+		parseerror(s);
+		return;
+	} else {
+		s.consume();
+	}
+	while(!(s.next() instanceof EOFToken)) {
+		decl.value.push(consumeAComponentValue(s));
+	}
+	var foundImportant = false;
+	for(var i = decl.value.length - 1; i >= 0; i--) {
+		if(decl.value[i] instanceof WhitespaceToken) {
+			continue;
+		} else if(decl.value[i] instanceof IdentToken && decl.value[i].ASCIIMatch("important")) {
+			foundImportant = true;
+		} else if(foundImportant && decl.value[i] instanceof DelimToken && decl.value[i].value == "!") {
+			decl.value.splice(i, decl.value.length);
+			decl.important = true;
+			break;
+		} else {
+			break;
 		}
 	}
+	return decl;
+}
 
-	function consumeAFunc() {
-		var func = new Func(token.value);
-		var arg = new FuncArg();
+function consumeAComponentValue(s) {
+	s.consume();
+	if(s.token instanceof OpenCurlyToken || s.token instanceof OpenSquareToken || s.token instanceof OpenParenToken)
+		return consumeASimpleBlock();
+	if(s.token instanceof FunctionToken)
+		return consumeAFunction();
+	return s.token;
+}
 
-		for(;;) {
-			consume();
-			switch(token.tokenType) {
-			case "EOF":
-			case ")": func.append(arg); return func;
-			case "DELIM":
-				if(token.value == ",") {
-					func.append(arg);
-					arg = new FuncArg();
-				} else {
-					arg.append(token);
-				}
+function consumeASimpleBlock(s) {
+	var mirror = s.token.mirror;
+	var block = new SimpleBlock(s.token.value);
+	while(s.consume()) {
+		if(s.token instanceof EOFToken || (s.token instanceof GroupingToken  && s.token.value == mirror))
+			return block;
+		else {
+			s.reconsume();
+			block.value.push(consumeAComponentValue(s));
+		}
+	}
+}
+
+function consumeAFunction(s) {
+	var func = new Func(s.token.value);
+	while(s.consume()) {
+		if(s.token instanceof EOFToken || s.token instanceof CloseParenToken)
+			return func;
+		else {
+			s.reconsume();
+			func.value.push(consumeAComponentValue(s));
+		}
+	}
+}
+
+function normalizeInput(input) {
+	if(typeof input == "string")
+		return new TokenStream(tokenize(input));
+	if(input instanceof TokenStream)
+		return input;
+	if(input.length !== undefined)
+		return new TokenStream(input);
+	else throw SyntaxError(input);
+}
+
+function parseAStylesheet(s) {
+	s = normalizeInput(s);
+	var sheet = new Stylesheet();
+	sheet.value = consumeAListOfRules(s, "top-level");
+	return sheet;
+}
+
+function parseAListOfRules(s) {
+	s = normalizeInput(s);
+	return consumeAListOfRules(s);
+}
+
+function parseARule(s) {
+	s = normalizeInput(s);
+	while(s.next() instanceof WhitespaceToken) s.consume();
+	if(s.next() instanceof EOFToken) throw SyntaxError();
+	if(s.next() instanceof AtKeywordToken) {
+		var rule = consumeAnAtRule(s);
+	} else {
+		var rule = consumeAQualifiedRule(s);
+		if(!rule) throw SyntaxError();
+	}
+	while(s.next() instanceof WhitespaceToken) s.consume();
+	if(s.next() instanceof EOFToken)
+		return rule;
+	throw SyntaxError();
+}
+
+function parseADeclaration(s) {
+	s = normalizeInput(s);
+	while(s.next() instanceof WhitespaceToken) s.consume();
+	if(!(s.next() instanceof IdentToken)) throw SyntaxError();
+	var decl = consumeADeclaration();
+	if(decl)
+		return decl
+	else
+		throw SyntaxError();
+}
+
+function parseAListOfDeclarations(s) {
+	s = normalizeInput(s);
+	return consumeAListOfDeclarations(s);
+}
+
+function parseAComponentValue(s) {
+	s = normalizeInput(s);
+	while(s.next() instanceof WhitespaceToken) s.consume();
+	if(s.next() instanceof EOFToken) throw SyntaxError();
+	var val = consumeAComponentValue(s);
+	if(!val) throw SyntaxError();
+	while(s.next() instanceof WhitespaceToken) s.consume();
+	if(s.next() instanceof EOFToken)
+		return val;
+	throw SyntaxError();
+}
+
+function parseAListOfComponentValues(s) {
+	var vals = [];
+	while(true) {
+		var val = consumeAComponentValue(s);
+		if(val instanceof EOFToken)
+			return vals
+		else
+			vals.push(val);
+	}
+}
+
+function parseACommaSeparatedListOfComponentValues(s) {
+	var listOfCVLs = [];
+	while(true) {
+		var vals = [];
+		while(true) {
+			var val = consumeAComponentValue(s);
+			if(val instanceof EOFToken) {
+				return listOfCVLS;
+			} else if(val instanceof CommaToken) {
+				listOfCVLS.push(vals);
 				break;
-			default: arg.append(consumeAPrimitive());
+			} else {
+				vals.push(val);
 			}
 		}
 	}
 }
 
-function CSSParserRule() { return this; }
-CSSParserRule.prototype.fillType = '';
+
+function CSSParserRule() { throw "Abstract Base Class"; }
 CSSParserRule.prototype.toString = function(indent) {
-	return JSON.stringify(this.toJSON(),null,indent);
+	return JSON.stringify(this,null,indent);
 }
-CSSParserRule.prototype.append = function(val) {
-	this.value.push(val);
-	return this;
+CSSParserRule.prototype.toJSON = function() {
+	return {type:this.type, value:this.value};
 }
 
 function Stylesheet() {
 	this.value = [];
 	return this;
 }
-Stylesheet.prototype = new CSSParserRule;
+Stylesheet.prototype = Object.create(CSSParserRule.prototype);
 Stylesheet.prototype.type = "STYLESHEET";
-Stylesheet.prototype.toJSON = function() {
-	return {type:'stylesheet', value: this.value.map(function(e){return e.toJSON();})};
-}
 
 function AtRule(name) {
 	this.name = name;
 	this.prelude = [];
-	this.value = [];
-	if(name in AtRule.registry)
-		this.fillType = AtRule.registry[name];
+	this.value = null;
 	return this;
 }
-AtRule.prototype = new CSSParserRule;
+AtRule.prototype = Object.create(CSSParserRule.prototype);
 AtRule.prototype.type = "AT-RULE";
-AtRule.prototype.appendPrelude = function(val) {
-	this.prelude.push(val);
-	return this;
-}
 AtRule.prototype.toJSON = function() {
-	return {type:'at', name:this.name, prelude:this.prelude.map(function(e){return e.toJSON();}), value:this.value.map(function(e){return e.toJSON();})};
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.name = this.name;
+	json.prelude = this.prelude;
+	return json;
 }
-AtRule.registry = {
-	'import': '',
-	'media': 'rule',
-	'font-face': 'declaration',
-	'page': 'declaration',
-	'keyframes': 'rule',
-	'namespace': '',
-	'counter-style': 'declaration',
-	'supports': 'rule',
-	'document': 'rule',
-	'font-feature-values': 'declaration',
-	'viewport': '',
-	'region-style': 'rule'
-};
 
-function StyleRule() {
-	this.selector = [];
+function QualifiedRule() {
+	this.prelude = [];
 	this.value = [];
 	return this;
 }
-StyleRule.prototype = new CSSParserRule;
-StyleRule.prototype.type = "STYLE-RULE";
-StyleRule.prototype.fillType = 'declaration';
-StyleRule.prototype.appendSelector = function(val) {
-	this.selector.push(val);
-	return this;
-}
-StyleRule.prototype.toJSON = function() {
-	return {type:'selector', selector:this.selector.map(function(e){return e.toJSON();}), value:this.value.map(function(e){return e.toJSON();})};
+QualifiedRule.prototype = Object.create(CSSParserRule.prototype);
+QualifiedRule.prototype.type = "QUALIFIED-RULE";
+QualifiedRule.prototype.toJSON = function() {
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.prelude = this.prelude;
+	return json;
 }
 
 function Declaration(name) {
@@ -313,21 +334,20 @@ function Declaration(name) {
 	this.value = [];
 	return this;
 }
-Declaration.prototype = new CSSParserRule;
+Declaration.prototype = Object.create(CSSParserRule.prototype);
 Declaration.prototype.type = "DECLARATION";
-Declaration.prototype.toJSON = function() {
-	return {type:'declaration', name:this.name, value:this.value.map(function(e){return e.toJSON();})};
-}
 
 function SimpleBlock(type) {
 	this.name = type;
 	this.value = [];
 	return this;
 }
-SimpleBlock.prototype = new CSSParserRule;
+SimpleBlock.prototype = Object.create(CSSParserRule.prototype);
 SimpleBlock.prototype.type = "BLOCK";
 SimpleBlock.prototype.toJSON = function() {
-	return {type:'block', name:this.name, value:this.value.map(function(e){return e.toJSON();})};
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.name = this.name;
+	return json;
 }
 
 function Func(name) {
@@ -335,24 +355,29 @@ function Func(name) {
 	this.value = [];
 	return this;
 }
-Func.prototype = new CSSParserRule;
+Func.prototype = Object.create(CSSParserRule.prototype);
 Func.prototype.type = "FUNCTION";
 Func.prototype.toJSON = function() {
-	return {type:'func', name:this.name, value:this.value.map(function(e){return e.toJSON();})};
-}
-
-function FuncArg() {
-	this.value = [];
-	return this;
-}
-FuncArg.prototype = new CSSParserRule;
-FuncArg.prototype.type = "FUNCTION-ARG";
-FuncArg.prototype.toJSON = function() {
-	return this.value.map(function(e){return e.toJSON();});
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.name = this.name;
+	return json;
 }
 
 // Exportation.
-// TODO: also export the various rule objects?
-exports.parse = parse;
+exports.CSSParserRule = CSSParserRule;
+exports.Stylesheet = Stylesheet;
+exports.AtRule = AtRule;
+exports.QualifiedRule = QualifiedRule;
+exports.Declaration = Declaration;
+exports.SimpleBlock = SimpleBlock;
+exports.Func = Func;
+exports.parseAStylesheet = parseAStylesheet;
+exports.parseAListOfRules = parseAListOfRules;
+exports.parseARule = parseARule;
+exports.parseADeclaration = parseADeclaration;
+exports.parseAListOfDeclarations = parseAListOfDeclarations;
+exports.parseAComponentValue = parseAComponentValue;
+exports.parseAListOfComponentValues = parseAListOfComponentValues;
+exports.parseACommaSeparatedListOfComponentValues = parseACommaSeparatedListOfComponentValues;
 
 }));

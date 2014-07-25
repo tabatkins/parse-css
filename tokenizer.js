@@ -526,7 +526,7 @@ function tokenize(str) {
 
 
 	var iterationCount = 0;
-	while(!eof()) {
+	while(!eof(next())) {
 		tokens.push(consumeAToken());
 		iterationCount++;
 		if(iterationCount > str.length*2) return "I'm infinite-looping!";
@@ -573,28 +573,31 @@ function CommaToken() { return this; }
 CommaToken.prototype = Object.create(CSSParserToken.prototype);
 CommaToken.prototype.tokenType = ",";
 
-function OpenCurlyToken() { return this; }
-OpenCurlyToken.prototype = Object.create(CSSParserToken.prototype);
+function GroupingToken() { throw "Abstract Base Class"; }
+GroupingToken.prototype = Object.create(CSSParserToken.prototype);
+
+function OpenCurlyToken() { this.value = "{"; this.mirror = "}"; return this; }
+OpenCurlyToken.prototype = Object.create(GroupingToken.prototype);
 OpenCurlyToken.prototype.tokenType = "{";
 
-function CloseCurlyToken() { return this; }
-CloseCurlyToken.prototype = Object.create(CSSParserToken.prototype);
+function CloseCurlyToken() { this.value = "}"; this.mirror = "{"; return this; }
+CloseCurlyToken.prototype = Object.create(GroupingToken.prototype);
 CloseCurlyToken.prototype.tokenType = "}";
 
-function OpenSquareToken() { return this; }
-OpenSquareToken.prototype = Object.create(CSSParserToken.prototype);
+function OpenSquareToken() { this.value = "["; this.mirror = "]"; return this; }
+OpenSquareToken.prototype = Object.create(GroupingToken.prototype);
 OpenSquareToken.prototype.tokenType = "[";
 
-function CloseSquareToken() { return this; }
-CloseSquareToken.prototype = Object.create(CSSParserToken.prototype);
+function CloseSquareToken() { this.value = "]"; this.mirror = "["; return this; }
+CloseSquareToken.prototype = Object.create(GroupingToken.prototype);
 CloseSquareToken.prototype.tokenType = "]";
 
-function OpenParenToken() { return this; }
-OpenParenToken.prototype = Object.create(CSSParserToken.prototype);
+function OpenParenToken() { this.value = "("; this.mirror = ")"; return this; }
+OpenParenToken.prototype = Object.create(GroupingToken.prototype);
 OpenParenToken.prototype.tokenType = "(";
 
-function CloseParenToken() { return this; }
-CloseParenToken.prototype = Object.create(CSSParserToken.prototype);
+function CloseParenToken() { this.value = ")"; this.mirror = "("; return this; }
+CloseParenToken.prototype = Object.create(GroupingToken.prototype);
 CloseParenToken.prototype.tokenType = ")";
 
 function IncludeMatchToken() { return this; }
@@ -641,7 +644,7 @@ DelimToken.prototype.toJSON = function() {
 function StringValuedToken() { throw "Abstract Base Class"; }
 StringValuedToken.prototype = Object.create(CSSParserToken.prototype);
 StringValuedToken.prototype.ASCIImatch = function(str) {
-	return this.valueAsString().toLowerCase() == str.toLowerCase();
+	return this.value.toLowerCase() == str.toLowerCase();
 }
 StringValuedToken.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
@@ -658,6 +661,7 @@ IdentToken.prototype.toString = function() { return "IDENT("+this.value+")"; }
 
 function FunctionToken(val) {
 	this.value = val;
+	this.mirror = ")";
 }
 FunctionToken.prototype = Object.create(StringValuedToken.prototype);
 FunctionToken.prototype.tokenType = "FUNCTION";
@@ -783,5 +787,7 @@ exports.CloseSquareToken = CloseSquareToken;
 exports.OpenCurlyToken = OpenCurlyToken;
 exports.CloseCurlyToken = CloseCurlyToken;
 exports.EOFToken = EOFToken;
+exports.CSSParserToken = CSSParserToken;
+exports.GroupingToken = GroupingToken;
 
 }));
