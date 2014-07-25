@@ -1,12 +1,3 @@
-// This test suite runs on NodeJS and uses the 'ansidiff' package.
-// Once you have NodeJS, install ansidiff with:
-//
-//    npm install ansidiff
-//
-// Then run the test suite with:
-//
-//    node tests.js
-
 var TESTS = [
   {
     css: 'foo { bar: baz; }',
@@ -53,8 +44,8 @@ var TESTS = [
 
 
 var ansidiff = require('ansidiff'),
-    tokenize = require('./tokenizer').tokenize,
-    parse = require('./parser').parse;
+    tokenize = require('./parse-css').tokenize,
+    parseAStylesheet = require('./parse-css').parseAStylesheet;
 
 var total = TESTS.length, failures = 0,
     i, test, tokens, sheet, dump, expected_dump;
