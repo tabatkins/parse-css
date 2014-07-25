@@ -24,7 +24,6 @@ function newline(code) { return code == 0xa || code == 0xc; }
 function whitespace(code) { return newline(code) || code == 9 || code == 0x20; }
 function badescape(code) { return newline(code) || isNaN(code); }
 
-// Note: I'm not yet acting smart enough to actually handle astral characters.
 var maximumallowedcodepoint = 0x10ffff;
 
 function preprocess(str) {
