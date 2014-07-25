@@ -731,7 +731,7 @@ URLToken.prototype = Object.create(StringValuedToken.prototype);
 URLToken.prototype.tokenType = "URL";
 URLToken.prototype.toString = function() { return "URL("+this.value+")"; }
 URLToken.prototype.toSource = function() {
-	return "url(" + escapeURL(this.value) + ")";
+	return 'url("' + escapeString(this.value) + '")';
 }
 
 function NumberToken() {
@@ -799,23 +799,85 @@ DimensionToken.prototype.toSource = function() {
 }
 
 function escapeIdent(string) {
-	// TODO
-	return string;
+	string = ''+string;
+	var result = '';
+	var firstcode = string.charCodeAt(0);
+	for(var i = 0; i < string.length; i++) {
+		var code = string.charCodeAt(i);
+		if(code == 0x0) {
+			throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
+		}
+
+		if(
+			between(code, 0x1, 0x1f) || code == 0x7f ||
+			(i == 0 && between(code, 0x30, 0x39)) ||
+			(i == 1 && between(code, 0x30, 0x39) && firstcode == 0x2d)
+		) {
+			result += '\\' + code.toString(16) + ' ';
+		} else if(
+			code >= 0x80 ||
+			code == 0x2d ||
+			code == 0x5f ||
+			between(code, 0x30, 0x39) ||
+			between(code, 0x41, 0x5a) ||
+			between(code, 0x61, 0x7a)
+		) {
+			result += string[i];
+		} else {
+			result += '\\' + string[i];
+		}
+	}
+	return result;
 }
 
 function escapeHash(string) {
-	// TODO
-	return string;
+	// Escapes the contents of "unrestricted"-type hash tokens.
+	// Won't preserve the ID-ness of "id"-type hash tokens;
+	// use escapeIdent() for that.
+	string = ''+string;
+	var result = '';
+	var firstcode = string.charCodeAt(0);
+	for(var i = 0; i < string.length; i++) {
+		var code = string.charCodeAt(i);
+		if(code == 0x0) {
+			throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
+		}
+
+		if(
+			code >= 0x80 ||
+			code == 0x2d ||
+			code == 0x5f ||
+			between(code, 0x30, 0x39) ||
+			between(code, 0x41, 0x5a) ||
+			between(code, 0x61, 0x7a)
+		) {
+			result += string[i];
+		} else {
+			result += '\\' + code.toString(16) + ' ';
+		}
+	}
+	return result;
 }
 
 function escapeString(string) {
-	// TODO
-	return string;
-}
+	string = ''+string;
+	var result = '';
+	for(var i = 0; i < string.length; i++) {
+		var code = string.charCodeAt(i);
 
-function escapeURL(string) {
-	// TODO
-	return string;
+		if(code == 0x0) {
+			throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
+		}
+
+		if(between(code, 0x1, 0x1f) || code == 0x7f) {
+			result += '\\' + code.toString(16) + ' ';
+		} else if(code == 0x22 || code == 0x5c) {
+			result += '\\' + string[i];
+		} else {
+			result = string[i];
+		}
+	}
+	return result;
 }
 
 // Exportation.
