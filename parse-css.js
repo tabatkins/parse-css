@@ -115,7 +115,7 @@ function tokenize(str) {
 		return codepoint == -1;
 	};
 	var donothing = function() {};
-	var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + " in state " + state + ".");return true; };
+	var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");return true; };
 
 	var consumeAToken = function() {
 		consumeComments();
@@ -299,9 +299,10 @@ function tokenize(str) {
 		var str = consumeAName();
 		if(str.toLowerCase() == "url" && next() == 0x28) {
 			consume();
-			while(whitespace(next())) consume();
+			while(whitespace(next(1)) && whitespace(next(2))) consume();
 			if(next() == 0x22 || next() == 0x27) {
-				reconsume();
+				return new FunctionToken(str);
+			} else if(whitespace(next()) && (next(2) == 0x22 || next(2) == 0x27)) {
 				return new FunctionToken(str);
 			} else {
 				return consumeAURLToken();
