@@ -61,8 +61,7 @@ var total = TESTS.length, failures = 0,
 
 for (i = 0; i < total; i++) {
     test = TESTS[i];
-    tokens = tokenize(test.css);
-    sheet = parse(tokens);
+    sheet = parseAStylesheet(test.css);
     dump = sheet.toString('  ');
     expected_dump = JSON.stringify(test.expected, null, '  ');
     if (dump == expected_dump) {
