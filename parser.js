@@ -332,6 +332,7 @@ QualifiedRule.prototype.toJSON = function() {
 function Declaration(name) {
 	this.name = name;
 	this.value = [];
+	this.important = false;
 	return this;
 }
 Declaration.prototype = Object.create(CSSParserRule.prototype);
