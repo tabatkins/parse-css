@@ -389,7 +389,7 @@ function tokenize(str) {
 				}
 			}
 			if(whitespace(next())) consume();
-			var value = parseInt(digits.map(String.fromCharCode).join(''), 16);
+			var value = parseInt(digits.map(function(x){return String.fromCharCode(x);}).join(''), 16);
 			if( value > maximumallowedcodepoint ) value = 0xfffd;
 			return value;
 		} else if(eof()) {
