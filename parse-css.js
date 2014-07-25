@@ -539,6 +539,7 @@ CSSParserToken.prototype.toJSON = function() {
 	return {token: this.tokenType};
 }
 CSSParserToken.prototype.toString = function() { return this.tokenType; }
+CSSParserToken.prototype.toSource = function() { return ''+this; }
 
 function BadStringToken() { return this; }
 BadStringToken.prototype = Object.create(CSSParserToken.prototype);
@@ -552,14 +553,17 @@ function WhitespaceToken() { return this; }
 WhitespaceToken.prototype = Object.create(CSSParserToken.prototype);
 WhitespaceToken.prototype.tokenType = "WHITESPACE";
 WhitespaceToken.prototype.toString = function() { return "WS"; }
+WhitespaceToken.prototype.toSource = function() { return " "; }
 
 function CDOToken() { return this; }
 CDOToken.prototype = Object.create(CSSParserToken.prototype);
 CDOToken.prototype.tokenType = "CDO";
+CDOToken.prototype.toSource = function() { return "<!--"; }
 
 function CDCToken() { return this; }
 CDCToken.prototype = Object.create(CSSParserToken.prototype);
 CDCToken.prototype.tokenType = "CDC";
+CDCToken.prototype.toSource = function() { return "-->"; }
 
 function ColonToken() { return this; }
 ColonToken.prototype = Object.create(CSSParserToken.prototype);
@@ -627,6 +631,7 @@ ColumnToken.prototype.tokenType = "||";
 function EOFToken() { return this; }
 EOFToken.prototype = Object.create(CSSParserToken.prototype);
 EOFToken.prototype.tokenType = "EOF";
+EOFToken.prototype.toSource = function() { return ""; }
 
 function DelimToken(code) {
 	this.value = stringFromCode(code);
@@ -639,6 +644,12 @@ DelimToken.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.value = this.value;
 	return json;
+}
+DelimToken.prototype.toSource = function() {
+	if(this.value == "\\")
+		return "\\\n";
+	else
+		return this.value;
 }
 
 function StringValuedToken() { throw "Abstract Base Class"; }
@@ -658,6 +669,9 @@ function IdentToken(val) {
 IdentToken.prototype = Object.create(StringValuedToken.prototype);
 IdentToken.prototype.tokenType = "IDENT";
 IdentToken.prototype.toString = function() { return "IDENT("+this.value+")"; }
+IdentToken.prototype.toSource = function() {
+	return escapeIdent(this.value);
+}
 
 function FunctionToken(val) {
 	this.value = val;
@@ -666,6 +680,9 @@ function FunctionToken(val) {
 FunctionToken.prototype = Object.create(StringValuedToken.prototype);
 FunctionToken.prototype.tokenType = "FUNCTION";
 FunctionToken.prototype.toString = function() { return "FUNCTION("+this.value+")"; }
+FunctionToken.prototype.toSource = function() {
+	return escapeIdent(this.value) + "(";
+}
 
 function AtKeywordToken(val) {
 	this.value = val;
@@ -673,6 +690,9 @@ function AtKeywordToken(val) {
 AtKeywordToken.prototype = Object.create(StringValuedToken.prototype);
 AtKeywordToken.prototype.tokenType = "AT-KEYWORD";
 AtKeywordToken.prototype.toString = function() { return "AT("+this.value+")"; }
+AtKeywordToken.prototype.toSource = function() {
+	return "@" + escapeIdent(this.value);
+}
 
 function HashToken(val) {
 	this.value = val;
@@ -687,13 +707,22 @@ HashToken.prototype.toJSON = function() {
 	json.type = this.type;
 	return json;
 }
+HashToken.prototype.toSource = function() {
+	if(this.type == "id") {
+		return "#" + escapeIdent(this.value);
+	} else {
+		return "#" + escapeHash(this.value);
+	}
+}
 
 function StringToken(val) {
 	this.value = val;
 }
 StringToken.prototype = Object.create(StringValuedToken.prototype);
 StringToken.prototype.tokenType = "STRING";
-StringToken.prototype.toString = function() { return "\""+this.value+"\""; }
+StringToken.prototype.toString = function() {
+	return '"' + escapeString(this.value) + '"';
+}
 
 function URLToken(val) {
 	this.value = val;
@@ -701,6 +730,9 @@ function URLToken(val) {
 URLToken.prototype = Object.create(StringValuedToken.prototype);
 URLToken.prototype.tokenType = "URL";
 URLToken.prototype.toString = function() { return "URL("+this.value+")"; }
+URLToken.prototype.toSource = function() {
+	return "url(" + escapeURL(this.value) + ")";
+}
 
 function NumberToken() {
 	this.value = null;
@@ -721,6 +753,7 @@ NumberToken.prototype.toJSON = function() {
 	json.repr = this.repr;
 	return json;
 }
+NumberToken.prototype.toSource = function() { return this.repr; };
 
 function PercentageToken() {
 	this.value = null;
@@ -735,6 +768,7 @@ PercentageToken.prototype.toJSON = function() {
 	json.repr = this.repr;
 	return json;
 }
+PercentageToken.prototype.toSource = function() { return this.repr + "%"; }
 
 function DimensionToken() {
 	this.value = null;
@@ -752,6 +786,36 @@ DimensionToken.prototype.toJSON = function() {
 	json.repr = this.repr;
 	json.unit = this.unit;
 	return json;
+}
+DimensionToken.prototype.toSource = function() {
+	var source = this.repr;
+	var unit = escapeIdent(this.unit);
+	if(unit[0].toLowerCase() == "e" && (unit[1] == "-" || between(unit.charCodeAt(1), 0x30, 0x39))) {
+		// Unit is ambiguous with scinot
+		// Remove the leading "e", replace with escape.
+		unit = "\\65 " + unit.slice(1, unit.length);
+	}
+	return source+unit;
+}
+
+function escapeIdent(string) {
+	// TODO
+	return string;
+}
+
+function escapeHash(string) {
+	// TODO
+	return string;
+}
+
+function escapeString(string) {
+	// TODO
+	return string;
+}
+
+function escapeURL(string) {
+	// TODO
+	return string;
 }
 
 // Exportation.
