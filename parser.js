@@ -41,7 +41,7 @@ function parseerror(s, msg) {
 function donothing(){ return true; };
 
 function consumeAListOfRules(s, topLevel) {
-	rules = [];
+	var rules = [];
 	var rule;
 	while(s.consume()) {
 		if(s.token instanceof WhitespaceToken) {
