@@ -33,10 +33,10 @@ function preprocess(str) {
 	var codepoints = [];
 	for(var i = 0; i < str.length; i++) {
 		var code = str.charCodeAt(i);
-		if(code == 0xd || code == 0xc) code = 0xa;
 		if(code == 0xd && str.charCodeAt(i+1) == 0xa) {
 			code = 0xa; i++;
 		}
+		if(code == 0xd || code == 0xc) code = 0xa;
 		if(code == 0x0) code = 0xfffd;
 		if(between(code, 0xd800, 0xdbff) && between(str.charCodeAt(i+1), 0xdc00, 0xdfff)) {
 			// Decode a surrogate pair into an astral codepoint.
