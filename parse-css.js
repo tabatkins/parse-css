@@ -874,7 +874,7 @@ function escapeString(string) {
 		} else if(code == 0x22 || code == 0x5c) {
 			result += '\\' + string[i];
 		} else {
-			result = string[i];
+			result += string[i];
 		}
 	}
 	return result;
