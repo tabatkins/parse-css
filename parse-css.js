@@ -317,10 +317,10 @@ function tokenize(str) {
 
 	var consumeAStringToken = function(endingCodePoint) {
 		if(endingCodePoint === undefined) endingCodePoint = code;
-		var token = new StringToken();
+		var string = "";
 		while(consume()) {
 			if(code == endingCodePoint || eof()) {
-				return token;
+				return new StringToken(string);
 			} else if(newline(code)) {
 				parseerror();
 				reconsume();
@@ -331,10 +331,10 @@ function tokenize(str) {
 				} else if(newline(next())) {
 					consume();
 				} else {
-					token.value += stringFromCode(consumeEscape())
+					string += stringFromCode(consumeEscape())
 				}
 			} else {
-				token.value += stringFromCode(code);
+				string += stringFromCode(code);
 			}
 		}
 	};
@@ -939,9 +939,9 @@ function consumeADeclaration(s) {
 function consumeAComponentValue(s) {
 	s.consume();
 	if(s.token instanceof OpenCurlyToken || s.token instanceof OpenSquareToken || s.token instanceof OpenParenToken)
-		return consumeASimpleBlock();
+		return consumeASimpleBlock(s);
 	if(s.token instanceof FunctionToken)
-		return consumeAFunction();
+		return consumeAFunction(s);
 	return s.token;
 }
 
