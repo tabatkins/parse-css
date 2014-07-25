@@ -728,7 +728,7 @@ function PercentageToken() {
 PercentageToken.prototype = Object.create(CSSParserToken.prototype);
 PercentageToken.prototype.tokenType = "PERCENTAGE";
 PercentageToken.prototype.toString = function() { return "PERCENTAGE("+this.value+")"; }
-NumberToken.prototype.toJSON = function() {
+PercentageToken.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.value = this.value;
 	json.repr = this.repr;
@@ -744,7 +744,7 @@ function DimensionToken() {
 DimensionToken.prototype = Object.create(CSSParserToken.prototype);
 DimensionToken.prototype.tokenType = "DIMENSION";
 DimensionToken.prototype.toString = function() { return "DIM("+this.value+","+this.unit+")"; }
-NumberToken.prototype.toJSON = function() {
+DimensionToken.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.value = this.value;
 	json.type = this.type;
