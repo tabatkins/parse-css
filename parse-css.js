@@ -26,6 +26,12 @@ function badescape(code) { return newline(code) || isNaN(code); }
 
 var maximumallowedcodepoint = 0x10ffff;
 
+var InvalidCharacterError = function(message) {
+	this.message = message;
+};
+InvalidCharacterError.prototype = new Error;
+InvalidCharacterError.prototype.name = 'InvalidCharacterError';
+
 function preprocess(str) {
 	// Turn a string into an array of code points,
 	// following the preprocessing cleanup rules.
