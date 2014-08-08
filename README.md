@@ -21,7 +21,7 @@ It is intended to fully and completely match browser behavior
 Using the Library
 -----------------
 
-Include `css-parser.js` in your page.
+Include `parse-css.js` in your page.
 Then just call the desired parsing function,
 named after the algorithms in the spec:
 `parseAStylesheet()`, etc.
@@ -67,6 +67,6 @@ because they're named exactly the same as the corresponding section of the Synta
 Node Integration
 ----------------
 
-`css-parser.js` uses the UMD module pattern,
+`parse-css.js` uses the UMD module pattern,
 exporting the parser functions, the `tokenize()` function,
 and all of the classes used by the parser and tokenizer.
