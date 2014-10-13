@@ -18,6 +18,9 @@ to make the same change in the parser.
 It is intended to fully and completely match browser behavior
 (at least, as much as the final spec does).
 
+There's a [dingus](https://rawgit.com/tabatkins/parse-css/master/example.html) for testing it out,
+or just quickly checking what some CSS parses into.
+
 Using the Library
 -----------------
 
