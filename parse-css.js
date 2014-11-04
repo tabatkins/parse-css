@@ -660,7 +660,7 @@ DelimToken.prototype.toSource = function() {
 
 function StringValuedToken() { throw "Abstract Base Class"; }
 StringValuedToken.prototype = Object.create(CSSParserToken.prototype);
-StringValuedToken.prototype.ASCIImatch = function(str) {
+StringValuedToken.prototype.ASCIIMatch = function(str) {
 	return this.value.toLowerCase() == str.toLowerCase();
 }
 StringValuedToken.prototype.toJSON = function() {
@@ -1023,7 +1023,7 @@ function consumeAListOfDeclarations(s) {
 			s.reconsume();
 			decls.push(consumeAnAtRule(s));
 		} else if(s.token instanceof IdentToken) {
-			var temp = [token];
+			var temp = [s.token];
 			while(!(s.next() instanceof SemicolonToken || s.next() instanceof EOFToken))
 				temp.push(consumeAComponentValue(s));
 			var decl;
@@ -1144,7 +1144,7 @@ function parseADeclaration(s) {
 	s = normalizeInput(s);
 	while(s.next() instanceof WhitespaceToken) s.consume();
 	if(!(s.next() instanceof IdentToken)) throw SyntaxError();
-	var decl = consumeADeclaration();
+	var decl = consumeADeclaration(s);
 	if(decl)
 		return decl
 	else
