@@ -1252,6 +1252,12 @@ function Declaration(name) {
 }
 Declaration.prototype = Object.create(CSSParserRule.prototype);
 Declaration.prototype.type = "DECLARATION";
+Declaration.prototype.toJSON = function() {
+	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+	json.name = this.name;
+	json.important = this.important;
+	return json;
+}
 
 function SimpleBlock(type) {
 	this.name = type;
