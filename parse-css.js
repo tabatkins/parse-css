@@ -346,7 +346,7 @@ function tokenize(str) {
 	};
 
 	var consumeAURLToken = function() {
-		var token = new URLToken();
+		var token = new URLToken("");
 		while(whitespace(next())) consume();
 		if(eof(next())) return token;
 		while(consume()) {
