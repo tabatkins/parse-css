@@ -687,7 +687,7 @@ FunctionToken.prototype = Object.create(StringValuedToken.prototype);
 FunctionToken.prototype.tokenType = "FUNCTION";
 FunctionToken.prototype.toString = function() { return "FUNCTION("+this.value+")"; }
 FunctionToken.prototype.toSource = function() {
-	return escapeIdent(this.value) + "(";
+	return escapeIdent(this.value) + ")";
 }
 
 function AtKeywordToken(val) {
