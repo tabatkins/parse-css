@@ -61,6 +61,6 @@ function parseStuff() {
 	var sheet = parseAStylesheet(tokenlist);
 	console.log(sheet);
 	var tree = document.querySelector('#tree');
-	tree.value = sheet.toString('  ');
+	tree.value = JSON.stringify(sheet, null, "  ");
 }
 </script>
