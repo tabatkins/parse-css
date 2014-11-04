@@ -1169,6 +1169,7 @@ function parseAComponentValue(s) {
 }
 
 function parseAListOfComponentValues(s) {
+	s = normalizeInput(s);
 	var vals = [];
 	while(true) {
 		var val = consumeAComponentValue(s);
@@ -1180,15 +1181,16 @@ function parseAListOfComponentValues(s) {
 }
 
 function parseACommaSeparatedListOfComponentValues(s) {
+	s = normalizeInput(s);
 	var listOfCVLs = [];
 	while(true) {
 		var vals = [];
 		while(true) {
 			var val = consumeAComponentValue(s);
 			if(val instanceof EOFToken) {
-				return listOfCVLS;
+				return listOfCVLs;
 			} else if(val instanceof CommaToken) {
-				listOfCVLS.push(vals);
+				listOfCVLs.push(vals);
 				break;
 			} else {
 				vals.push(val);
