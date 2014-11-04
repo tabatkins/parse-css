@@ -1188,6 +1188,7 @@ function parseACommaSeparatedListOfComponentValues(s) {
 		while(true) {
 			var val = consumeAComponentValue(s);
 			if(val instanceof EOFToken) {
+				listOfCVLs.push(vals);
 				return listOfCVLs;
 			} else if(val instanceof CommaToken) {
 				listOfCVLs.push(vals);
