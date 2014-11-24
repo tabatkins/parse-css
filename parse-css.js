@@ -1002,7 +1002,7 @@ function consumeAQualifiedRule(s) {
 			rule.value = consumeASimpleBlock(s);
 			return rule;
 		} else if(s.token instanceof SimpleBlock && s.token.name == "{") {
-			rule.value = token;
+			rule.value = s.token;
 			return rule;
 		} else {
 			s.reconsume();
