@@ -1,7 +1,6 @@
 <!doctype html>
 <title>Tests</title>
-<script src="tokenizer.js"></script>
-<script src="parser.js"></script>
+<script src="parse-css.js"></script>
 <script src="diff.js"></script>
 <style>
 ins { background: hsl(120, 50%, 90%); color: greeen; }
@@ -10,79 +9,135 @@ ins, del { text-decoration: none; }
 </style>
 <script>
 function log(str) {
-    document.querySelector('#log').innerHTML += str+'\n';
+		document.querySelector('#log').innerHTML += str+'\n';
 }
 </script>
 <pre id='log'></pre>
 <script>
 var TESTS = [
-  {
-    css: 'foo { \
-        bar: baz; \
-    }',
-    expected: {"type": "stylesheet", "value": [
-      {
-        "type": "selector",
-        "selector": ["IDENT(foo)", "WS"],
-        "value": [
-          {
-            "type": "declaration",
-            "name": "bar",
-            "value": ["WS", "IDENT(baz)"]}]}]
-    }
-  }, {
-    css: 'foo { bar: rgb(255, 0, 127); }',
-    expected: {"type": "stylesheet", "value": [
-      {
-        "type": "selector",
-        "selector": ["IDENT(foo)", "WS"],
-        "value": [
-          {
-            "type": "declaration",
-            "name": "bar",
-            "value": ["WS", {"type": "func", "name": "rgb", "value": [
-                ["INT(255)"], ["WS", "INT(0)"], ["WS", "INT(127)"]]}]}]}]
-    }
-  }, {
-    css: '#foo {}',
-    expected: {"type": "stylesheet", "value": [
-      {
-        "type": "selector",
-        "selector": ["HASH(foo)", "WS"],
-        "value": []}]
-    }
-  }, {
-    css: '@media{ }',
-    expected: {"type": "stylesheet", "value": [
-      {
-        "type": "at", "name": "media",
-        "prelude": [],
-        "value": []}]}
-  }
+	{
+		css: 'foo { \
+				bar: baz; \
+		}',
+		expected: {"type": "STYLESHEET",
+			"value": [
+				{"type": "QUALIFIED-RULE",
+					"value": {"type": "BLOCK",
+						"value": [
+							{"token": "WHITESPACE"},
+							{"token": "IDENT", "value": "bar"},
+							{"token": ":"},
+							{"token": "WHITESPACE"},
+							{"token": "IDENT", "value": "baz"},
+							{"token": ";"},
+							{"token": "WHITESPACE"}
+						],
+						"name": "{"
+					},
+					"prelude": [
+						{"token": "IDENT", "value": "foo"},
+						{"token": "WHITESPACE"}
+					]
+				}
+			]
+		}
+	}, {
+		css: 'foo { bar: rgb(255, 0, 127); }',
+		expected: {"type": "STYLESHEET",
+			"value": [
+				{
+					"type": "QUALIFIED-RULE",
+					"value": {
+						"type": "BLOCK",
+						"value": [
+							{"token": "WHITESPACE"},
+							{"token": "IDENT", "value": "bar"},
+							{"token": ":"},
+							{"token": "WHITESPACE"},
+							{"type": "FUNCTION",
+								"value": [
+									{"token": "NUMBER", "value": 255, "type": "integer", "repr": "255"},
+									{"token": ","},
+									{"token": "WHITESPACE"},
+									{"token": "NUMBER", "value": 0, "type": "integer", "repr": "0"},
+									{"token": ","},
+									{"token": "WHITESPACE"},
+									{"token": "NUMBER", "value": 127, "type": "integer", "repr": "127"}
+								],
+								"name": "rgb"
+							},
+							{"token": ";"},
+							{"token": "WHITESPACE"}
+						],
+						"name": "{"
+					},
+					"prelude": [
+						{"token": "IDENT", "value": "foo"},
+						{"token": "WHITESPACE"}
+					]
+				}
+			]
+		}
+	}, {
+		css: '#foo {}',
+		expected: {"type": "STYLESHEET",
+			"value": [
+				{
+					"type": "QUALIFIED-RULE",
+					"value": {
+						"type": "BLOCK",
+						"value": [],
+						"name": "{"
+					},
+					"prelude": [
+						{"token": "HASH", "value": "foo", "type": "id"},
+						{"token": "WHITESPACE"}
+					]
+				}
+			]
+		}
+	}, {
+		css: '@media{ }',
+		expected: {"type": "STYLESHEET",
+			"value": [
+				{
+					"type": "AT-RULE",
+					"value": {"type": "BLOCK",
+						"value": [
+							{"token": "WHITESPACE"}
+						],
+						"name": "{"
+					},
+					"name": "media",
+					"prelude": []
+				}
+			]
+		}
+	}
 ];
 
 var total = TESTS.length, failures = 0,
-    i, test, tokens, sheet, dump, expected_dump;
+		i, test, tokens, sheet, dump, expected_dump;
 
 for (i = 0; i < total; i++) {
-    test = TESTS[i];
-    tokens = tokenize(test.css);
-    sheet = parse(tokens);
-    dump = sheet.toString('  ');
-    expected_dump = JSON.stringify(test.expected, null, '  ');
-    if (dump == expected_dump) {
-        log('Test '+i+' of '+total+': PASS');
-    } else {
-        log('Test '+i+' of '+total+': FAIL\nCSS: '+test.css+'\nTokens: '+tokens.join(' '));
-        log(diffString(expected_dump, dump));
-        failures++;
-    }
+		test = TESTS[i];
+		tokens = tokenize(test.css);
+		sheet = parseAStylesheet(tokens);
+		dump = sheet.toString('  ');
+		expected_dump = JSON.stringify(test.expected, null, '  ');
+		if (dump == expected_dump) {
+				log('Test '+i+' of '+total+': PASS');
+		} else {
+				log('Test '+i+' of '+total+': FAIL\nCSS: '+test.css+'\nTokens: '+tokens.join(' '));
+				log(diffString(expected_dump, dump));
+				failures++;
+		}
 }
 
 // Abuse the differ to get colored output
 if (failures == 0) {
-    log(diffString(total+' tests, ', total+' tests, all passed :)'));
+		log(diffString(total+' tests, ', total+' tests, all passed :)'));
 } else {
-    log(diffString(total+' tests, '+failures+' failures :(', total+' tests, '));
+		log(diffString(total+' tests, '+failures+' failures :(', total+' tests, '));
 }
 </script>
