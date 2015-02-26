@@ -47,7 +47,8 @@ function preprocess(str) {
 			// Decode a surrogate pair into an astral codepoint.
 			var lead = code - 0xd800;
 			var trail = str.charCodeAt(i+1) - 0xdc00;
-			code = Math.pow(2, 21) + lead * Math.pow(2, 10) + trail;
+			code = Math.pow(2, 20) + lead * Math.pow(2, 10) + trail;
+			i++;
 		}
 		codepoints.push(code);
 	}
@@ -57,9 +58,9 @@ function preprocess(str) {
 function stringFromCode(code) {
 	if(code <= 0xffff) return String.fromCharCode(code);
 	// Otherwise, encode astral char as surrogate pair.
-	code -= Math.pow(2, 21);
+	code -= Math.pow(2, 20);
 	var lead = Math.floor(code/Math.pow(2, 10)) + 0xd800;
-	var trail = code % Math.pow(2, 10); + 0xdc00;
+	var trail = code % Math.pow(2, 10) + 0xdc00;
 	return String.fromCharCode(lead) + String.fromCharCode(trail);
 }
 
