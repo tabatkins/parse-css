@@ -23,6 +23,7 @@ function nonprintable(code) { return between(code, 0,8) || code == 0xb || betwee
 function newline(code) { return code == 0xa; }
 function whitespace(code) { return newline(code) || code == 9 || code == 0x20; }
 function badescape(code) { return newline(code) || isNaN(code); }
+function astral(code) { return code > 0xffff; }
 
 var maximumallowedcodepoint = 0x10ffff;
 
@@ -98,10 +99,13 @@ function tokenize(str) {
 	var consume = function(num) {
 		if(num === undefined)
 			num = 1;
-		i += num;
-		code = codepoint(i);
-		if(newline(code)) incrLineno();
-		else column += num;
+		while(num-- > 0) {
+			++i;
+			code = codepoint(i);
+			if(newline(code)) incrLineno();
+			else if (astral(code)) column += 2;
+			else column += num;
+		}
 		//console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16));
 		return true;
 	};
@@ -110,6 +114,8 @@ function tokenize(str) {
 		if (newline(code)) {
 			line -= 1;
 			column = lastLineLength;
+		} else if(astral(code)) {
+			column -= 2;
 		} else {
 			column -= 1;
 		}
