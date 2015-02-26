@@ -65,7 +65,10 @@ function stringFromCode(code) {
 	return String.fromCharCode(lead) + String.fromCharCode(trail);
 }
 
-function tokenize(str) {
+function tokenize(str, options) {
+	if (options === undefined) {
+		options = {loc: false};
+	}
 	str = preprocess(str);
 	var i = -1;
 	var tokens = [];
@@ -119,8 +122,6 @@ function tokenize(str) {
 		} else {
 			column -= 1;
 		}
-		locStart.line = line;
-		locStart.column = column;
 		return true;
 	};
 	var eof = function(codepoint) {
@@ -133,6 +134,8 @@ function tokenize(str) {
 	var consumeAToken = function() {
 		consumeComments();
 		consume();
+		locStart.line = line;
+		locStart.column = column;
 		if(whitespace(code)) {
 			while(whitespace(next())) consume();
 			return new WhitespaceToken;
@@ -539,7 +542,13 @@ function tokenize(str) {
 
 	var iterationCount = 0;
 	while(!eof(next())) {
-		tokens.push(consumeAToken());
+		var token = consumeAToken();
+		if (options.loc) {
+			token.loc = {};
+			token.loc.start = {line:locStart.line, column:locStart.column};
+			token.loc.end = {line:line, column:column};
+		}
+		tokens.push(token);
 		iterationCount++;
 		if(iterationCount > str.length*2) return "I'm infinite-looping!";
 	}
