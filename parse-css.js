@@ -24,7 +24,6 @@ function namechar(code) { return namestartchar(code) || digit(code) || code == 0
 function nonprintable(code) { return between(code, 0,8) || code == 0xb || between(code, 0xe,0x1f) || code == 0x7f; }
 function newline(code) { return code == 0xa; }
 function whitespace(code) { return newline(code) || code == 9 || code == 0x20; }
-function astral(code) { return code > 0xffff; }
 
 var maximumallowedcodepoint = 0x10ffff;
 
@@ -33,29 +32,6 @@ var InvalidCharacterError = function(message) {
 };
 InvalidCharacterError.prototype = new Error;
 InvalidCharacterError.prototype.name = 'InvalidCharacterError';
-
-function preprocess(str) {
-	// Turn a string into an array of code points,
-	// following the preprocessing cleanup rules.
-	var codepoints = [];
-	for(var i = 0; i < str.length; i++) {
-		var code = str.charCodeAt(i);
-		if(code == 0xd && str.charCodeAt(i+1) == 0xa) {
-			code = 0xa; i++;
-		}
-		if(code == 0xd || code == 0xc) code = 0xa;
-		if(code === 0x0) code = 0xfffd;
-		if(between(code, 0xd800, 0xdbff) && between(str.charCodeAt(i+1), 0xdc00, 0xdfff)) {
-			// Decode a surrogate pair into an astral codepoint.
-			var lead = code - 0xd800;
-			var trail = str.charCodeAt(i+1) - 0xdc00;
-			code = Math.pow(2, 20) + lead * Math.pow(2, 10) + trail;
-			i++;
-		}
-		codepoints.push(code);
-	}
-	return codepoints;
-}
 
 function stringFromCode(code) {
 	if(code <= 0xffff) return String.fromCharCode(code);
@@ -70,7 +46,6 @@ function tokenize(str, options) {
 	if (options === undefined) {
 		options = {loc: false};
 	}
-	str = preprocess(str);
 	var i = -1;
 	var tokens = [];
 	var code;
@@ -91,14 +66,28 @@ function tokenize(str, options) {
 		if(i >= str.length) {
 			return -1;
 		}
-		return str[i];
+		return str.charCodeAt(i);
 	};
 	var next = function(num) {
 		if(num === undefined)
 			num = 1;
 		if(num > 3)
 			throw "Spec Error: no more than three codepoints of lookahead.";
-		return codepoint(i+num);
+
+		var rcode;
+		for (var offset = i + 1; num-- > 0; ++offset) {
+			rcode = codepoint(offset);
+			if (rcode === 0xd && codepoint(offset+1) === 0xa) {
+				++offset;
+				rcode = 0xa;
+			} else if (rcode === 0xd || rcode === 0xc) {
+				rcode = 0xa;
+			} else if (rcode === 0x0) {
+				rcode = 0xfffd;
+			}
+		}
+
+		return rcode;
 	};
 	var consume = function(num) {
 		if(num === undefined)
@@ -106,20 +95,24 @@ function tokenize(str, options) {
 		while(num-- > 0) {
 			++i;
 			code = codepoint(i);
+			if (code === 0xd && codepoint(i+1) === 0xa) {
+				++i;
+				code = 0xa;
+			} else if (code === 0xd || code === 0xc) {
+				code = 0xa;
+			} else if (code === 0x0) {
+				code = 0xfffd;
+			}
 			if(newline(code)) incrLineno();
-			else if (astral(code)) column += 2;
-			else column += num;
+			else column++;
 		}
-		//console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16));
 		return true;
 	};
 	var reconsume = function() {
-		i -= 1;
+		i -= 1;		// This is ok even in the \r\n case.
 		if (newline(code)) {
 			line -= 1;
 			column = lastLineLength;
-		} else if(astral(code)) {
-			column -= 2;
 		} else {
 			column -= 1;
 		}
