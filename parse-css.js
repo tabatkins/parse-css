@@ -42,7 +42,7 @@ function stringFromCode(code) {
 	return String.fromCharCode(lead) + String.fromCharCode(trail);
 }
 
-function tokenize(str, options) {
+function* tokenize(str, options) {
 	if (options === undefined) {
 		options = {loc: false,
 			   offsets: false,
@@ -50,7 +50,6 @@ function tokenize(str, options) {
 			   startOffset: 0};
 	}
 	var i = options.startOffset - 1;
-	var tokens = [];
 	var code;
 
 	// Line number information.
@@ -557,11 +556,10 @@ function tokenize(str, options) {
 		if (options.offsets) {
 			token.offset = {start: offsetStart, end: i};
 		}
-		tokens.push(token);
+		yield token;
 		iterationCount++;
 		if(iterationCount > str.length*2) return "I'm infinite-looping!";
 	}
-	return tokens;
 }
 
 function CSSParserToken() { throw "Abstract Base Class"; }
@@ -956,27 +954,39 @@ exports.CSSParserToken = CSSParserToken;
 exports.GroupingToken = GroupingToken;
 
 function TokenStream(tokens) {
-	// Assume that tokens is an array.
+	// Assume that tokens is a iterator.
 	this.tokens = tokens;
-	this.i = -1;
+	this.token = undefined;
+	this.stored = [];
 }
-TokenStream.prototype.tokenAt = function(i) {
-	if(i < this.tokens.length)
-		return this.tokens[i];
-	return new EOFToken();
-};
 TokenStream.prototype.consume = function(num) {
 	if(num === undefined) num = 1;
-	this.i += num;
-	this.token = this.tokenAt(this.i);
+	while (num-- > 0) {
+		if (this.stored.length > 0) {
+			this.token = this.stored.shift();
+		} else {
+			var n = this.tokens.next();
+			if (n.done) {
+				this.token = new EOFToken();
+				break;
+			}
+			this.token = n.value;
+		}
+	}
 	//console.log(this.i, this.token);
 	return true;
 };
 TokenStream.prototype.next = function() {
-	return this.tokenAt(this.i+1);
+	if (this.stored.length === 0) {
+		var n = this.tokens.next();
+		if (n.done)
+			return new EOFToken();
+		this.stored.push(n.value);
+	}
+	return this.stored[0];
 };
 TokenStream.prototype.reconsume = function() {
-	this.i--;
+	this.stored.unshift(this.token);
 };
 
 function parseerror(s, msg) {
@@ -1136,7 +1146,7 @@ function normalizeInput(input) {
 	if(input instanceof TokenStream)
 		return input;
 	if(input.length !== undefined)
-		return new TokenStream(input);
+		return new TokenStream(input[Symbol.iterator]());
 	else throw SyntaxError(input);
 }
 
