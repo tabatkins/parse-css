@@ -44,9 +44,12 @@ function stringFromCode(code) {
 
 function tokenize(str, options) {
 	if (options === undefined) {
-		options = {loc: false, offsets: false, keepComments: false};
+		options = {loc: false,
+			   offsets: false,
+			   keepComments: false,
+			   startOffset: 0};
 	}
-	var i = -1;
+	var i = options.startOffset - 1;
 	var tokens = [];
 	var code;
 
