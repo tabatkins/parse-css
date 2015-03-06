@@ -44,7 +44,7 @@ function stringFromCode(code) {
 
 function tokenize(str, options) {
 	if (options === undefined) {
-		options = {loc: false, keepComments: false};
+		options = {loc: false, offsets: false, keepComments: false};
 	}
 	var i = -1;
 	var tokens = [];
@@ -61,6 +61,7 @@ function tokenize(str, options) {
 		column = 0;
 	};
 	var locStart = {line:line, column:column};
+	var offsetStart = i;
 
 	var codepoint = function(i) {
 		if(i >= str.length) {
@@ -135,6 +136,7 @@ function tokenize(str, options) {
 		}
 		locStart.line = line;
 		locStart.column = column;
+		offsetStart = i;
 		if(whitespace(code)) {
 			while(whitespace(next())) consume();
 			return new WhitespaceToken;
@@ -548,6 +550,9 @@ function tokenize(str, options) {
 			token.loc = {};
 			token.loc.start = {line:locStart.line, column:locStart.column};
 			token.loc.end = {line:line, column:column};
+		}
+		if (options.offsets) {
+			token.offset = {start: offsetStart, end: i};
 		}
 		tokens.push(token);
 		iterationCount++;
