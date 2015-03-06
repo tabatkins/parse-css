@@ -1013,9 +1013,6 @@ function consumeAnAtRule(s) {
 		} else if(s.token instanceof OpenCurlyToken) {
 			rule.value = consumeASimpleBlock(s);
 			return rule;
-		} else if(s.token instanceof SimpleBlock && s.token.name == "{") {
-			rule.value = s.token;
-			return rule;
 		} else {
 			s.reconsume();
 			rule.prelude.push(consumeAComponentValue(s));
@@ -1031,9 +1028,6 @@ function consumeAQualifiedRule(s) {
 			return;
 		} else if(s.token instanceof OpenCurlyToken) {
 			rule.value = consumeASimpleBlock(s);
-			return rule;
-		} else if(s.token instanceof SimpleBlock && s.token.name == "{") {
-			rule.value = s.token;
 			return rule;
 		} else {
 			s.reconsume();
