@@ -1153,12 +1153,15 @@ function parseARule(s) {
 	while(s.next() instanceof WhitespaceToken) s.consume();
 	if(s.next() instanceof EOFToken) throw SyntaxError();
 	var rule;
-	if(s.next() instanceof AtKeywordToken) {
+	var startToken = s.next();
+	if(startToken instanceof AtKeywordToken) {
 		rule = consumeAnAtRule(s);
 	} else {
 		rule = consumeAQualifiedRule(s);
 		if(!rule) throw SyntaxError();
 	}
+	rule.startToken = startToken;
+	rule.endToken = s.token;
 	while(s.next() instanceof WhitespaceToken) s.consume();
 	if(s.next() instanceof EOFToken)
 		return rule;
