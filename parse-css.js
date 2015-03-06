@@ -1165,10 +1165,7 @@ function parseARule(s) {
 	}
 	rule.startToken = startToken;
 	rule.endToken = s.token;
-	while(s.next() instanceof WhitespaceToken) s.consume();
-	if(s.next() instanceof EOFToken)
-		return rule;
-	throw SyntaxError();
+	return rule;
 }
 
 function parseADeclaration(s) {
