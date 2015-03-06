@@ -44,7 +44,7 @@ function stringFromCode(code) {
 
 function tokenize(str, options) {
 	if (options === undefined) {
-		options = {loc: false};
+		options = {loc: false, keepComments: false};
 	}
 	var i = -1;
 	var tokens = [];
@@ -126,14 +126,20 @@ function tokenize(str, options) {
 	var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");return true; };
 
 	var consumeAToken = function() {
-		consumeComments();
 		consume();
+		if (!options.keepComments) {
+			while(code == 0x2f && next() == 0x2a) {
+				consumeAComment();
+				consume();
+			}
+		}
 		locStart.line = line;
 		locStart.column = column;
 		if(whitespace(code)) {
 			while(whitespace(next())) consume();
 			return new WhitespaceToken;
 		}
+		else if(code == 0x2f && next() == 0x2a) return consumeAComment();
 		else if(code == 0x22) return consumeAStringToken();
 		else if(code == 0x23) {
 			if(namechar(next()) || areAValidEscape(next(1), next(2))) {
@@ -264,20 +270,21 @@ function tokenize(str, options) {
 		else return new DelimToken(code);
 	};
 
-	var consumeComments = function() {
-		while(next(1) == 0x2f && next(2) == 0x2a) {
-			consume(2);
-			while(true) {
+	var consumeAComment = function() {
+		consume();
+		var comment = "";
+		while(true) {
+			consume();
+			if(code == 0x2a && next() == 0x2f) {
 				consume();
-				if(code == 0x2a && next() == 0x2f) {
-					consume();
-					break;
-				} else if(eof()) {
-					parseerror();
-					return;
-				}
+				break;
+			} else if(eof()) {
+				parseerror();
+				return;
 			}
+			comment += stringFromCode(code);
 		}
+		return new CommentToken(comment);
 	};
 
 	var consumeANumericToken = function() {
@@ -738,6 +745,16 @@ StringToken.prototype.tokenType = "STRING";
 StringToken.prototype.toString = function() {
 	return '"' + escapeString(this.value) + '"';
 };
+
+function CommentToken(val) {
+	this.value = val;
+}
+CommentToken.prototype = Object.create(StringValuedToken.prototype);
+CommentToken.prototype.tokenType = "COMMENT";
+CommentToken.prototype.toString = function() {
+	return '/*' + this.value + '*/';
+}
+CommentToken.prototype.toSource = CommentToken.prototype.toString;
 
 function URLToken(val) {
 	this.value = val;
