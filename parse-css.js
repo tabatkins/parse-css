@@ -1107,6 +1107,7 @@ function consumeAComponentValue(s) {
 function consumeASimpleBlock(s) {
 	var mirror = s.token.mirror;
 	var block = new SimpleBlock(s.token.value);
+	block.startToken = s.token;
 	while(s.consume()) {
 		if(s.token instanceof EOFToken || (s.token instanceof GroupingToken && s.token.value == mirror))
 			return block;
