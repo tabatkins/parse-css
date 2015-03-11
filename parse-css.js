@@ -44,11 +44,21 @@ function stringFromCode(code) {
 
 function* tokenize(str, options) {
 	if (options === undefined) {
-		options = {loc: false,
-			   offsets: false,
-			   keepComments: false,
-			   startOffset: 0};
+		options = {};
 	}
+	if (options.loc === undefined) {
+		options.loc = false;
+	}
+	if (options.offsets === undefined) {
+		options.offsets = false;
+	}
+	if (options.keepComments === undefined) {
+		options.keepComments = false;
+	}
+	if (options.startOffset === undefined) {
+		options.startOffset = 0;
+	}
+
 	var i = options.startOffset - 1;
 	var code;
 
