@@ -976,6 +976,9 @@ TokenStream.prototype.consume = function(num) {
 			this.token = this.stored.shift();
 		} else {
 			var n = this.tokens.next();
+			while (!n.done && n.value instanceof CommentToken) {
+				n = this.tokens.next();
+			}
 			if (n.done) {
 				this.token = new EOFToken();
 				break;
@@ -989,6 +992,9 @@ TokenStream.prototype.consume = function(num) {
 TokenStream.prototype.next = function() {
 	if (this.stored.length === 0) {
 		var n = this.tokens.next();
+		while (!n.done && n.value instanceof CommentToken) {
+			n = this.tokens.next();
+		}
 		if (n.done)
 			return new EOFToken();
 		this.stored.push(n.value);
