@@ -1155,6 +1155,8 @@ function normalizeInput(input) {
 		return new TokenStream(tokenize(input));
 	if(input instanceof TokenStream)
 		return input;
+	if(typeof (input.next) == "function")
+		return new TokenStream(input);
 	if(input.length !== undefined)
 		return new TokenStream(input[Symbol.iterator]());
 	else throw SyntaxError(input);
