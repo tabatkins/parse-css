@@ -137,7 +137,7 @@ this is used automatically.
 This is what it currently looks like:
 
 ```js
-var CSSGrammar = {
+{
 	qualified: {declarations:true},
 	"@media": {stylesheet:true},
 	"@keyframes": {qualified:{declarations:true}},
@@ -146,7 +146,17 @@ var CSSGrammar = {
 	"@scope": {stylesheet:true},
 	"@counter-style": {declarations:true},
 	"@import": null,
-	"@font-feature-values": {declarations:true},
+	"@font-feature-values": {
+		// No qualified rules actually allowed,
+		// but have to declare it one way or the other.
+		qualified: true,
+		"@stylistic": {declarations:true},
+		"@styleset": {declarations:true},
+		"@character-variants": {declarations:true},
+		"@swash": {declarations:true},
+		"@ornaments": {declarations:true},
+		"@annotation": {declarations:true},
+	},
 	"@viewport": {declarations:true},
 	"@page": {
 		declarations: true,
