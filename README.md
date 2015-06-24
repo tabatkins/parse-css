@@ -133,6 +133,18 @@ A `CSSGrammar` object is provided with a default grammar for CSS.
 If you call `canonicalize()` without a grammar,
 this is used automatically.
 
+The return value is a nested structure of objects.
+Each has a "type" key, set to either "stylesheet", "qualified-rule" or "at-rule".
+Unless it's a statement at-rule,
+each has a "rules" key set to an array of contained rules/declarations.
+At-rules also have a "name" (string) and "prelude" (list of tokens for the part before the block).
+Qualified rules have a "declarations",
+which is an object mapping declaration name to value (list of tokens),
+for ease of use
+(all the declarations are in the `.rules` property already,
+but this gives you easy access to them by name,
+and only stores the last of each if they're repeated).
+
 Node Integration
 ----------------
 
