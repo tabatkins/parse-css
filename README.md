@@ -82,25 +82,28 @@ rendering the result into an easier-to-digest form.
 
 A grammar is an object with one of the following four forms:
 
-1. ```
-	{"stylesheet":true}
-	```
+1. 
+    ```
+    {"stylesheet":true}
+    ```
 
-2. ```
+2. 
+    ```
 	{
 		"qualified": <grammar>,
 		"@foo": <grammar>,
 		"unknown": <function>
 	}
-	```
+    ```
 
-3. ```
+3. 
+    ```
 	{
 		"declarations": true,
 		"@foo": <grammar>
 		"unknown": <function>
 	}
-	```
+    ```
 
 4. `null`
 
