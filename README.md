@@ -82,30 +82,29 @@ rendering the result into an easier-to-digest form.
 
 A grammar is an object with one of the following four forms:
 
-1. 
-    ```
-    {"stylesheet":true}
-    ```
+```js
+{"stylesheet":true}
+```
 
-2. 
-    ```
-	{
-		"qualified": <grammar>,
-		"@foo": <grammar>,
-		"unknown": <function>
-	}
-    ```
+```js
+{
+	"qualified": <grammar>,
+	"@foo": <grammar>,
+	"unknown": <function>
+}
+```
 
-3. 
-    ```
-	{
-		"declarations": true,
-		"@foo": <grammar>
-		"unknown": <function>
-	}
-    ```
+```js
+{
+	"declarations": true,
+	"@foo": <grammar>
+	"unknown": <function>
+}
+```
 
-4. `null`
+```js
+null
+```
 
 A `stylesheet` block contains nothing else;
 it just means that this rule uses the top-level grammar for its contents.
@@ -135,6 +134,43 @@ like `@import`.
 A `CSSGrammar` object is provided with a default grammar for CSS.
 If you call `canonicalize()` without a grammar,
 this is used automatically.
+This is what it currently looks like:
+
+```js
+var CSSGrammar = {
+	qualified: {declarations:true},
+	"@media": {stylesheet:true},
+	"@keyframes": {qualified:{declarations:true}},
+	"@font-face": {declarations:true},
+	"@supports": {stylesheet:true},
+	"@scope": {stylesheet:true},
+	"@counter-style": {declarations:true},
+	"@import": null,
+	"@font-feature-values": {declarations:true},
+	"@viewport": {declarations:true},
+	"@page": {
+		declarations: true,
+		"@top-left-corner": {declarations:true},
+		"@top-left": {declarations:true},
+		"@top-center": {declarations:true},
+		"@top-right": {declarations:true},
+		"@top-right-corner": {declarations:true},
+		"@right-top": {declarations:true},
+		"@right-middle": {declarations:true},
+		"@right-bottom": {declarations:true},
+		"@right-bottom-corner": {declarations:true},
+		"@bottom-right": {declarations:true},
+		"@bottom-center": {declarations:true},
+		"@bottom-left": {declarations:true},
+		"@bottom-left-corner": {declarations:true},
+		"@left-bottom": {declarations:true},
+		"@left-center": {declarations:true},
+		"@left-top": {declarations:true},
+	},
+	"@custom-selector": null,
+	"@custom-media": null
+}
+```
 
 The return value is a nested structure of objects.
 Each has a "type" key, set to either "stylesheet", "qualified-rule" or "at-rule".
