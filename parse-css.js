@@ -1285,6 +1285,136 @@ Func.prototype.toJSON = function() {
 	return json;
 }
 
+
+/* Grammar Application */
+
+function canonicalize(rule, grammar, topGrammar) {
+	if(grammar === undefined) grammar = CSSGrammar;
+	if(topGrammar === undefined) topGrammar = grammar
+	if(!validateGrammar(grammar)) return;
+	if(grammar) {
+		if(grammar.stylesheet) grammar = topGrammar;
+		var unknownTransformer = grammar.unknown || function(){return};
+	}
+	var ret = {"type":rule.type.toLowerCase()};
+
+	if(rule.type == "STYLESHEET") {
+		var contents = rule.value;
+	} else if(rule.type == "BLOCK") {
+		var unparsedContents = rule.value;
+	} else if(rule.type == "QUALIFIED-RULE") {
+		var unparsedContents = rule.value.value;
+	} else if(rule.type == "AT-RULE") {
+		var unparsedContents = rule.value.value;
+		ret.name = rule.name;
+		ret.prelude = rule.prelude;
+	} else if(rule.type == "DECLARATION") {
+		// I don't do grammar-checking of declarations yet.
+		ret.name = rule.name;
+		ret.value = rule.value;
+		ret.important = rule.important;
+		return ret;
+	}
+	if(unparsedContents) {
+		if(grammar.declarations) {
+			var contents = parseAListOfDeclarations(unparsedContents);
+		} else if(grammar.qualified) {
+			var contents = parseAListOfRules(unparsedContents);
+		}
+	}
+
+	if(!grammar) {
+		return ret;
+	} else if(grammar.declarations) {
+		ret.declarations = {}; // simple key/value map of declarations
+		ret.rules = []; // in-order list of both decls and at-rules
+		ret.errors = [];
+		for(var i = 0; i < contents.length; i++) {
+			var rule = contents[i];
+			if(rule instanceof Declaration) {
+				var decl = canonicalize(rule, {}, topGrammar);
+				ret.declarations[rule.name] = decl;
+				ret.rules.push(decl);
+			} else { // rule is instanceof AtRule
+				var subGrammar = grammar["@" + rule.name];
+				if(subGrammar) { // Rule is valid in this context
+					ret.rules.push(canonicalize(rule, subGrammar, topGrammar));
+				} else {
+					var result = unknownTransformer(rule);
+					if(result) {
+						ret.rules.push(result);
+					} else {
+						ret.errors.push(result);
+					}
+				}
+			}
+		}
+	} else {
+		ret.rules = [];
+		ret.errors = [];
+		for(var i = 0; i < contents.length; i++) {
+			var rule = contents[i];
+			if(rule instanceof QualifiedRule) {
+				ret.rules.push(canonicalize(rule, grammar.qualified, topGrammar));
+			} else {
+				var subGrammar = grammar["@" + rule.name];
+				if(subGrammar) { // Rule is valid in this context
+					ret.rules.push(canonicalize(rule, subGrammar, topGrammar));
+				} else {
+					var result = unknownTransformer(rule);
+					if(result) {
+						ret.rules.push(result);
+					} else {
+						ret.errors.push(result);
+					}
+				}
+			}
+		}
+	}
+	return ret;
+}
+
+function validateGrammar(grammar) {
+	// TODO
+	return true
+}
+
+var CSSGrammar = {
+	qualified: {declarations:true},
+	"@media": {stylesheet:true},
+	"@keyframes": {qualified:{declarations:true}},
+	"@font-face": {declarations:true},
+	"@supports": {stylesheet:true},
+	"@scope": {stylesheet:true},
+	"@counter-style": {declarations:true},
+	"@import": null,
+	"@font-feature-values": {declarations:true},
+	"@viewport": {declarations:true},
+	"@page": {
+		declarations: true,
+		"@top-left-corner": {declarations:true},
+		"@top-left": {declarations:true},
+		"@top-center": {declarations:true},
+		"@top-right": {declarations:true},
+		"@top-right-corner": {declarations:true},
+		"@right-top": {declarations:true},
+		"@right-middle": {declarations:true},
+		"@right-bottom": {declarations:true},
+		"@right-bottom-corner": {declarations:true},
+		"@bottom-right": {declarations:true},
+		"@bottom-center": {declarations:true},
+		"@bottom-left": {declarations:true},
+		"@bottom-left-corner": {declarations:true},
+		"@left-bottom": {declarations:true},
+		"@left-center": {declarations:true},
+		"@left-top": {declarations:true},
+	},
+	"@custom-selector": null,
+	"@custom-media": null
+}
+
+
+
 // Exportation.
 exports.CSSParserRule = CSSParserRule;
 exports.Stylesheet = Stylesheet;
@@ -1301,5 +1431,7 @@ exports.parseAListOfDeclarations = parseAListOfDeclarations;
 exports.parseAComponentValue = parseAComponentValue;
 exports.parseAListOfComponentValues = parseAListOfComponentValues;
 exports.parseACommaSeparatedListOfComponentValues = parseACommaSeparatedListOfComponentValues;
+exports.canonicalizeRule = canonicalize;
+exports.CSSGrammar = CSSGrammar;
 
 }));
