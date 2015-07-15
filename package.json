@@ -11,7 +11,7 @@
     "type": "git",
     "url": "git://github.com/tabatkins/parse-css.git"
   },
-  "main": "index",
+  "main": "parse-css.js",
   "homepage": "https://github.com/tabatkins/parse-css",
   "contributors": [
     {
