@@ -1302,8 +1302,10 @@ function canonicalize(rule, grammar, topGrammar) {
 		var contents = rule.value;
 	} else if(rule.type == "BLOCK") {
 		var unparsedContents = rule.value;
+		ret.name = rule.name;
 	} else if(rule.type == "QUALIFIED-RULE") {
 		var unparsedContents = rule.value.value;
+		ret.prelude = rule.prelude;
 	} else if(rule.type == "AT-RULE") {
 		var unparsedContents = rule.value.value;
 		ret.name = rule.name;
