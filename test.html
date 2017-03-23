@@ -117,18 +117,20 @@ var TESTS = [
 ];
 
 var total = TESTS.length, failures = 0,
-		i, test, tokens, sheet, dump, expected_dump;
+		i, test, sheet, dump, expected_dump;
 
 for (i = 0; i < total; i++) {
 		test = TESTS[i];
-		tokens = tokenize(test.css);
-		sheet = parseAStylesheet(tokens);
+		console.log(' CSS = ' + test.css);
+		sheet = parseAStylesheet(test.css);
+		console.log( ' sheet = ' + sheet);
 		dump = sheet.toString('  ');
+		console.log(' dump = ' + dump);
 		expected_dump = JSON.stringify(test.expected, null, '  ');
 		if (dump == expected_dump) {
 				log('Test '+i+' of '+total+': PASS');
 		} else {
-				log('Test '+i+' of '+total+': FAIL\nCSS: '+test.css+'\nTokens: '+tokens.join(' '));
+				log('Test '+i+' of '+total+': FAIL\nCSS: '+test.css);
 				log(diffString(expected_dump, dump));
 				failures++;
 		}

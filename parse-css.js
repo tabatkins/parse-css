@@ -1,3 +1,5 @@
+"use strict";
+
 (function (root, factory) {
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // Rhino, and plain browser loading.
@@ -10,7 +12,7 @@
     }
 }(this, function (exports) {
 
-var between = function (num, first, last) { return num >= first && num <= last; }
+function between(num, first, last) { return num >= first && num <= last; }
 function digit(code) { return between(code, 0x30,0x39); }
 function hexdigit(code) { return digit(code) || between(code, 0x41,0x46) || between(code, 0x61,0x66); }
 function uppercaseletter(code) { return between(code, 0x41,0x5a); }
@@ -22,7 +24,6 @@ function namechar(code) { return namestartchar(code) || digit(code) || code == 0
 function nonprintable(code) { return between(code, 0,8) || code == 0xb || between(code, 0xe,0x1f) || code == 0x7f; }
 function newline(code) { return code == 0xa; }
 function whitespace(code) { return newline(code) || code == 9 || code == 0x20; }
-function badescape(code) { return newline(code) || isNaN(code); }
 
 var maximumallowedcodepoint = 0x10ffff;
 
@@ -31,29 +32,6 @@ var InvalidCharacterError = function(message) {
 };
 InvalidCharacterError.prototype = new Error;
 InvalidCharacterError.prototype.name = 'InvalidCharacterError';
-
-function preprocess(str) {
-	// Turn a string into an array of code points,
-	// following the preprocessing cleanup rules.
-	var codepoints = [];
-	for(var i = 0; i < str.length; i++) {
-		var code = str.charCodeAt(i);
-		if(code == 0xd && str.charCodeAt(i+1) == 0xa) {
-			code = 0xa; i++;
-		}
-		if(code == 0xd || code == 0xc) code = 0xa;
-		if(code == 0x0) code = 0xfffd;
-		if(between(code, 0xd800, 0xdbff) && between(str.charCodeAt(i+1), 0xdc00, 0xdfff)) {
-			// Decode a surrogate pair into an astral codepoint.
-			var lead = code - 0xd800;
-			var trail = str.charCodeAt(i+1) - 0xdc00;
-			code = Math.pow(2, 20) + lead * Math.pow(2, 10) + trail;
-			i++;
-		}
-		codepoints.push(code);
-	}
-	return codepoints;
-}
 
 function stringFromCode(code) {
 	if(code <= 0xffff) return String.fromCharCode(code);
@@ -64,10 +42,24 @@ function stringFromCode(code) {
 	return String.fromCharCode(lead) + String.fromCharCode(trail);
 }
 
-function tokenize(str) {
-	str = preprocess(str);
-	var i = -1;
-	var tokens = [];
+function* tokenize(str, options) {
+	if (options === undefined) {
+		options = {};
+	}
+	if (options.loc === undefined) {
+		options.loc = false;
+	}
+	if (options.offsets === undefined) {
+		options.offsets = false;
+	}
+	if (options.keepComments === undefined) {
+		options.keepComments = false;
+	}
+	if (options.startOffset === undefined) {
+		options.startOffset = 0;
+	}
+
+	var i = options.startOffset - 1;
 	var code;
 
 	// Line number information.
@@ -81,40 +73,62 @@ function tokenize(str) {
 		column = 0;
 	};
 	var locStart = {line:line, column:column};
+	var offsetStart = i;
 
 	var codepoint = function(i) {
 		if(i >= str.length) {
 			return -1;
 		}
-		return str[i];
-	}
+		return str.charCodeAt(i);
+	};
 	var next = function(num) {
 		if(num === undefined)
 			num = 1;
 		if(num > 3)
 			throw "Spec Error: no more than three codepoints of lookahead.";
-		return codepoint(i+num);
+
+		var rcode;
+		for (var offset = i + 1; num-- > 0; ++offset) {
+			rcode = codepoint(offset);
+			if (rcode === 0xd && codepoint(offset+1) === 0xa) {
+				++offset;
+				rcode = 0xa;
+			} else if (rcode === 0xd || rcode === 0xc) {
+				rcode = 0xa;
+			} else if (rcode === 0x0) {
+				rcode = 0xfffd;
+			}
+		}
+
+		return rcode;
 	};
 	var consume = function(num) {
 		if(num === undefined)
 			num = 1;
-		i += num;
-		code = codepoint(i);
-		if(newline(code)) incrLineno();
-		else column += num;
-		//console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16));
+		while(num-- > 0) {
+			++i;
+			code = codepoint(i);
+			if (code === 0xd && codepoint(i+1) === 0xa) {
+				++i;
+				code = 0xa;
+			} else if (code === 0xd || code === 0xc) {
+				code = 0xa;
+			} else if (code === 0x0) {
+				code = 0xfffd;
+			}
+			if(newline(code)) incrLineno();
+			else column++;
+		}
 		return true;
 	};
 	var reconsume = function() {
-		i -= 1;
+		i -= 1;		// This is ok even in the \r\n case.
 		if (newline(code)) {
 			line -= 1;
 			column = lastLineLength;
 		} else {
 			column -= 1;
 		}
-		locStart.line = line;
-		locStart.column = column;
 		return true;
 	};
 	var eof = function(codepoint) {
@@ -125,12 +139,21 @@ function tokenize(str) {
 	var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");return true; };
 
 	var consumeAToken = function() {
-		consumeComments();
 		consume();
+		if (!options.keepComments) {
+			while(code == 0x2f && next() == 0x2a) {
+				consumeAComment();
+				consume();
+			}
+		}
+		locStart.line = line;
+		locStart.column = column;
+		offsetStart = i;
 		if(whitespace(code)) {
 			while(whitespace(next())) consume();
 			return new WhitespaceToken;
 		}
+		else if(code == 0x2f && next() == 0x2a) return consumeAComment();
 		else if(code == 0x22) return consumeAStringToken();
 		else if(code == 0x23) {
 			if(namechar(next()) || areAValidEscape(next(1), next(2))) {
@@ -261,20 +284,21 @@ function tokenize(str) {
 		else return new DelimToken(code);
 	};
 
-	var consumeComments = function() {
-		while(next(1) == 0x2f && next(2) == 0x2a) {
-			consume(2);
-			while(true) {
+	var consumeAComment = function() {
+		consume();
+		var comment = "";
+		while(true) {
+			consume();
+			if(code == 0x2a && next() == 0x2f) {
 				consume();
-				if(code == 0x2a && next() == 0x2f) {
-					consume();
-					break;
-				} else if(eof()) {
-					parseerror();
-					return;
-				}
+				break;
+			} else if(eof()) {
+				parseerror();
+				return;
 			}
+			comment += stringFromCode(code);
 		}
+		return new CommentToken(comment);
 	};
 
 	var consumeANumericToken = function() {
@@ -337,7 +361,7 @@ function tokenize(str) {
 				} else if(newline(next())) {
 					consume();
 				} else {
-					string += stringFromCode(consumeEscape())
+					string += stringFromCode(consumeEscape());
 				}
 			} else {
 				string += stringFromCode(code);
@@ -533,19 +557,27 @@ function tokenize(str) {
 
 	var iterationCount = 0;
 	while(!eof(next())) {
-		tokens.push(consumeAToken());
+		var token = consumeAToken();
+		if (options.loc) {
+			token.loc = {};
+			token.loc.start = {line:locStart.line, column:locStart.column};
+			token.loc.end = {line:line, column:column};
+		}
+		if (options.offsets) {
+			token.offset = {start: offsetStart, end: i};
+		}
+		yield token;
 		iterationCount++;
 		if(iterationCount > str.length*2) return "I'm infinite-looping!";
 	}
-	return tokens;
 }
 
 function CSSParserToken() { throw "Abstract Base Class"; }
 CSSParserToken.prototype.toJSON = function() {
 	return {token: this.tokenType};
-}
-CSSParserToken.prototype.toString = function() { return this.tokenType; }
-CSSParserToken.prototype.toSource = function() { return ''+this; }
+};
+CSSParserToken.prototype.toString = function() { return this.tokenType; };
+CSSParserToken.prototype.toSource = function() { return ''+this; };
 
 function BadStringToken() { return this; }
 BadStringToken.prototype = Object.create(CSSParserToken.prototype);
@@ -558,18 +590,18 @@ BadURLToken.prototype.tokenType = "BADURL";
 function WhitespaceToken() { return this; }
 WhitespaceToken.prototype = Object.create(CSSParserToken.prototype);
 WhitespaceToken.prototype.tokenType = "WHITESPACE";
-WhitespaceToken.prototype.toString = function() { return "WS"; }
-WhitespaceToken.prototype.toSource = function() { return " "; }
+WhitespaceToken.prototype.toString = function() { return "WS"; };
+WhitespaceToken.prototype.toSource = function() { return " "; };
 
 function CDOToken() { return this; }
 CDOToken.prototype = Object.create(CSSParserToken.prototype);
 CDOToken.prototype.tokenType = "CDO";
-CDOToken.prototype.toSource = function() { return "<!--"; }
+CDOToken.prototype.toSource = function() { return "<!--"; };
 
 function CDCToken() { return this; }
 CDCToken.prototype = Object.create(CSSParserToken.prototype);
 CDCToken.prototype.tokenType = "CDC";
-CDCToken.prototype.toSource = function() { return "-->"; }
+CDCToken.prototype.toSource = function() { return "-->"; };
 
 function ColonToken() { return this; }
 ColonToken.prototype = Object.create(CSSParserToken.prototype);
@@ -637,7 +669,7 @@ ColumnToken.prototype.tokenType = "||";
 function EOFToken() { return this; }
 EOFToken.prototype = Object.create(CSSParserToken.prototype);
 EOFToken.prototype.tokenType = "EOF";
-EOFToken.prototype.toSource = function() { return ""; }
+EOFToken.prototype.toSource = function() { return ""; };
 
 function DelimToken(code) {
 	this.value = stringFromCode(code);
@@ -645,39 +677,39 @@ function DelimToken(code) {
 }
 DelimToken.prototype = Object.create(CSSParserToken.prototype);
 DelimToken.prototype.tokenType = "DELIM";
-DelimToken.prototype.toString = function() { return "DELIM("+this.value+")"; }
+DelimToken.prototype.toString = function() { return "DELIM("+this.value+")"; };
 DelimToken.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.value = this.value;
 	return json;
-}
+};
 DelimToken.prototype.toSource = function() {
 	if(this.value == "\\")
 		return "\\\n";
 	else
 		return this.value;
-}
+};
 
 function StringValuedToken() { throw "Abstract Base Class"; }
 StringValuedToken.prototype = Object.create(CSSParserToken.prototype);
 StringValuedToken.prototype.ASCIIMatch = function(str) {
 	return this.value.toLowerCase() == str.toLowerCase();
-}
+};
 StringValuedToken.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.value = this.value;
 	return json;
-}
+};
 
 function IdentToken(val) {
 	this.value = val;
 }
 IdentToken.prototype = Object.create(StringValuedToken.prototype);
 IdentToken.prototype.tokenType = "IDENT";
-IdentToken.prototype.toString = function() { return "IDENT("+this.value+")"; }
+IdentToken.prototype.toString = function() { return "IDENT("+this.value+")"; };
 IdentToken.prototype.toSource = function() {
 	return escapeIdent(this.value);
-}
+};
 
 function FunctionToken(val) {
 	this.value = val;
@@ -685,20 +717,20 @@ function FunctionToken(val) {
 }
 FunctionToken.prototype = Object.create(StringValuedToken.prototype);
 FunctionToken.prototype.tokenType = "FUNCTION";
-FunctionToken.prototype.toString = function() { return "FUNCTION("+this.value+")"; }
+FunctionToken.prototype.toString = function() { return "FUNCTION("+this.value+")"; };
 FunctionToken.prototype.toSource = function() {
 	return escapeIdent(this.value) + "(";
-}
+};
 
 function AtKeywordToken(val) {
 	this.value = val;
 }
 AtKeywordToken.prototype = Object.create(StringValuedToken.prototype);
 AtKeywordToken.prototype.tokenType = "AT-KEYWORD";
-AtKeywordToken.prototype.toString = function() { return "AT("+this.value+")"; }
+AtKeywordToken.prototype.toString = function() { return "AT("+this.value+")"; };
 AtKeywordToken.prototype.toSource = function() {
 	return "@" + escapeIdent(this.value);
-}
+};
 
 function HashToken(val) {
 	this.value = val;
@@ -706,20 +738,20 @@ function HashToken(val) {
 }
 HashToken.prototype = Object.create(StringValuedToken.prototype);
 HashToken.prototype.tokenType = "HASH";
-HashToken.prototype.toString = function() { return "HASH("+this.value+")"; }
+HashToken.prototype.toString = function() { return "HASH("+this.value+")"; };
 HashToken.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.value = this.value;
 	json.type = this.type;
 	return json;
-}
+};
 HashToken.prototype.toSource = function() {
 	if(this.type == "id") {
 		return "#" + escapeIdent(this.value);
 	} else {
 		return "#" + escapeHash(this.value);
 	}
-}
+};
 
 function StringToken(val) {
 	this.value = val;
@@ -728,17 +760,27 @@ StringToken.prototype = Object.create(StringValuedToken.prototype);
 StringToken.prototype.tokenType = "STRING";
 StringToken.prototype.toString = function() {
 	return '"' + escapeString(this.value) + '"';
+};
+
+function CommentToken(val) {
+	this.value = val;
 }
+CommentToken.prototype = Object.create(StringValuedToken.prototype);
+CommentToken.prototype.tokenType = "COMMENT";
+CommentToken.prototype.toString = function() {
+	return '/*' + this.value + '*/';
+}
+CommentToken.prototype.toSource = CommentToken.prototype.toString;
 
 function URLToken(val) {
 	this.value = val;
 }
 URLToken.prototype = Object.create(StringValuedToken.prototype);
 URLToken.prototype.tokenType = "URL";
-URLToken.prototype.toString = function() { return "URL("+this.value+")"; }
+URLToken.prototype.toString = function() { return "URL("+this.value+")"; };
 URLToken.prototype.toSource = function() {
 	return 'url("' + escapeString(this.value) + '")';
-}
+};
 
 function NumberToken() {
 	this.value = null;
@@ -751,14 +793,14 @@ NumberToken.prototype.toString = function() {
 	if(this.type == "integer")
 		return "INT("+this.value+")";
 	return "NUMBER("+this.value+")";
-}
+};
 NumberToken.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.value = this.value;
 	json.type = this.type;
 	json.repr = this.repr;
 	return json;
-}
+};
 NumberToken.prototype.toSource = function() { return this.repr; };
 
 function PercentageToken() {
@@ -767,14 +809,14 @@ function PercentageToken() {
 }
 PercentageToken.prototype = Object.create(CSSParserToken.prototype);
 PercentageToken.prototype.tokenType = "PERCENTAGE";
-PercentageToken.prototype.toString = function() { return "PERCENTAGE("+this.value+")"; }
+PercentageToken.prototype.toString = function() { return "PERCENTAGE("+this.value+")"; };
 PercentageToken.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.value = this.value;
 	json.repr = this.repr;
 	return json;
-}
-PercentageToken.prototype.toSource = function() { return this.repr + "%"; }
+};
+PercentageToken.prototype.toSource = function() { return this.repr + "%"; };
 
 function DimensionToken() {
 	this.value = null;
@@ -784,7 +826,7 @@ function DimensionToken() {
 }
 DimensionToken.prototype = Object.create(CSSParserToken.prototype);
 DimensionToken.prototype.tokenType = "DIMENSION";
-DimensionToken.prototype.toString = function() { return "DIM("+this.value+","+this.unit+")"; }
+DimensionToken.prototype.toString = function() { return "DIM("+this.value+","+this.unit+")"; };
 DimensionToken.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.value = this.value;
@@ -792,7 +834,7 @@ DimensionToken.prototype.toJSON = function() {
 	json.repr = this.repr;
 	json.unit = this.unit;
 	return json;
-}
+};
 DimensionToken.prototype.toSource = function() {
 	var source = this.repr;
 	var unit = escapeIdent(this.unit);
@@ -802,7 +844,7 @@ DimensionToken.prototype.toSource = function() {
 		unit = "\\65 " + unit.slice(1, unit.length);
 	}
 	return source+unit;
-}
+};
 
 function escapeIdent(string) {
 	string = ''+string;
@@ -810,13 +852,13 @@ function escapeIdent(string) {
 	var firstcode = string.charCodeAt(0);
 	for(var i = 0; i < string.length; i++) {
 		var code = string.charCodeAt(i);
-		if(code == 0x0) {
+		if(code === 0x0) {
 			throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
 		}
 
 		if(
 			between(code, 0x1, 0x1f) || code == 0x7f ||
-			(i == 0 && between(code, 0x30, 0x39)) ||
+			(i === 0 && between(code, 0x30, 0x39)) ||
 			(i == 1 && between(code, 0x30, 0x39) && firstcode == 0x2d)
 		) {
 			result += '\\' + code.toString(16) + ' ';
@@ -842,10 +884,9 @@ function escapeHash(string) {
 	// use escapeIdent() for that.
 	string = ''+string;
 	var result = '';
-	var firstcode = string.charCodeAt(0);
 	for(var i = 0; i < string.length; i++) {
 		var code = string.charCodeAt(i);
-		if(code == 0x0) {
+		if(code === 0x0) {
 			throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
 		}
 
@@ -871,7 +912,7 @@ function escapeString(string) {
 	for(var i = 0; i < string.length; i++) {
 		var code = string.charCodeAt(i);
 
-		if(code == 0x0) {
+		if(code === 0x0) {
 			throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
 		}
 
@@ -923,34 +964,52 @@ exports.CSSParserToken = CSSParserToken;
 exports.GroupingToken = GroupingToken;
 
 function TokenStream(tokens) {
-	// Assume that tokens is an array.
+	// Assume that tokens is a iterator.
 	this.tokens = tokens;
-	this.i = -1;
-}
-TokenStream.prototype.tokenAt = function(i) {
-	if(i < this.tokens.length)
-		return this.tokens[i];
-	return new EOFToken();
+	this.token = undefined;
+	this.stored = [];
 }
 TokenStream.prototype.consume = function(num) {
 	if(num === undefined) num = 1;
-	this.i += num;
-	this.token = this.tokenAt(this.i);
+	while (num-- > 0) {
+		if (this.stored.length > 0) {
+			this.token = this.stored.shift();
+		} else {
+			var n = this.tokens.next();
+			while (!n.done && n.value instanceof CommentToken) {
+				n = this.tokens.next();
+			}
+			if (n.done) {
+				this.token = new EOFToken();
+				break;
+			}
+			this.token = n.value;
+		}
+	}
 	//console.log(this.i, this.token);
 	return true;
-}
+};
 TokenStream.prototype.next = function() {
-	return this.tokenAt(this.i+1);
-}
+	if (this.stored.length === 0) {
+		var n = this.tokens.next();
+		while (!n.done && n.value instanceof CommentToken) {
+			n = this.tokens.next();
+		}
+		if (n.done)
+			return new EOFToken();
+		this.stored.push(n.value);
+	}
+	return this.stored[0];
+};
 TokenStream.prototype.reconsume = function() {
-	this.i--;
-}
+	this.stored.unshift(this.token);
+};
 
 function parseerror(s, msg) {
 	console.log("Parse error at token " + s.i + ": " + s.token + ".\n" + msg);
 	return true;
 }
-function donothing(){ return true; };
+function donothing(){ return true; }
 
 function consumeAListOfRules(s, topLevel) {
 	var rules = [];
@@ -983,9 +1042,6 @@ function consumeAnAtRule(s) {
 		} else if(s.token instanceof OpenCurlyToken) {
 			rule.value = consumeASimpleBlock(s);
 			return rule;
-		} else if(s.token instanceof SimpleBlock && s.token.name == "{") {
-			rule.value = s.token;
-			return rule;
 		} else {
 			s.reconsume();
 			rule.prelude.push(consumeAComponentValue(s));
@@ -1001,9 +1057,6 @@ function consumeAQualifiedRule(s) {
 			return;
 		} else if(s.token instanceof OpenCurlyToken) {
 			rule.value = consumeASimpleBlock(s);
-			return rule;
-		} else if(s.token instanceof SimpleBlock && s.token.name == "{") {
-			rule.value = s.token;
 			return rule;
 		} else {
 			s.reconsume();
@@ -1080,6 +1133,7 @@ function consumeAComponentValue(s) {
 function consumeASimpleBlock(s) {
 	var mirror = s.token.mirror;
 	var block = new SimpleBlock(s.token.value);
+	block.startToken = s.token;
 	while(s.consume()) {
 		if(s.token instanceof EOFToken || (s.token instanceof GroupingToken && s.token.value == mirror))
 			return block;
@@ -1107,8 +1161,10 @@ function normalizeInput(input) {
 		return new TokenStream(tokenize(input));
 	if(input instanceof TokenStream)
 		return input;
-	if(input.length !== undefined)
+	if(typeof (input.next) == "function")
 		return new TokenStream(input);
+	if(input.length !== undefined)
+		return new TokenStream(input[Symbol.iterator]());
 	else throw SyntaxError(input);
 }
 
@@ -1128,16 +1184,17 @@ function parseARule(s) {
 	s = normalizeInput(s);
 	while(s.next() instanceof WhitespaceToken) s.consume();
 	if(s.next() instanceof EOFToken) throw SyntaxError();
-	if(s.next() instanceof AtKeywordToken) {
-		var rule = consumeAnAtRule(s);
+	var rule;
+	var startToken = s.next();
+	if(startToken instanceof AtKeywordToken) {
+		rule = consumeAnAtRule(s);
 	} else {
-		var rule = consumeAQualifiedRule(s);
+		rule = consumeAQualifiedRule(s);
 		if(!rule) throw SyntaxError();
 	}
-	while(s.next() instanceof WhitespaceToken) s.consume();
-	if(s.next() instanceof EOFToken)
-		return rule;
-	throw SyntaxError();
+	rule.startToken = startToken;
+	rule.endToken = s.token;
+	return rule;
 }
 
 function parseADeclaration(s) {
@@ -1146,7 +1203,7 @@ function parseADeclaration(s) {
 	if(!(s.next() instanceof IdentToken)) throw SyntaxError();
 	var decl = consumeADeclaration(s);
 	if(decl)
-		return decl
+		return decl;
 	else
 		throw SyntaxError();
 }
@@ -1174,7 +1231,7 @@ function parseAListOfComponentValues(s) {
 	while(true) {
 		var val = consumeAComponentValue(s);
 		if(val instanceof EOFToken)
-			return vals
+			return vals;
 		else
 			vals.push(val);
 	}
@@ -1204,10 +1261,10 @@ function parseACommaSeparatedListOfComponentValues(s) {
 function CSSParserRule() { throw "Abstract Base Class"; }
 CSSParserRule.prototype.toString = function(indent) {
 	return JSON.stringify(this,null,indent);
-}
+};
 CSSParserRule.prototype.toJSON = function() {
 	return {type:this.type, value:this.value};
-}
+};
 
 function Stylesheet() {
 	this.value = [];
@@ -1229,7 +1286,7 @@ AtRule.prototype.toJSON = function() {
 	json.name = this.name;
 	json.prelude = this.prelude;
 	return json;
-}
+};
 
 function QualifiedRule() {
 	this.prelude = [];
@@ -1242,7 +1299,7 @@ QualifiedRule.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.prelude = this.prelude;
 	return json;
-}
+};
 
 function Declaration(name) {
 	this.name = name;
@@ -1257,7 +1314,7 @@ Declaration.prototype.toJSON = function() {
 	json.name = this.name;
 	json.important = this.important;
 	return json;
-}
+};
 
 function SimpleBlock(type) {
 	this.name = type;
@@ -1270,7 +1327,7 @@ SimpleBlock.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.name = this.name;
 	return json;
-}
+};
 
 function Func(name) {
 	this.name = name;
@@ -1283,7 +1340,7 @@ Func.prototype.toJSON = function() {
 	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
 	json.name = this.name;
 	return json;
-}
+};
 
 
 /* Grammar Application */
