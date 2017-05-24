@@ -518,7 +518,7 @@ function tokenize(str) {
 
 	var consumeTheRemnantsOfABadURL = function() {
 		while(consume()) {
-			if(code == 0x2d || eof()) {
+			if(code == 0x29 || eof()) {
 				return;
 			} else if(startsWithAValidEscape()) {
 				consumeEscape();
