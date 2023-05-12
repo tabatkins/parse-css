@@ -16,100 +16,352 @@ function log(str) {
 <script>
 var TESTS = [
 	{
-		css: 'foo { \
-				bar: baz; \
-		}',
-		expected: {"type": "STYLESHEET",
-			"value": [
-				{"type": "QUALIFIED-RULE",
-					"value": {"type": "BLOCK",
-						"value": [
-							{"token": "WHITESPACE"},
-							{"token": "IDENT", "value": "bar"},
-							{"token": ":"},
-							{"token": "WHITESPACE"},
-							{"token": "IDENT", "value": "baz"},
-							{"token": ";"},
-							{"token": "WHITESPACE"}
-						],
-						"name": "{"
-					},
-					"prelude": [
-						{"token": "IDENT", "value": "foo"},
-						{"token": "WHITESPACE"}
-					]
-				}
-			]
+		css: `foo {
+				bar: baz;
+		}`,
+		expected: {
+		  "type": "STYLESHEET",
+		  "rules": [
+		    {
+		      "type": "QUALIFIED-RULE",
+		      "prelude": [
+		        {
+		          "token": "IDENT",
+		          "value": "foo"
+		        },
+		        {
+		          "token": "WHITESPACE"
+		        }
+		      ],
+		      "declarations": [
+		        {
+		          "type": "DECLARATION",
+		          "name": "bar",
+		          "value": [
+		            {
+		              "token": "IDENT",
+		              "value": "baz"
+		            }
+		          ],
+		          "important": false
+		        }
+		      ],
+		      "rules": []
+		    }
+		  ]
 		}
 	}, {
 		css: 'foo { bar: rgb(255, 0, 127); }',
-		expected: {"type": "STYLESHEET",
-			"value": [
+		expected: {
+			"type": "STYLESHEET",
+			"rules": [
 				{
 					"type": "QUALIFIED-RULE",
-					"value": {
-						"type": "BLOCK",
-						"value": [
-							{"token": "WHITESPACE"},
-							{"token": "IDENT", "value": "bar"},
-							{"token": ":"},
-							{"token": "WHITESPACE"},
-							{"type": "FUNCTION",
-								"value": [
-									{"token": "NUMBER", "value": 255, "type": "integer", "repr": "255"},
-									{"token": ","},
-									{"token": "WHITESPACE"},
-									{"token": "NUMBER", "value": 0, "type": "integer", "repr": "0"},
-									{"token": ","},
-									{"token": "WHITESPACE"},
-									{"token": "NUMBER", "value": 127, "type": "integer", "repr": "127"}
-								],
-								"name": "rgb"
-							},
-							{"token": ";"},
-							{"token": "WHITESPACE"}
-						],
-						"name": "{"
-					},
 					"prelude": [
-						{"token": "IDENT", "value": "foo"},
-						{"token": "WHITESPACE"}
-					]
+						{
+							"token": "IDENT",
+							"value": "foo"
+						},
+						{
+							"token": "WHITESPACE"
+						}
+					],
+					"declarations": [
+						{
+							"type": "DECLARATION",
+							"name": "bar",
+							"value": [
+								{
+									"type": "FUNCTION",
+									"name": "rgb",
+									"value": [
+										{
+											"token": "NUMBER",
+											"value": 255,
+											"type": "integer",
+											"repr": "255"
+										},
+										{
+											"token": ","
+										},
+										{
+											"token": "WHITESPACE"
+										},
+										{
+											"token": "NUMBER",
+											"value": 0,
+											"type": "integer",
+											"repr": "0"
+										},
+										{
+											"token": ","
+										},
+										{
+											"token": "WHITESPACE"
+										},
+										{
+											"token": "NUMBER",
+											"value": 127,
+											"type": "integer",
+											"repr": "127"
+										}
+									]
+								}
+							],
+							"important": false
+						}
+					],
+					"rules": []
 				}
 			]
 		}
 	}, {
 		css: '#foo {}',
-		expected: {"type": "STYLESHEET",
-			"value": [
+		expected: {
+			"type": "STYLESHEET",
+			"rules": [
 				{
 					"type": "QUALIFIED-RULE",
-					"value": {
-						"type": "BLOCK",
-						"value": [],
-						"name": "{"
-					},
 					"prelude": [
-						{"token": "HASH", "value": "foo", "type": "id"},
-						{"token": "WHITESPACE"}
-					]
+						{
+							"token": "HASH",
+							"value": "foo",
+							"type": "id"
+						},
+						{
+							"token": "WHITESPACE"
+						}
+					],
+					"declarations": [],
+					"rules": []
 				}
 			]
 		}
 	}, {
 		css: '@media{ }',
-		expected: {"type": "STYLESHEET",
-			"value": [
+		expected: {
+			"type": "STYLESHEET",
+			"rules": [
 				{
 					"type": "AT-RULE",
-					"value": {"type": "BLOCK",
-						"value": [
-							{"token": "WHITESPACE"}
-						],
-						"name": "{"
-					},
 					"name": "media",
-					"prelude": []
+					"prelude": [],
+					"declarations": [],
+					"rules": []
+				}
+			]
+		}
+	}, {
+		css: '.foo {color: red; @media { foo: bar } color: green }',
+		expected: {
+			"type": "STYLESHEET",
+			"rules": [
+				{
+					"type": "QUALIFIED-RULE",
+					"prelude": [
+						{
+							"token": "DELIM",
+							"value": "."
+						},
+						{
+							"token": "IDENT",
+							"value": "foo"
+						},
+						{
+							"token": "WHITESPACE"
+						}
+					],
+					"declarations": [
+						{
+							"type": "DECLARATION",
+							"name": "color",
+							"value": [
+								{
+									"token": "IDENT",
+									"value": "red"
+								}
+							],
+							"important": false
+						},
+						{
+							"type": "DECLARATION",
+							"name": "color",
+							"value": [
+								{
+									"token": "IDENT",
+									"value": "green"
+								}
+							],
+							"important": false
+						}
+					],
+					"rules": [
+						{
+							"type": "AT-RULE",
+							"name": "media",
+							"prelude": [
+								{
+									"token": "WHITESPACE"
+								}
+							],
+							"declarations": [
+								{
+									"type": "DECLARATION",
+									"name": "foo",
+									"value": [
+										{
+											"token": "IDENT",
+											"value": "bar"
+										}
+									],
+									"important": false
+								}
+							],
+							"rules": []
+						}
+					]
+				}
+			]
+		}
+	}, {
+		css: 'foo{div:hover; color:red{};}',
+		expected: {
+			"type": "STYLESHEET",
+			"rules": [
+				{
+					"type": "QUALIFIED-RULE",
+					"prelude": [
+						{
+							"token": "IDENT",
+							"value": "foo"
+						}
+					],
+					"declarations": [
+						{
+							"type": "DECLARATION",
+							"name": "div",
+							"value": [
+								{
+									"token": "IDENT",
+									"value": "hover"
+								}
+							],
+							"important": false
+						}
+					],
+					"rules": [
+						{
+							"type": "QUALIFIED-RULE",
+							"prelude": [
+								{
+									"token": "IDENT",
+									"value": "color"
+								},
+								{
+									"token": ":"
+								},
+								{
+									"token": "IDENT",
+									"value": "red"
+								}
+							],
+							"declarations": [],
+							"rules": []
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		css: `@foo;;foo {}`,
+		expected: {
+			"type": "STYLESHEET",
+			"rules": [
+				{
+					"type": "AT-RULE",
+					"name": "foo",
+					"prelude": [],
+					"declarations": null,
+					"rules": null
+				}
+			]
+		}
+	}, {
+		css: `foo{@foo;;foo {}}`,
+		expected: {
+			"type": "STYLESHEET",
+			"rules": [
+				{
+					"type": "QUALIFIED-RULE",
+					"prelude": [
+						{
+							"token": "IDENT",
+							"value": "foo"
+						}
+					],
+					"declarations": [],
+					"rules": [
+						{
+							"type": "AT-RULE",
+							"name": "foo",
+							"prelude": [],
+							"declarations": null,
+							"rules": null
+						},
+						{
+							"type": "QUALIFIED-RULE",
+							"prelude": [
+								{
+									"token": "IDENT",
+									"value": "foo"
+								},
+								{
+									"token": "WHITESPACE"
+								}
+							],
+							"declarations": [],
+							"rules": []
+						}
+					]
+				}
+			]
+		}
+	}, {
+		css: `foo { --div:hover{}}`,
+		expected: {
+			"type": "STYLESHEET",
+			"rules": [
+				{
+					"type": "QUALIFIED-RULE",
+					"prelude": [
+						{
+							"token": "IDENT",
+							"value": "foo"
+						},
+						{
+							"token": "WHITESPACE"
+						}
+					],
+					"declarations": [
+						{
+							"type": "DECLARATION",
+							"name": "--div",
+							"value": [
+								{
+									"token": "IDENT",
+									"value": "hover"
+								},
+								{
+									"type": "BLOCK",
+									"name": "{",
+									"value": []
+								}
+							],
+							"important": false
+						}
+					],
+					"rules": []
 				}
 			]
 		}
@@ -119,19 +371,26 @@ var TESTS = [
 var total = TESTS.length, failures = 0,
 		i, test, tokens, sheet, dump, expected_dump;
 
-for (i = 0; i < total; i++) {
-		test = TESTS[i];
-		tokens = tokenize(test.css);
-		sheet = parseAStylesheet(tokens);
-		dump = sheet.toString('  ');
-		expected_dump = JSON.stringify(test.expected, null, '  ');
-		if (dump == expected_dump) {
-				log('Test '+i+' of '+total+': PASS');
-		} else {
-				log('Test '+i+' of '+total+': FAIL\nCSS: '+test.css+'\nTokens: '+tokens.join(' '));
-				log(diffString(expected_dump, dump));
-				failures++;
-		}
+for(const [i, test] of enumerate(TESTS, 1)) {
+	const tokens = tokenize(test.css);
+	const sheet = parseAStylesheet(tokens);
+	const dump = sheet.toString('\t');
+	const expected_dump = JSON.stringify(test.expected, null, '\t');
+	if (dump == expected_dump) {
+			log(`Test ${i} of ${TESTS.length}: PASS`);
+	} else {
+			log(`Test ${i} of ${TESTS.length}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
+			log(diffString(expected_dump, dump));
+			failures++;
+	}
+
+}
+
+function* enumerate(iter, i=0) {
+	for(const x of iter) {
+		yield [i, x];
+		i++;
+	}
 }
 
 // Abuse the differ to get colored output
@@ -141,3 +400,8 @@ if (failures == 0) {
 		log(diffString(total+' tests, '+failures+' failures :(', total+' tests, '));
 }
 </script>
+<style>
+body {
+	tab-size:  2;
+}
+</style>
