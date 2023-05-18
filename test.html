@@ -26,11 +26,11 @@ var TESTS = [
 		      "type": "QUALIFIED-RULE",
 		      "prelude": [
 		        {
-		          "token": "IDENT",
+		          "type": "IDENT",
 		          "value": "foo"
 		        },
 		        {
-		          "token": "WHITESPACE"
+		          "type": "WHITESPACE"
 		        }
 		      ],
 		      "declarations": [
@@ -39,7 +39,7 @@ var TESTS = [
 		          "name": "bar",
 		          "value": [
 		            {
-		              "token": "IDENT",
+		              "type": "IDENT",
 		              "value": "baz"
 		            }
 		          ],
@@ -59,11 +59,11 @@ var TESTS = [
 					"type": "QUALIFIED-RULE",
 					"prelude": [
 						{
-							"token": "IDENT",
+							"type": "IDENT",
 							"value": "foo"
 						},
 						{
-							"token": "WHITESPACE"
+							"type": "WHITESPACE"
 						}
 					],
 					"declarations": [
@@ -76,34 +76,31 @@ var TESTS = [
 									"name": "rgb",
 									"value": [
 										{
-											"token": "NUMBER",
+											"type": "NUMBER",
 											"value": 255,
-											"type": "integer",
-											"repr": "255"
+											"isInteger": true,
 										},
 										{
-											"token": ","
+											"type": "COMMA"
 										},
 										{
-											"token": "WHITESPACE"
+											"type": "WHITESPACE"
 										},
 										{
-											"token": "NUMBER",
+											"type": "NUMBER",
 											"value": 0,
-											"type": "integer",
-											"repr": "0"
+											"isInteger": true,
 										},
 										{
-											"token": ","
+											"type": "COMMA"
 										},
 										{
-											"token": "WHITESPACE"
+											"type": "WHITESPACE"
 										},
 										{
-											"token": "NUMBER",
+											"type": "NUMBER",
 											"value": 127,
-											"type": "integer",
-											"repr": "127"
+											"isInteger": true,
 										}
 									]
 								}
@@ -124,12 +121,12 @@ var TESTS = [
 					"type": "QUALIFIED-RULE",
 					"prelude": [
 						{
-							"token": "HASH",
+							"type": "HASH",
 							"value": "foo",
 							"type": "id"
 						},
 						{
-							"token": "WHITESPACE"
+							"type": "WHITESPACE"
 						}
 					],
 					"declarations": [],
@@ -160,15 +157,15 @@ var TESTS = [
 					"type": "QUALIFIED-RULE",
 					"prelude": [
 						{
-							"token": "DELIM",
+							"type": "DELIM",
 							"value": "."
 						},
 						{
-							"token": "IDENT",
+							"type": "IDENT",
 							"value": "foo"
 						},
 						{
-							"token": "WHITESPACE"
+							"type": "WHITESPACE"
 						}
 					],
 					"declarations": [
@@ -177,7 +174,7 @@ var TESTS = [
 							"name": "color",
 							"value": [
 								{
-									"token": "IDENT",
+									"type": "IDENT",
 									"value": "red"
 								}
 							],
@@ -188,7 +185,7 @@ var TESTS = [
 							"name": "color",
 							"value": [
 								{
-									"token": "IDENT",
+									"type": "IDENT",
 									"value": "green"
 								}
 							],
@@ -201,7 +198,7 @@ var TESTS = [
 							"name": "media",
 							"prelude": [
 								{
-									"token": "WHITESPACE"
+									"type": "WHITESPACE"
 								}
 							],
 							"declarations": [
@@ -210,7 +207,7 @@ var TESTS = [
 									"name": "foo",
 									"value": [
 										{
-											"token": "IDENT",
+											"type": "IDENT",
 											"value": "bar"
 										}
 									],
@@ -232,7 +229,7 @@ var TESTS = [
 					"type": "QUALIFIED-RULE",
 					"prelude": [
 						{
-							"token": "IDENT",
+							"type": "IDENT",
 							"value": "foo"
 						}
 					],
@@ -242,7 +239,7 @@ var TESTS = [
 							"name": "div",
 							"value": [
 								{
-									"token": "IDENT",
+									"type": "IDENT",
 									"value": "hover"
 								}
 							],
@@ -254,14 +251,14 @@ var TESTS = [
 							"type": "QUALIFIED-RULE",
 							"prelude": [
 								{
-									"token": "IDENT",
+									"type": "IDENT",
 									"value": "color"
 								},
 								{
-									"token": ":"
+									"type": "COLON"
 								},
 								{
-									"token": "IDENT",
+									"type": "IDENT",
 									"value": "red"
 								}
 							],
@@ -296,7 +293,7 @@ var TESTS = [
 					"type": "QUALIFIED-RULE",
 					"prelude": [
 						{
-							"token": "IDENT",
+							"type": "IDENT",
 							"value": "foo"
 						}
 					],
@@ -313,11 +310,11 @@ var TESTS = [
 							"type": "QUALIFIED-RULE",
 							"prelude": [
 								{
-									"token": "IDENT",
+									"type": "IDENT",
 									"value": "foo"
 								},
 								{
-									"token": "WHITESPACE"
+									"type": "WHITESPACE"
 								}
 							],
 							"declarations": [],
@@ -336,11 +333,11 @@ var TESTS = [
 					"type": "QUALIFIED-RULE",
 					"prelude": [
 						{
-							"token": "IDENT",
+							"type": "IDENT",
 							"value": "foo"
 						},
 						{
-							"token": "WHITESPACE"
+							"type": "WHITESPACE"
 						}
 					],
 					"declarations": [
@@ -349,7 +346,7 @@ var TESTS = [
 							"name": "--div",
 							"value": [
 								{
-									"token": "IDENT",
+									"type": "IDENT",
 									"value": "hover"
 								},
 								{

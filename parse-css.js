@@ -11,7 +11,7 @@
     }
 }(this, function (exports) {
 
-var between = function (num, first, last) { return num >= first && num <= last; }
+function between(num, first, last) { return num >= first && num <= last; }
 function digit(code) { return between(code, 0x30,0x39); }
 function hexdigit(code) { return digit(code) || between(code, 0x41,0x46) || between(code, 0x61,0x66); }
 function uppercaseletter(code) { return between(code, 0x41,0x5a); }
@@ -27,11 +27,13 @@ function badescape(code) { return newline(code) || isNaN(code); }
 
 var maximumallowedcodepoint = 0x10ffff;
 
-var InvalidCharacterError = function(message) {
-	this.message = message;
-};
-InvalidCharacterError.prototype = new Error;
-InvalidCharacterError.prototype.name = 'InvalidCharacterError';
+class InvalidCharacterError extends Error {
+	constructor(message) {
+		super();
+		this.name = "InvalidCharacterError";
+		this.message = message;
+	}
+}
 
 function preprocess(str) {
 	// Turn a string into an array of code points,
@@ -56,13 +58,8 @@ function preprocess(str) {
 	return codepoints;
 }
 
-function stringFromCode(code) {
-	if(code <= 0xffff) return String.fromCharCode(code);
-	// Otherwise, encode astral char as surrogate pair.
-	code -= Math.pow(2, 16);
-	var lead = Math.floor(code/Math.pow(2, 10)) + 0xd800;
-	var trail = code % Math.pow(2, 10) + 0xdc00;
-	return String.fromCharCode(lead) + String.fromCharCode(trail);
+function asciiCaselessMatch(s1, s2) {
+	return s1.toLowerCase() == s2.toLowerCase();
 }
 
 function tokenize(str) {
@@ -281,24 +278,13 @@ function tokenize(str) {
 	var consumeANumericToken = function() {
 		var num = consumeANumber();
 		if(wouldStartAnIdentifier(next(1), next(2), next(3))) {
-			var token = new DimensionToken();
-			token.value = num.value;
-			token.repr = num.repr;
-			token.type = num.type;
-			token.unit = consumeAName();
-			return token;
+			const unit = consumeAName();
+			return new DimensionToken(num.value, unit);
 		} else if(next() == 0x25) {
 			consume();
-			var token = new PercentageToken();
-			token.value = num.value;
-			token.repr = num.repr;
-			return token;
+			return new PercentageToken(num.value);
 		} else {
-			var token = new NumberToken();
-			token.value = num.value;
-			token.repr = num.repr;
-			token.type = num.type;
-			return token;
+			return new NumberToken(num.value, num.isInteger);
 		}
 	};
 
@@ -338,10 +324,10 @@ function tokenize(str) {
 				} else if(newline(next())) {
 					consume();
 				} else {
-					string += stringFromCode(consumeEscape())
+					string += String.fromCodePoint(consumeEscape())
 				}
 			} else {
-				string += stringFromCode(code);
+				string += String.fromCodePoint(code);
 			}
 		}
 	};
@@ -368,14 +354,14 @@ function tokenize(str) {
 				return new BadURLToken();
 			} else if(code == 0x5c) {
 				if(startsWithAValidEscape()) {
-					token.value += stringFromCode(consumeEscape());
+					token.value += String.fromCodePoint(consumeEscape());
 				} else {
 					parseerror();
 					consumeTheRemnantsOfABadURL();
 					return new BadURLToken();
 				}
 			} else {
-				token.value += stringFromCode(code);
+				token.value += String.fromCodePoint(code);
 			}
 		}
 	};
@@ -452,9 +438,9 @@ function tokenize(str) {
 		var result = "";
 		while(consume()) {
 			if(namechar(code)) {
-				result += stringFromCode(code);
+				result += String.fromCodePoint(code);
 			} else if(startsWithAValidEscape()) {
-				result += stringFromCode(consumeEscape());
+				result += String.fromCodePoint(consumeEscape());
 			} else {
 				reconsume();
 				return result;
@@ -467,49 +453,49 @@ function tokenize(str) {
 		var type = "integer";
 		if(next() == 0x2b || next() == 0x2d) {
 			consume();
-			repr += stringFromCode(code);
+			repr += String.fromCodePoint(code);
 		}
 		while(digit(next())) {
 			consume();
-			repr += stringFromCode(code);
+			repr += String.fromCodePoint(code);
 		}
 		if(next(1) == 0x2e && digit(next(2))) {
 			consume();
-			repr += stringFromCode(code);
+			repr += String.fromCodePoint(code);
 			consume();
-			repr += stringFromCode(code);
+			repr += String.fromCodePoint(code);
 			type = "number";
 			while(digit(next())) {
 				consume();
-				repr += stringFromCode(code);
+				repr += String.fromCodePoint(code);
 			}
 		}
 		var c1 = next(1), c2 = next(2), c3 = next(3);
 		if((c1 == 0x45 || c1 == 0x65) && digit(c2)) {
 			consume();
-			repr += stringFromCode(code);
+			repr += String.fromCodePoint(code);
 			consume();
-			repr += stringFromCode(code);
+			repr += String.fromCodePoint(code);
 			type = "number";
 			while(digit(next())) {
 				consume();
-				repr += stringFromCode(code);
+				repr += String.fromCodePoint(code);
 			}
 		} else if((c1 == 0x45 || c1 == 0x65) && (c2 == 0x2b || c2 == 0x2d) && digit(c3)) {
 			consume();
-			repr += stringFromCode(code);
+			repr += String.fromCodePoint(code);
 			consume();
-			repr += stringFromCode(code);
+			repr += String.fromCodePoint(code);
 			consume();
-			repr += stringFromCode(code);
+			repr += String.fromCodePoint(code);
 			type = "number";
 			while(digit(next())) {
 				consume();
-				repr += stringFromCode(code);
+				repr += String.fromCodePoint(code);
 			}
 		}
 		var value = convertAStringToANumber(repr);
-		return {type:type, value:value, repr:repr};
+		return {value:value, isInteger: type=="integer"};
 	};
 
 	var convertAStringToANumber = function(string) {
@@ -541,350 +527,293 @@ function tokenize(str) {
 	return tokens;
 }
 
-function CSSParserToken() { throw "Abstract Base Class"; }
-CSSParserToken.prototype.toJSON = function() {
-	return {token: this.tokenType};
+class CSSParserToken {
+	constructor(type) {
+		this.type = type;
+	}
+
+	toJSON() { return {type:this.type}; }
+	toString() { return this.type; }
+	toSource() { throw new Exception("Not implemented."); }
 }
-CSSParserToken.prototype.toString = function() { return this.tokenType; }
-CSSParserToken.prototype.toSource = function() { return ''+this; }
+//toJSON()
+//toString()
+//toSource()
 
-function BadStringToken() { return this; }
-BadStringToken.prototype = Object.create(CSSParserToken.prototype);
-BadStringToken.prototype.tokenType = "BADSTRING";
+class BadStringToken extends CSSParserToken {
+	constructor() {
+		super("BADSTRING");
+	}
+	toSource() { return '"\n"'; }
+}
 
-function BadURLToken() { return this; }
-BadURLToken.prototype = Object.create(CSSParserToken.prototype);
+class BadURLToken extends CSSParserToken {
+	constructor() {
+		super("BADURL");
+	}
+	toSource() { return "url(BADURL '')"}
+}
 BadURLToken.prototype.tokenType = "BADURL";
 
-function WhitespaceToken() { return this; }
-WhitespaceToken.prototype = Object.create(CSSParserToken.prototype);
-WhitespaceToken.prototype.tokenType = "WHITESPACE";
-WhitespaceToken.prototype.toString = function() { return "WS"; }
-WhitespaceToken.prototype.toSource = function() { return " "; }
-
-function CDOToken() { return this; }
-CDOToken.prototype = Object.create(CSSParserToken.prototype);
-CDOToken.prototype.tokenType = "CDO";
-CDOToken.prototype.toSource = function() { return "<!--"; }
-
-function CDCToken() { return this; }
-CDCToken.prototype = Object.create(CSSParserToken.prototype);
-CDCToken.prototype.tokenType = "CDC";
-CDCToken.prototype.toSource = function() { return "-->"; }
-
-function ColonToken() { return this; }
-ColonToken.prototype = Object.create(CSSParserToken.prototype);
-ColonToken.prototype.tokenType = ":";
-
-function SemicolonToken() { return this; }
-SemicolonToken.prototype = Object.create(CSSParserToken.prototype);
-SemicolonToken.prototype.tokenType = ";";
-
-function CommaToken() { return this; }
-CommaToken.prototype = Object.create(CSSParserToken.prototype);
-CommaToken.prototype.tokenType = ",";
-
-function GroupingToken() { throw "Abstract Base Class"; }
-GroupingToken.prototype = Object.create(CSSParserToken.prototype);
-
-function OpenCurlyToken() { this.value = "{"; this.mirror = CloseCurlyToken; return this; }
-OpenCurlyToken.prototype = Object.create(GroupingToken.prototype);
-OpenCurlyToken.prototype.tokenType = "{";
-
-function CloseCurlyToken() { this.value = "}"; return this; }
-CloseCurlyToken.prototype = Object.create(GroupingToken.prototype);
-CloseCurlyToken.prototype.tokenType = "}";
-
-function OpenSquareToken() { this.value = "["; this.mirror = CloseSquareToken; return this; }
-OpenSquareToken.prototype = Object.create(GroupingToken.prototype);
-OpenSquareToken.prototype.tokenType = "[";
-
-function CloseSquareToken() { this.value = "]"; return this; }
-CloseSquareToken.prototype = Object.create(GroupingToken.prototype);
-CloseSquareToken.prototype.tokenType = "]";
-
-function OpenParenToken() { this.value = "("; this.mirror = CloseParenToken; return this; }
-OpenParenToken.prototype = Object.create(GroupingToken.prototype);
-OpenParenToken.prototype.tokenType = "(";
-
-function CloseParenToken() { this.value = ")"; return this; }
-CloseParenToken.prototype = Object.create(GroupingToken.prototype);
-CloseParenToken.prototype.tokenType = ")";
-
-function IncludeMatchToken() { return this; }
-IncludeMatchToken.prototype = Object.create(CSSParserToken.prototype);
-IncludeMatchToken.prototype.tokenType = "~=";
-
-function DashMatchToken() { return this; }
-DashMatchToken.prototype = Object.create(CSSParserToken.prototype);
-DashMatchToken.prototype.tokenType = "|=";
-
-function PrefixMatchToken() { return this; }
-PrefixMatchToken.prototype = Object.create(CSSParserToken.prototype);
-PrefixMatchToken.prototype.tokenType = "^=";
-
-function SuffixMatchToken() { return this; }
-SuffixMatchToken.prototype = Object.create(CSSParserToken.prototype);
-SuffixMatchToken.prototype.tokenType = "$=";
-
-function SubstringMatchToken() { return this; }
-SubstringMatchToken.prototype = Object.create(CSSParserToken.prototype);
-SubstringMatchToken.prototype.tokenType = "*=";
-
-function ColumnToken() { return this; }
-ColumnToken.prototype = Object.create(CSSParserToken.prototype);
-ColumnToken.prototype.tokenType = "||";
-
-function EOFToken() { return this; }
-EOFToken.prototype = Object.create(CSSParserToken.prototype);
-EOFToken.prototype.tokenType = "EOF";
-EOFToken.prototype.toSource = function() { return ""; }
-
-function DelimToken(code) {
-	this.value = stringFromCode(code);
-	return this;
+class WhitespaceToken extends CSSParserToken {
+	constructor() {
+		super("WHITESPACE");
+	}
+	toString() { return "WS"; }
+	toSource() { return " "; }
 }
-DelimToken.prototype = Object.create(CSSParserToken.prototype);
-DelimToken.prototype.tokenType = "DELIM";
-DelimToken.prototype.toString = function() { return "DELIM("+this.value+")"; }
-DelimToken.prototype.toJSON = function() {
-	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-	json.value = this.value;
-	return json;
+
+class CDOToken extends CSSParserToken {
+	constructor() {
+		super("CDO");
+	}
+	toSource() { return "<!--"; }
 }
-DelimToken.prototype.toSource = function() {
-	if(this.value == "\\")
-		return "\\\n";
-	else
+
+class CDCToken extends CSSParserToken {
+	constructor() {
+		super("CDC");
+	}
+	toSource() { return "-->"; }
+}
+
+class ColonToken extends CSSParserToken {
+	constructor() {
+		super("COLON");
+	}
+	toSource() { return ":"; }
+}
+
+class SemicolonToken extends CSSParserToken {
+	constructor() {
+		super("SEMICOLON");
+	}
+	toSource() { return ";" };
+}
+
+class CommaToken extends CSSParserToken {
+	constructor() {
+		super("COMMA");
+	}
+	toSource() { return ";" }
+}
+
+class OpenCurlyToken extends CSSParserToken {
+	constructor() {
+		super("OPEN-CURLY");
+		this.grouping = true;
+		this.mirror = CloseCurlyToken;
+	}
+	toSource() { return "{"; }
+}
+
+class CloseCurlyToken extends CSSParserToken {
+	constructor() {
+		super("CLOSE-CURLY");
+	}
+	toSource() { return "}"; }
+}
+
+class OpenSquareToken extends CSSParserToken {
+	constructor() {
+		super("OPEN-SQUARE");
+		this.grouping = true;
+		this.mirror = CloseSquareToken;
+	}
+	toSource() { return "["; }
+}
+
+class CloseSquareToken extends CSSParserToken {
+	constructor() {
+		super("CLOSE-SQUARE");
+	}
+	toSource() { return "]"; }
+}
+
+class OpenParenToken extends CSSParserToken {
+	constructor() {
+		super("OPEN-PAREN");
+		this.grouping = true;
+		this.mirror = CloseParenToken;
+	}
+	toSource() { return "("; }
+}
+
+class CloseParenToken extends CSSParserToken {
+	constructor() {
+		super("CLOSE-PAREN");
+	}
+	toSource() { return ")"; }
+}
+
+class EOFToken extends CSSParserToken {
+	constructor() {
+		super("EOF");
+	}
+	toSource() { return ""; }
+}
+
+class DelimToken extends CSSParserToken {
+	constructor(val) {
+		super("DELIM");
+		if(typeof val == "number") {
+			val = String.fromCodePoint(val);
+		} else {
+			val = String(val);
+		}
+		this.value = val;
+	}
+	toString() { return `DELIM(${this.val})`; }
+	toJSON() { return {type:this.type, value:this.value}; }
+	toSource() {
+		if(this.value == "\\") return "\\\n";
 		return this.value;
-}
-
-function StringValuedToken() { throw "Abstract Base Class"; }
-StringValuedToken.prototype = Object.create(CSSParserToken.prototype);
-StringValuedToken.prototype.ASCIIMatch = function(str) {
-	return this.value.toLowerCase() == str.toLowerCase();
-}
-StringValuedToken.prototype.toJSON = function() {
-	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-	json.value = this.value;
-	return json;
-}
-
-function IdentToken(val) {
-	this.value = val;
-}
-IdentToken.prototype = Object.create(StringValuedToken.prototype);
-IdentToken.prototype.tokenType = "IDENT";
-IdentToken.prototype.toString = function() { return "IDENT("+this.value+")"; }
-IdentToken.prototype.toSource = function() {
-	return escapeIdent(this.value);
-}
-
-function FunctionToken(val) {
-	this.value = val;
-	this.mirror = ")";
-}
-FunctionToken.prototype = Object.create(StringValuedToken.prototype);
-FunctionToken.prototype.tokenType = "FUNCTION";
-FunctionToken.prototype.toString = function() { return "FUNCTION("+this.value+")"; }
-FunctionToken.prototype.toSource = function() {
-	return escapeIdent(this.value) + "(";
-}
-
-function AtKeywordToken(val) {
-	this.value = val;
-}
-AtKeywordToken.prototype = Object.create(StringValuedToken.prototype);
-AtKeywordToken.prototype.tokenType = "AT-KEYWORD";
-AtKeywordToken.prototype.toString = function() { return "AT("+this.value+")"; }
-AtKeywordToken.prototype.toSource = function() {
-	return "@" + escapeIdent(this.value);
-}
-
-function HashToken(val) {
-	this.value = val;
-	this.type = "unrestricted";
-}
-HashToken.prototype = Object.create(StringValuedToken.prototype);
-HashToken.prototype.tokenType = "HASH";
-HashToken.prototype.toString = function() { return "HASH("+this.value+")"; }
-HashToken.prototype.toJSON = function() {
-	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-	json.value = this.value;
-	json.type = this.type;
-	return json;
-}
-HashToken.prototype.toSource = function() {
-	if(this.type == "id") {
-		return "#" + escapeIdent(this.value);
-	} else {
-		return "#" + escapeHash(this.value);
 	}
 }
 
-function StringToken(val) {
-	this.value = val;
-}
-StringToken.prototype = Object.create(StringValuedToken.prototype);
-StringToken.prototype.tokenType = "STRING";
-StringToken.prototype.toString = function() {
-	return '"' + escapeString(this.value) + '"';
-}
-
-function URLToken(val) {
-	this.value = val;
-}
-URLToken.prototype = Object.create(StringValuedToken.prototype);
-URLToken.prototype.tokenType = "URL";
-URLToken.prototype.toString = function() { return "URL("+this.value+")"; }
-URLToken.prototype.toSource = function() {
-	return 'url("' + escapeString(this.value) + '")';
-}
-
-function NumberToken() {
-	this.value = null;
-	this.type = "integer";
-	this.repr = "";
-}
-NumberToken.prototype = Object.create(CSSParserToken.prototype);
-NumberToken.prototype.tokenType = "NUMBER";
-NumberToken.prototype.toString = function() {
-	if(this.type == "integer")
-		return "INT("+this.value+")";
-	return "NUMBER("+this.value+")";
-}
-NumberToken.prototype.toJSON = function() {
-	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-	json.value = this.value;
-	json.type = this.type;
-	json.repr = this.repr;
-	return json;
-}
-NumberToken.prototype.toSource = function() { return this.repr; };
-
-function PercentageToken() {
-	this.value = null;
-	this.repr = "";
-}
-PercentageToken.prototype = Object.create(CSSParserToken.prototype);
-PercentageToken.prototype.tokenType = "PERCENTAGE";
-PercentageToken.prototype.toString = function() { return "PERCENTAGE("+this.value+")"; }
-PercentageToken.prototype.toJSON = function() {
-	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-	json.value = this.value;
-	json.repr = this.repr;
-	return json;
-}
-PercentageToken.prototype.toSource = function() { return this.repr + "%"; }
-
-function DimensionToken() {
-	this.value = null;
-	this.type = "integer";
-	this.repr = "";
-	this.unit = "";
-}
-DimensionToken.prototype = Object.create(CSSParserToken.prototype);
-DimensionToken.prototype.tokenType = "DIMENSION";
-DimensionToken.prototype.toString = function() { return "DIM("+this.value+","+this.unit+")"; }
-DimensionToken.prototype.toJSON = function() {
-	var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-	json.value = this.value;
-	json.type = this.type;
-	json.repr = this.repr;
-	json.unit = this.unit;
-	return json;
-}
-DimensionToken.prototype.toSource = function() {
-	var source = this.repr;
-	var unit = escapeIdent(this.unit);
-	if(unit[0].toLowerCase() == "e" && (unit[1] == "-" || between(unit.charCodeAt(1), 0x30, 0x39))) {
-		// Unit is ambiguous with scinot
-		// Remove the leading "e", replace with escape.
-		unit = "\\65 " + unit.slice(1, unit.length);
+class IdentToken extends CSSParserToken {
+	constructor(val) {
+		super("IDENT");
+		this.value = val;
 	}
-	return source+unit;
+	toString() { return `IDENT(${this.value})`; }
+	toJSON() { return {type:this.type, value:this.value}; }
+	toSource() { return escapeIdent(this.value); }
+}
+
+class FunctionToken extends CSSParserToken {
+	constructor(val) {
+		super("FUNCTION");
+		this.value = val;
+		this.mirror = CloseParenToken;
+	}
+	toString() { return `FUNCTION(${this.value})`; }
+	toJSON() { return {type:this.type, value:this.value}; }
+	toSource() { return escapeIdent(this.value) + "("; }
+}
+
+class AtKeywordToken extends CSSParserToken {
+	constructor(val) {
+		super("AT-KEYWORD");
+		this.value = val;
+	}
+	toString() { return `AT(${this.value})`; }
+	toJSON() { return {type:this.type, value:this.value }; }
+	toSource() { return "@" + escapeIdent(this.value); }
+}
+
+class HashToken extends CSSParserToken {
+	constructor(val) {
+		super("HASH");
+		this.value = val;
+	}
+	toString() { return `HASH(${this.value})`; }
+	toJSON() { return {type:this.type, value:this.value}; }
+	toSource() { return "#" + escapeHash(this.value); }
+}
+
+class StringToken extends CSSParserToken {
+	constructor(val) {
+		super("STRING");
+		this.value = val;
+	}
+	toString() { return `STRING(${this.value})`; }
+	toJSON() { return {type:this.type, value:this.value}; }
+	toSource() { return `"${escapeString(this.value)}"`; }
+}
+
+class URLToken extends CSSParserToken {
+	constructor(val) {
+		super("URL");
+		this.value = val;
+	}
+	toString() { return `URL(${this.value})`; }
+	toJSON() { return {type:this.type, value:this.value}; }
+	toSource() { return `url("${escapeString(this.value)}")`; }
+}
+
+class NumberToken extends CSSParserToken {
+	constructor(val, isInteger) {
+		super("NUMBER");
+		this.value = val;
+		this.isInteger = isInteger;
+	}
+	toString() {
+		if(this.isInteger) return `INT(${this.value})`;
+		return `NUMBER(${this.value})`;
+	}
+	toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger}; }
+	toSource() { return formatNumber(this.value); }
+}
+
+class PercentageToken extends CSSParserToken {
+	constructor(val) {
+		super("PERCENTAGE");
+		this.value = val;
+	}
+	toString() { `PERCENTAGE(${this.value})`; }
+	toJSON() { return {type:this.type, value:this.value}; }
+	toSource() { return `${formatNumber(this.value)}%`; }
+}
+
+class DimensionToken extends CSSParserToken {
+	constructor(val, unit) {
+		super("DIMENSION");
+		this.value = val;
+		this.unit = unit;
+	}
+	toString() { `DIM(${this.value}, ${this.unit})`; }
+	toJSON() { return {type:this.type, value:this.value, unit:this.unit}; }
+	toSource() {
+		let unit = escapeIdent(this.unit);
+		if(unit[0].toLowerCase() == "e" && (unit[1] == "-" || digit(unit[1]))) {
+			// Unit is ambiguous with scinot
+			// Remove the leading "e", replace with escape.
+			unit = "\\65 " + unit.slice(1, unit.length);
+		}
+		return `${formatNumber(this.value)}${unit}`;
+	}
 }
 
 function escapeIdent(string) {
-	string = ''+string;
-	var result = '';
-	var firstcode = string.charCodeAt(0);
-	for(var i = 0; i < string.length; i++) {
-		var code = string.charCodeAt(i);
-		if(code == 0x0) {
-			throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
+	return Array.from(String(string), (e,i)=>{
+		const code = e.codePointAt(0);
+		if(i == 0) {
+			if(namestartchar(code)) return e;
+			return escapeIdentCode(code);
 		}
-
-		if(
-			between(code, 0x1, 0x1f) || code == 0x7f ||
-			(i == 0 && between(code, 0x30, 0x39)) ||
-			(i == 1 && between(code, 0x30, 0x39) && firstcode == 0x2d)
-		) {
-			result += '\\' + code.toString(16) + ' ';
-		} else if(
-			code >= 0x80 ||
-			code == 0x2d ||
-			code == 0x5f ||
-			between(code, 0x30, 0x39) ||
-			between(code, 0x41, 0x5a) ||
-			between(code, 0x61, 0x7a)
-		) {
-			result += string[i];
-		} else {
-			result += '\\' + string[i];
-		}
-	}
-	return result;
+		if(namechar(code)) return e;
+		return escapeIdentCode(code);
+	}).join("");
 }
 
 function escapeHash(string) {
-	// Escapes the contents of "unrestricted"-type hash tokens.
-	// Won't preserve the ID-ness of "id"-type hash tokens;
-	// use escapeIdent() for that.
-	string = ''+string;
-	var result = '';
-	var firstcode = string.charCodeAt(0);
-	for(var i = 0; i < string.length; i++) {
-		var code = string.charCodeAt(i);
-		if(code == 0x0) {
-			throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
-		}
-
-		if(
-			code >= 0x80 ||
-			code == 0x2d ||
-			code == 0x5f ||
-			between(code, 0x30, 0x39) ||
-			between(code, 0x41, 0x5a) ||
-			between(code, 0x61, 0x7a)
-		) {
-			result += string[i];
-		} else {
-			result += '\\' + code.toString(16) + ' ';
-		}
-	}
-	return result;
+	// Escapes the value (after the #) of a hash.
+	return Array.from(String(string), e=>{
+		const code = e.codePointAt(0);
+		if(namechar(code)) return e;
+		return escapeIdentCode(code);
+	}).join("");
 }
 
 function escapeString(string) {
-	string = ''+string;
-	var result = '';
-	for(var i = 0; i < string.length; i++) {
-		var code = string.charCodeAt(i);
-
-		if(code == 0x0) {
-			throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
+	// Escapes the contents (between the quotes) of a string
+	return Array.from(String(string), e=>{
+		const code = e.codePointAt(0);
+		if(between(code, 0x0, 0x1f)
+			|| code == 0x7f
+			|| code == 0x22
+			|| code == 0x5c
+		) {
+			return "\\" + code.toString(16) + " ";
 		}
+		return e;
+	}).join("");
+}
 
-		if(between(code, 0x1, 0x1f) || code == 0x7f) {
-			result += '\\' + code.toString(16) + ' ';
-		} else if(code == 0x22 || code == 0x5c) {
-			result += '\\' + string[i];
-		} else {
-			result += string[i];
-		}
-	}
-	return result;
+function formatNumber(num) {
+	// TODO: Fix this to match CSS stringification behavior.
+	return String(num);
 }
 
 // Exportation.
@@ -901,12 +830,6 @@ exports.DelimToken = DelimToken;
 exports.NumberToken = NumberToken;
 exports.PercentageToken = PercentageToken;
 exports.DimensionToken = DimensionToken;
-exports.IncludeMatchToken = IncludeMatchToken;
-exports.DashMatchToken = DashMatchToken;
-exports.PrefixMatchToken = PrefixMatchToken;
-exports.SuffixMatchToken = SuffixMatchToken;
-exports.SubstringMatchToken = SubstringMatchToken;
-exports.ColumnToken = ColumnToken;
 exports.WhitespaceToken = WhitespaceToken;
 exports.CDOToken = CDOToken;
 exports.CDCToken = CDCToken;
@@ -921,7 +844,6 @@ exports.OpenCurlyToken = OpenCurlyToken;
 exports.CloseCurlyToken = CloseCurlyToken;
 exports.EOFToken = EOFToken;
 exports.CSSParserToken = CSSParserToken;
-exports.GroupingToken = GroupingToken;
 
 class TokenStream {
 	constructor(tokens) {
@@ -1127,7 +1049,7 @@ function consumeADeclaration(s, nested=false) {
 	for(var i = decl.value.length - 1; i >= 0; i--) {
 		if(decl.value[i] instanceof WhitespaceToken) {
 			continue;
-		} else if(!foundImportant && decl.value[i] instanceof IdentToken && decl.value[i].ASCIIMatch("important")) {
+		} else if(!foundImportant && decl.value[i] instanceof IdentToken && asciiCaselessMatch(decl.value[i].value, "important")) {
 			foundImportant = true;
 		} else if(foundImportant && decl.value[i] instanceof DelimToken && decl.value[i].value == "!") {
 			decl.value.length = i;
@@ -1189,16 +1111,15 @@ function consumeAComponentValue(s) {
 }
 
 function consumeASimpleBlock(s) {
-	if(!s.nextToken() instanceof GroupingToken) {
+	if(!s.nextToken().mirror) {
 		throw new Error("consumeASimpleBlock() called with an invalid token stream state.");
 	}
 	const start = s.nextToken();
-	const mirrorToken = start.mirror;
-	const block = new SimpleBlock(start.value);
+	const block = new SimpleBlock(start.toSource());
 	s.discardToken();
 	while(1) {
 		const token = s.nextToken();
-		if(token instanceof EOFToken || token instanceof mirrorToken) {
+		if(token instanceof EOFToken || token instanceof start.mirror) {
 			s.discardToken();
 			return block;
 		} else {
@@ -1234,7 +1155,7 @@ function isValidInContext(construct, context) {
 	// (Can only happen at the top level of a stylesheet.)
 	if(construct.type == "QUALIFIED-RULE") {
 		for(const val of construct.prelude) {
-			if(val.tokenType == ";") return false;
+			if(val.type == "SEMICOLON") return false;
 		}
 		return true;
 	}
