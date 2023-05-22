@@ -17,7 +17,25 @@ function hexdigit(code) { return digit(code) || between(code, 0x41,0x46) || betw
 function uppercaseletter(code) { return between(code, 0x41,0x5a); }
 function lowercaseletter(code) { return between(code, 0x61,0x7a); }
 function letter(code) { return uppercaseletter(code) || lowercaseletter(code); }
-function nonascii(code) { return code >= 0x80; }
+function nonascii(code) {
+	return (
+		code == 0xb7 ||
+		between(code, 0xc0, 0xd6) ||
+		between(code, 0xd8, 0xf6) ||
+		between(code, 0xf8, 0x37d) ||
+		between(code, 0x37f, 0x1fff) ||
+		code == 0x200c ||
+		code == 0x200d ||
+		code == 0x203f ||
+		code == 0x2040 ||
+		between(code, 0x2070, 0x218f) ||
+		between(code, 0x2c00, 0x2fef) ||
+		between(code, 0x3001, 0xd7ff) ||
+		between(code, 0xf900, 0xfdcf) ||
+		between(code, 0xfdf0, 0xfffd) ||
+		code >= 0x10000
+	);
+}
 function namestartchar(code) { return letter(code) || nonascii(code) || code == 0x5f; }
 function namechar(code) { return namestartchar(code) || digit(code) || code == 0x2d; }
 function nonprintable(code) { return between(code, 0,8) || code == 0xb || between(code, 0xe,0x1f) || code == 0x7f; }
@@ -1373,6 +1391,5 @@ exports.parseADeclaration = parseADeclaration;
 exports.parseAComponentValue = parseAComponentValue;
 exports.parseAListOfComponentValues = parseAListOfComponentValues;
 exports.parseACommaSeparatedListOfComponentValues = parseACommaSeparatedListOfComponentValues;
-exports.tokenize = tokenize;
 
 }));

@@ -2,7 +2,7 @@ Standards-Based CSS Parser
 ==========================
 
 This project implements a standards-based CSS Parser.
-I'm writing the CSS Syntax spec <http://dev.w3.org/csswg/css-syntax/>,
+I'm the editor of the CSS Syntax spec <http://drafts.csswg.org/css-syntax/>,
 and need an implementation of it for testing purposes.
 
 This parser is *not* designed to be fast,
@@ -18,7 +18,7 @@ to make the same change in the parser.
 It is intended to fully and completely match browser behavior
 (at least, as much as the final spec does).
 
-There's a [dingus](https://rawgit.com/tabatkins/parse-css/master/example.html) for testing it out,
+There's a [dingus](https://tabatkins.github.io/parse-css/example.html) for testing it out,
 or just quickly checking what some CSS parses into.
 
 Using the Library
@@ -43,13 +43,7 @@ and thus this parser,
 is *extremely generic*.
 It doesn't have any specific knowledge of CSS rules,
 just the core syntax,
-so it won't throw out invalid or unknown things,
-and it can't even actually parse the contents of blocks
-(because it doesn't know if they'll contain rules or declarations,
-and those are ambiguous without any context).
-I plan to add some functions that add more CSS knowledge
-(in an extensible way, so it'll retain anything custom that you want to handle yourself),
-but for now you have to do all the verification and additional parsing yourself.
+so it won't throw out invalid or unknown things.
 
 Parsing Functions
 -----------------
