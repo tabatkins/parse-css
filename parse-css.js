@@ -916,7 +916,7 @@ function parseerror(s, msg) {
 	return true;
 }
 
-function consumeAListOfRules(s, topLevel=false) {
+function consumeAStylesheetsContents(s) {
 	const rules = [];
 	while(1) {
 		const token = s.nextToken();
@@ -925,12 +925,7 @@ function consumeAListOfRules(s, topLevel=false) {
 		} else if(token instanceof EOFToken) {
 			return rules;
 		} else if(token instanceof CDOToken || token instanceof CDCToken) {
-			if(topLevel == "top-level") {
-				s.discardToken();
-			} else {
-				const rule = consumeAQualifiedRule(s);
-				if(rule) rules.push(rule);
-			}
+			s.discardToken();
 		} else if(token instanceof AtKeywordToken) {
 			const rule = consumeAnAtRule(s)
 			if(rule) rules.push(rule);
@@ -1207,13 +1202,18 @@ function normalizeInput(input) {
 function parseAStylesheet(s) {
 	s = normalizeInput(s);
 	var sheet = new Stylesheet();
-	sheet.rules = consumeAListOfRules(s, "top-level");
+	sheet.rules = consumeAStylesheetsContents(s);
 	return sheet;
 }
 
-function parseAListOfRules(s) {
+function parseAStylesheetsContents(s) {
 	s = normalizeInput(s);
-	return consumeAListOfRules(s);
+	return consumeAStylesheetsContents(s);
+}
+
+function parseABlocksContents(s) {
+	s = normalizeInput(s);
+	return consumeABlocksContents(s);
 }
 
 function parseARule(s) {
@@ -1385,7 +1385,8 @@ exports.Declaration = Declaration;
 exports.SimpleBlock = SimpleBlock;
 exports.Func = Func;
 exports.parseAStylesheet = parseAStylesheet;
-exports.parseAListOfRules = parseAListOfRules;
+exports.parseAStylesheetsContents = parseAStylesheetsContents;
+exports.parseABlocksContents = parseABlocksContents;
 exports.parseARule = parseARule;
 exports.parseADeclaration = parseADeclaration;
 exports.parseAComponentValue = parseAComponentValue;
