@@ -1297,7 +1297,7 @@ class Stylesheet extends CSSParserRule {
 		}
 	}
 	toSource() {
-		return "\n".join(this.rules.map(x=>x.toSource({indent:0}))) + "\n";
+		return this.rules.map(x=>x.toSource({indent:0})).join("\n");
 	}
 }
 
@@ -1328,12 +1328,10 @@ class AtRule extends CSSParserRule {
 		}
 		s += "{\n";
 		if(this.declarations) {
-			s += "\n".join(this.declarations.map(x=>x.toSource(indent+1)));
-			s += "\n";
+			s += this.declarations.map(x=>x.toSource(indent+1)).join("\n") + "\n";
 		}
 		if(this.rules) {
-			s += "\n".join(this.rules.map(x=>x.toSource(indent+1)));
-			s += "\n";
+			s += this.rules.map(x=>x.toSource(indent+1)).join("\n") + "\n";
 		}
 		s += printIndent(indent) + "}";
 	}
@@ -1364,12 +1362,10 @@ class QualifiedRule extends CSSParserRule {
 		}
 		s += "{\n";
 		if(this.declarations) {
-			s += "\n".join(this.declarations.map(x=>x.toSource(indent+1)));
-			s += "\n";
+			s += this.declarations.map(x=>x.toSource(indent+1)).join("\n") + "\n";
 		}
 		if(this.rules) {
-			s += "\n".join(this.rules.map(x=>x.toSource(indent+1)));
-			s += "\n";
+			s += this.rules.map(x=>x.toSource(indent+1)).join("\n") + "\n";
 		}
 		s += printIndent(indent) + "}";
 	}
@@ -1393,7 +1389,7 @@ class Declaration extends CSSParserRule {
 	}
 	toSource(indent=0) {
 		let s = printIndent(indent) + escapeIdent(this.name) + ": ";
-		s += "".join(this.value.map(x=>x.toSource()))
+		s += this.value.map(x=>x.toSource()).join("");
 		if(this.important) {
 			s += " !important";
 		}
@@ -1417,7 +1413,7 @@ class SimpleBlock extends CSSParserRule {
 	}
 	toSource() {
 		const mirror = {"{":"}", "[":"]", "(":")"};
-		return this.name + "".join(this.value.map(x=>x.toSource())) + mirror[this.name];
+		return this.name + this.value.map(x=>x.toSource()).join("") + mirror[this.name];
 	}
 }
 
@@ -1436,7 +1432,7 @@ class Func extends CSSParserRule {
 		}
 	}
 	toSource() {
-		return escapeIdent(this.name) + "(" + "".join(this.value.map(x=>x.toSource())) + ")";
+		return escapeIdent(this.name) + "(" + this.value.map(x=>x.toSource()).join("") + ")";
 	}
 }
 
