@@ -42,6 +42,7 @@ function nonprintable(code) { return between(code, 0,8) || code == 0xb || betwee
 function newline(code) { return code == 0xa; }
 function whitespace(code) { return newline(code) || code == 9 || code == 0x20; }
 function badescape(code) { return newline(code) || isNaN(code); }
+function surrogate(code) { return between(code, 0xd800, 0xdfff); }
 
 var maximumallowedcodepoint = 0x10ffff;
 
@@ -803,6 +804,13 @@ function escapeIdent(string) {
 		if(namechar(code)) return e;
 		return escapeIdentCode(code);
 	}).join("");
+}
+
+function escapeIdentCode(code) {
+	if(digit(code) || letter(code)) {
+		return `\\${code.toString(16)} `;
+	}
+	return "\\"+String.fromCodePoint(code);
 }
 
 function escapeHash(string) {
