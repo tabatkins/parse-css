@@ -1334,6 +1334,7 @@ class AtRule extends CSSParserRule {
 			s += this.rules.map(x=>x.toSource(indent+1)).join("\n") + "\n";
 		}
 		s += printIndent(indent) + "}";
+		return s;
 	}
 }
 
@@ -1368,6 +1369,7 @@ class QualifiedRule extends CSSParserRule {
 			s += this.rules.map(x=>x.toSource(indent+1)).join("\n") + "\n";
 		}
 		s += printIndent(indent) + "}";
+		return s;
 	}
 }
 
@@ -1394,6 +1396,7 @@ class Declaration extends CSSParserRule {
 			s += " !important";
 		}
 		s += ";";
+		return s;
 	}
 }
 
