@@ -293,15 +293,15 @@ function tokenize(str) {
 	};
 
 	var consumeANumericToken = function() {
-		var num = consumeANumber();
+		var {value, isInteger, sign} = consumeANumber();
 		if(wouldStartAnIdentifier(next(1), next(2), next(3))) {
 			const unit = consumeAName();
-			return new DimensionToken(num.value, unit);
+			return new DimensionToken(value, unit, sign);
 		} else if(next() == 0x25) {
 			consume();
-			return new PercentageToken(num.value);
+			return new PercentageToken(value, sign);
 		} else {
-			return new NumberToken(num.value, num.isInteger);
+			return new NumberToken(value, isInteger, sign);
 		}
 	};
 
@@ -753,7 +753,7 @@ class NumberToken extends CSSParserToken {
 	}
 	toString() {
 		const name = this.isInteger ? "INT" : "NUMBER";
-		const sign = this.sign == "+" : "+" : ""
+		const sign = this.sign == "+" : "+" : "";
 		return `${name}(${this.sign}${this.value})`;
 	}
 	toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, sign:this.sign}; }
@@ -761,22 +761,30 @@ class NumberToken extends CSSParserToken {
 }
 
 class PercentageToken extends CSSParserToken {
-	constructor(val) {
+	constructor(val, sign=undefined) {
 		super("PERCENTAGE");
 		this.value = val;
+		this.sign = sign;
 	}
-	toString() { `PERCENTAGE(${this.value})`; }
-	toJSON() { return {type:this.type, value:this.value}; }
-	toSource() { return `${formatNumber(this.value)}%`; }
+	toString() {
+		const sign = this.sign == "+" : "+" : "";
+		return `PERCENTAGE(${this.sign}${this.value})`;
+	}
+	toJSON() { return {type:this.type, value:this.value, sign:this.sign}; }
+	toSource() { return `${formatNumber(this.value, this.sign)}%`; }
 }
 
 class DimensionToken extends CSSParserToken {
-	constructor(val, unit) {
+	constructor(val, unit, sign=undefined) {
 		super("DIMENSION");
 		this.value = val;
 		this.unit = unit;
+		this.sign = sign;
 	}
-	toString() { `DIM(${this.value}, ${this.unit})`; }
+	toString() {
+		const sign = this.sign == "+" : "+" : "";
+		return `DIM(${this.sign}${this.value}, ${this.unit})`;
+	}
 	toJSON() { return {type:this.type, value:this.value, unit:this.unit}; }
 	toSource() {
 		let unit = escapeIdent(this.unit);
@@ -785,7 +793,7 @@ class DimensionToken extends CSSParserToken {
 			// Remove the leading "e", replace with escape.
 			unit = "\\65 " + unit.slice(1, unit.length);
 		}
-		return `${formatNumber(this.value)}${unit}`;
+		return `${formatNumber(this.value, this.sign)}${unit}`;
 	}
 }
 
