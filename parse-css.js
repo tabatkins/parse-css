@@ -1296,6 +1296,9 @@ class Stylesheet extends CSSParserRule {
 			rules: this.rules,
 		}
 	}
+	toSource() {
+		return "\n".join(this.rules.map(x=>x.toSource({indent:0}))) + "\n";
+	}
 }
 
 class AtRule extends CSSParserRule {
@@ -1316,6 +1319,24 @@ class AtRule extends CSSParserRule {
 			rules: this.rules,
 		}
 	}
+	toSource(indent=0) {
+		let s = printIndent(indent) + "@" + escapeIdent(this.name);
+		s += this.prelude.map(x=>x.toSource());
+		if(this.declarations == null) {
+			s += ";\n";
+			return s;
+		}
+		s += "{\n";
+		if(this.declarations) {
+			s += "\n".join(this.declarations.map(x=>x.toSource(indent+1)));
+			s += "\n";
+		}
+		if(this.rules) {
+			s += "\n".join(this.rules.map(x=>x.toSource(indent+1)));
+			s += "\n";
+		}
+		s += printIndent(indent) + "}";
+	}
 }
 
 class QualifiedRule extends CSSParserRule {
@@ -1333,6 +1354,24 @@ class QualifiedRule extends CSSParserRule {
 			declarations: this.declarations,
 			rules: this.rules,
 		}
+	}
+	toSource(indent=0) {
+		let s = printIndent(indent);
+		s += this.prelude.map(x=>x.toSource());
+		if(this.declarations == null) {
+			s += ";\n";
+			return s;
+		}
+		s += "{\n";
+		if(this.declarations) {
+			s += "\n".join(this.declarations.map(x=>x.toSource(indent+1)));
+			s += "\n";
+		}
+		if(this.rules) {
+			s += "\n".join(this.rules.map(x=>x.toSource(indent+1)));
+			s += "\n";
+		}
+		s += printIndent(indent) + "}";
 	}
 }
 
@@ -1352,6 +1391,14 @@ class Declaration extends CSSParserRule {
 			important: this.important,
 		}
 	}
+	toSource(indent=0) {
+		let s = printIndent(indent) + escapeIdent(this.name) + ": ";
+		s += "".join(this.value.map(x=>x.toSource()))
+		if(this.important) {
+			s += " !important";
+		}
+		s += ";";
+	}
 }
 
 class SimpleBlock extends CSSParserRule {
@@ -1367,6 +1414,10 @@ class SimpleBlock extends CSSParserRule {
 			name: this.name,
 			value: this.value,
 		}
+	}
+	toSource() {
+		const mirror = {"{":"}", "[":"]", "(":")"};
+		return this.name + "".join(this.value.map(x=>x.toSource())) + mirror[this.name];
 	}
 }
 
@@ -1384,6 +1435,13 @@ class Func extends CSSParserRule {
 			value: this.value,
 		}
 	}
+	toSource() {
+		return escapeIdent(this.name) + "(" + "".join(this.value.map(x=>x.toSource())) + ")";
+	}
+}
+
+function printIndent(level) {
+	return "\t".repeat(level);
 }
 
 
