@@ -1297,7 +1297,7 @@ class Stylesheet extends CSSParserRule {
 		}
 	}
 	toSource() {
-		return this.rules.map(x=>x.toSource({indent:0})).join("\n");
+		return this.rules.map(x=>x.toSource()).join("\n");
 	}
 }
 
@@ -1321,7 +1321,7 @@ class AtRule extends CSSParserRule {
 	}
 	toSource(indent=0) {
 		let s = printIndent(indent) + "@" + escapeIdent(this.name);
-		s += this.prelude.map(x=>x.toSource());
+		s += this.prelude.map(x=>x.toSource()).join("");
 		if(this.declarations == null) {
 			s += ";\n";
 			return s;
@@ -1356,7 +1356,7 @@ class QualifiedRule extends CSSParserRule {
 	}
 	toSource(indent=0) {
 		let s = printIndent(indent);
-		s += this.prelude.map(x=>x.toSource());
+		s += this.prelude.map(x=>x.toSource()).join("");
 		if(this.declarations == null) {
 			s += ";\n";
 			return s;
@@ -1393,7 +1393,7 @@ class Declaration extends CSSParserRule {
 		let s = printIndent(indent) + escapeIdent(this.name) + ": ";
 		s += this.value.map(x=>x.toSource()).join("");
 		if(this.important) {
-			s += " !important";
+			s += "!important";
 		}
 		s += ";";
 		return s;
