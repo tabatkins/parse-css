@@ -151,10 +151,8 @@ function tokenize(str) {
 		else if(code == 0x22) return consumeAStringToken();
 		else if(code == 0x23) {
 			if(namechar(next()) || areAValidEscape(next(1), next(2))) {
-				var token = new HashToken();
-				if(wouldStartAnIdentifier(next(1), next(2), next(3))) token.type = "id";
-				token.value = consumeAName();
-				return token;
+				const isIdent = wouldStartAnIdentifier(next(1), next(2), next(3));
+				return new HashToken(consumeAName(), isIdent);
 			} else {
 				return new DelimToken(code);
 			}
@@ -722,13 +720,19 @@ class AtKeywordToken extends CSSParserToken {
 }
 
 class HashToken extends CSSParserToken {
-	constructor(val) {
+	constructor(val, isIdent) {
 		super("HASH");
 		this.value = val;
+		this.isIdent = isIdent;
 	}
 	toString() { return `HASH(${this.value})`; }
-	toJSON() { return {type:this.type, value:this.value}; }
-	toSource() { return "#" + escapeHash(this.value); }
+	toJSON() { return {type:this.type, value:this.value, isIdent:this.isIdent}; }
+	toSource() {
+		if(this.isIdent) {
+			return "#" + escapeIdent(this.value);
+		}
+		return "#" + escapeHash(this.value);
+	}
 }
 
 class StringToken extends CSSParserToken {
