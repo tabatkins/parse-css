@@ -466,58 +466,47 @@ function tokenize(str) {
 	};
 
 	var consumeANumber = function() {
-		var repr = [];
-		var type = "integer";
+		let isInteger = true;
+		let sign;
+		let numberPart = "";
+		let exponentPart = "";
 		if(next() == 0x2b || next() == 0x2d) {
 			consume();
-			repr += String.fromCodePoint(code);
+			sign = String.fromCodePoint(code);
+			numberPart += sign;
 		}
 		while(digit(next())) {
 			consume();
-			repr += String.fromCodePoint(code);
+			numberPart += String.fromCodePoint(code);
 		}
 		if(next(1) == 0x2e && digit(next(2))) {
 			consume();
-			repr += String.fromCodePoint(code);
-			consume();
-			repr += String.fromCodePoint(code);
-			type = "number";
+			numberPart += ".";
 			while(digit(next())) {
 				consume();
-				repr += String.fromCodePoint(code);
+				numberPart += String.fromCodePoint(code);
 			}
+			isInteger = false;
 		}
 		var c1 = next(1), c2 = next(2), c3 = next(3);
-		if((c1 == 0x45 || c1 == 0x65) && digit(c2)) {
+		const eDigit = (c1 == 0x45 || c1 == 0x65) && digit(c2);
+		const eSignDigit = (c1 == 0x45 || c1 == 0x65) && (c2 == 0x2b || c2 == 0x2d) && digit(c3);
+		if(eDigit || eSignDigit) {
 			consume();
-			repr += String.fromCodePoint(code);
-			consume();
-			repr += String.fromCodePoint(code);
-			type = "number";
+			if(eSignDigit) {
+				consume();
+				exponentPart += String.fromCodePoint(code);
+			}
 			while(digit(next())) {
 				consume();
-				repr += String.fromCodePoint(code);
+				exponentPart += String.fromCodePoint(code);
 			}
-		} else if((c1 == 0x45 || c1 == 0x65) && (c2 == 0x2b || c2 == 0x2d) && digit(c3)) {
-			consume();
-			repr += String.fromCodePoint(code);
-			consume();
-			repr += String.fromCodePoint(code);
-			consume();
-			repr += String.fromCodePoint(code);
-			type = "number";
-			while(digit(next())) {
-				consume();
-				repr += String.fromCodePoint(code);
-			}
+			isInteger = false;
 		}
-		var value = convertAStringToANumber(repr);
-		return {value:value, isInteger: type=="integer"};
-	};
+		let value = +numberPart;
+		if(exponentPart) value = value * Math.pow(10, +exponentPart);
 
-	var convertAStringToANumber = function(string) {
-		// CSS's number rules are identical to JS, afaik.
-		return +string;
+		return {value, isInteger, sign};
 	};
 
 	var consumeTheRemnantsOfABadURL = function() {
@@ -756,17 +745,19 @@ class URLToken extends CSSParserToken {
 }
 
 class NumberToken extends CSSParserToken {
-	constructor(val, isInteger) {
+	constructor(val, isInteger, sign=undefined) {
 		super("NUMBER");
 		this.value = val;
 		this.isInteger = isInteger;
+		this.sign = sign;
 	}
 	toString() {
-		if(this.isInteger) return `INT(${this.value})`;
-		return `NUMBER(${this.value})`;
+		const name = this.isInteger ? "INT" : "NUMBER";
+		const sign = this.sign == "+" : "+" : ""
+		return `${name}(${this.sign}${this.value})`;
 	}
-	toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger}; }
-	toSource() { return formatNumber(this.value); }
+	toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, sign:this.sign}; }
+	toSource() { return formatNumber(this.value, this.sign); }
 }
 
 class PercentageToken extends CSSParserToken {
@@ -841,9 +832,9 @@ function escapeString(string) {
 	}).join("");
 }
 
-function formatNumber(num) {
+function formatNumber(num, sign=undefined) {
 	// TODO: Fix this to match CSS stringification behavior.
-	return String(num);
+	return (sign == "+" ? "+" : "") + String(num);
 }
 
 // Exportation.
