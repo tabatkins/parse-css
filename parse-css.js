@@ -1358,7 +1358,7 @@ class QualifiedRule extends CSSParserRule {
 		let s = printIndent(indent);
 		s += this.prelude.map(x=>x.toSource()).join("");
 		s += "{\n";
-		if(this.declarations.length;) {
+		if(this.declarations.length) {
 			s += this.declarations.map(x=>x.toSource(indent+1)).join("\n") + "\n";
 		}
 		if(this.rules.length) {
