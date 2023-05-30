@@ -157,25 +157,9 @@ function tokenize(str) {
 				return new DelimToken(code);
 			}
 		}
-		else if(code == 0x24) {
-			if(next() == 0x3d) {
-				consume();
-				return new SuffixMatchToken();
-			} else {
-				return new DelimToken(code);
-			}
-		}
 		else if(code == 0x27) return consumeAStringToken();
 		else if(code == 0x28) return new OpenParenToken();
 		else if(code == 0x29) return new CloseParenToken();
-		else if(code == 0x2a) {
-			if(next() == 0x3d) {
-				consume();
-				return new SubstringMatchToken();
-			} else {
-				return new DelimToken(code);
-			}
-		}
 		else if(code == 0x2b) {
 			if(startsWithANumber()) {
 				reconsume();
@@ -235,35 +219,8 @@ function tokenize(str) {
 			}
 		}
 		else if(code == 0x5d) return new CloseSquareToken();
-		else if(code == 0x5e) {
-			if(next() == 0x3d) {
-				consume();
-				return new PrefixMatchToken();
-			} else {
-				return new DelimToken(code);
-			}
-		}
 		else if(code == 0x7b) return new OpenCurlyToken();
-		else if(code == 0x7c) {
-			if(next() == 0x3d) {
-				consume();
-				return new DashMatchToken();
-			} else if(next() == 0x7c) {
-				consume();
-				return new ColumnToken();
-			} else {
-				return new DelimToken(code);
-			}
-		}
 		else if(code == 0x7d) return new CloseCurlyToken();
-		else if(code == 0x7e) {
-			if(next() == 0x3d) {
-				consume();
-				return new IncludeMatchToken();
-			} else {
-				return new DelimToken(code);
-			}
-		}
 		else if(digit(code)) {
 			reconsume();
 			return consumeANumericToken();
