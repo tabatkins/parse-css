@@ -558,7 +558,7 @@ class CommaToken extends CSSParserToken {
 	constructor() {
 		super("COMMA");
 	}
-	toSource() { return ";" }
+	toSource() { return "," }
 }
 
 class OpenCurlyToken extends CSSParserToken {
