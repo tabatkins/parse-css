@@ -1236,7 +1236,7 @@ function parseACommaSeparatedListOfComponentValues(s) {
 
 class CSSParserRule {
 	constructor(type) { this.type = type; }
-	toSource(indent) {
+	toString(indent) {
 		return JSON.stringify(this,null,indent);
 	}
 }
