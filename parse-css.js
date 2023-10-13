@@ -626,7 +626,7 @@ class DelimToken extends CSSParserToken {
 		}
 		this.value = val;
 	}
-	toString() { return `DELIM(${this.val})`; }
+	toString() { return `DELIM(${this.value})`; }
 	toJSON() { return {type:this.type, value:this.value}; }
 	toSource() {
 		if(this.value == "\\") return "\\\n";
@@ -745,7 +745,7 @@ class DimensionToken extends CSSParserToken {
 	toJSON() { return {type:this.type, value:this.value, unit:this.unit}; }
 	toSource() {
 		let unit = escapeIdent(this.unit);
-		if(unit[0].toLowerCase() == "e" && (unit[1] == "-" || digit(unit[1]))) {
+		if(unit[0].toLowerCase() == "e" && (unit[1] == "-" || digit(unit[1].charCodeAt(0)))) {
 			// Unit is ambiguous with scinot
 			// Remove the leading "e", replace with escape.
 			unit = "\\65 " + unit.slice(1, unit.length);
@@ -880,7 +880,7 @@ class TokenStream {
 }
 
 function parseerror(s, msg) {
-	console.log("Parse error at token " + s.i + ": " + s.tokens[i] + ".\n" + msg);
+	console.log("Parse error at token " + s.i + ": " + s.tokens[s.i] + ".\n" + msg);
 	return true;
 }
 
@@ -906,7 +906,7 @@ function consumeAStylesheetsContents(s) {
 
 function consumeAnAtRule(s, nested=false) {
 	const token = s.consumeToken();
-	if(!token instanceof AtKeywordToken)
+	if(!(token instanceof AtKeywordToken))
 		throw new Error("consumeAnAtRule() called with an invalid token stream state.");
 	const rule = new AtRule(token.value);
 	while(1) {
@@ -972,7 +972,7 @@ function looksLikeACustomProperty(tokens) {
 }
 
 function consumeABlock(s) {
-	if(!s.nextToken() instanceof OpenCurlyToken) {
+	if(!(s.nextToken() instanceof OpenCurlyToken)) {
 		throw new Error("consumeABlock() called with an invalid token stream state.");
 	}
 	s.discardToken();
@@ -1110,7 +1110,7 @@ function consumeASimpleBlock(s) {
 }
 
 function consumeAFunction(s) {
-	if(!s.nextToken() instanceof FunctionToken) {
+	if(!(s.nextToken() instanceof FunctionToken)) {
 		throw new Error("consumeAFunction() called with an invalid token stream state.");
 	}
 	var func = new Func(s.consumeToken().value);
@@ -1236,7 +1236,7 @@ function parseACommaSeparatedListOfComponentValues(s) {
 
 class CSSParserRule {
 	constructor(type) { this.type = type; }
-	toString(indent) {
+	toSource(indent) {
 		return JSON.stringify(this,null,indent);
 	}
 }
