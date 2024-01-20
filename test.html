@@ -123,7 +123,7 @@ var TESTS = [
 						{
 							"type": "HASH",
 							"value": "foo",
-							"type": "id"
+							"isIdent": true
 						},
 						{
 							"type": "WHITESPACE"
@@ -362,6 +362,35 @@ var TESTS = [
 				}
 			]
 		}
+	}, {
+		css: 'foo}{}',
+		expected: {"type": "STYLESHEET", "rules": [
+			{
+				"type": "QUALIFIED-RULE",
+				"prelude": [
+					{
+						"type": "IDENT",
+						"value": "foo"
+					}, {
+						"type": "CLOSE-CURLY"
+					}
+				],
+				"declarations": [],
+				"rules": []
+			}
+		]}
+	}, {
+		css: '@media}{}',
+		expected: {"type": "STYLESHEET", "rules": [
+			{
+				"type": "AT-RULE", "name": "media",
+				"prelude": [{
+					"type": "CLOSE-CURLY"
+				}],
+				"declarations": [],
+				"rules": []
+			}
+		]}
 	}
 ];
 

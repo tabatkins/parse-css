@@ -41,18 +41,8 @@ function namechar(code) { return namestartchar(code) || digit(code) || code == 0
 function nonprintable(code) { return between(code, 0,8) || code == 0xb || between(code, 0xe,0x1f) || code == 0x7f; }
 function newline(code) { return code == 0xa; }
 function whitespace(code) { return newline(code) || code == 9 || code == 0x20; }
-function badescape(code) { return newline(code) || isNaN(code); }
-function surrogate(code) { return between(code, 0xd800, 0xdfff); }
 
 var maximumallowedcodepoint = 0x10ffff;
-
-class InvalidCharacterError extends Error {
-	constructor(message) {
-		super();
-		this.name = "InvalidCharacterError";
-		this.message = message;
-	}
-}
 
 function preprocess(str) {
 	// Turn a string into an array of code points,
@@ -109,7 +99,7 @@ function tokenize(str) {
 		if(num === undefined)
 			num = 1;
 		if(num > 3)
-			throw "Spec Error: no more than three codepoints of lookahead.";
+			throw new Error("Spec Error: no more than three codepoints of lookahead.");
 		return codepoint(i+num);
 	};
 	var consume = function(num) {
@@ -497,7 +487,7 @@ class CSSParserToken {
 
 	toJSON() { return {type:this.type}; }
 	toString() { return this.type; }
-	toSource() { throw new Exception("Not implemented."); }
+	toSource() { throw new Error("Not implemented."); }
 }
 //toJSON()
 //toString()
@@ -551,7 +541,7 @@ class SemicolonToken extends CSSParserToken {
 	constructor() {
 		super("SEMICOLON");
 	}
-	toSource() { return ";" };
+	toSource() { return ";" }
 }
 
 class CommaToken extends CSSParserToken {
@@ -626,7 +616,7 @@ class DelimToken extends CSSParserToken {
 		}
 		this.value = val;
 	}
-	toString() { return `DELIM(${this.val})`; }
+	toString() { return `DELIM(${this.value})`; }
 	toJSON() { return {type:this.type, value:this.value}; }
 	toSource() {
 		if(this.value == "\\") return "\\\n";
@@ -880,7 +870,7 @@ class TokenStream {
 }
 
 function parseerror(s, msg) {
-	console.log("Parse error at token " + s.i + ": " + s.tokens[i] + ".\n" + msg);
+	console.log("Parse error at token " + s.i + ": " + s.tokens[s.i] + ".\n" + msg);
 	return true;
 }
 
@@ -906,7 +896,7 @@ function consumeAStylesheetsContents(s) {
 
 function consumeAnAtRule(s, nested=false) {
 	const token = s.consumeToken();
-	if(!token instanceof AtKeywordToken)
+	if(!(token instanceof AtKeywordToken))
 		throw new Error("consumeAnAtRule() called with an invalid token stream state.");
 	const rule = new AtRule(token.value);
 	while(1) {
@@ -918,7 +908,7 @@ function consumeAnAtRule(s, nested=false) {
 			if(nested) return filterValid(rule);
 			else {
 				parseerror(s, "Hit an unmatched } in the prelude of an at-rule.");
-				rule.prelude.push(consumeToken(s));
+				rule.prelude.push(s.consumeToken());
 			}
 		} else if(token instanceof OpenCurlyToken) {
 			[rule.declarations, rule.rules] = consumeABlock(s);
@@ -937,10 +927,10 @@ function consumeAQualifiedRule(s, nested=false, stopToken=EOFToken) {
 			parseerror(s, "Hit EOF or semicolon when trying to parse the prelude of a qualified rule.");
 			return;
 		} else if(token instanceof CloseCurlyToken) {
-			parseerror("Hit an unmatched } in the prelude of a qualified rule.");
+			parseerror(s, "Hit an unmatched } in the prelude of a qualified rule.");
 			if(nested) return;
 			else {
-				rule.prelude.push(consumeToken(s));
+				rule.prelude.push(s.consumeToken());
 			}
 		} else if(token instanceof OpenCurlyToken) {
 			if(looksLikeACustomProperty(rule.prelude)) {
@@ -972,7 +962,7 @@ function looksLikeACustomProperty(tokens) {
 }
 
 function consumeABlock(s) {
-	if(!s.nextToken() instanceof OpenCurlyToken) {
+	if(!(s.nextToken() instanceof OpenCurlyToken)) {
 		throw new Error("consumeABlock() called with an invalid token stream state.");
 	}
 	s.discardToken();
@@ -1110,7 +1100,7 @@ function consumeASimpleBlock(s) {
 }
 
 function consumeAFunction(s) {
-	if(!s.nextToken() instanceof FunctionToken) {
+	if(!(s.nextToken() instanceof FunctionToken)) {
 		throw new Error("consumeAFunction() called with an invalid token stream state.");
 	}
 	var func = new Func(s.consumeToken().value);
