@@ -683,6 +683,11 @@ var TESTS = [
   },
   {
     parser: "",
+    css: "url(ba'd\\))",
+    expected: [{type: "BADURL"}, {type: "EOF"}],
+  },
+  {
+    parser: "",
     css: "url(ba'd\\\\))",
     expected: [{type: "BADURL"}, {type: "CLOSE-PAREN"}, {type: "EOF"}],
   },
