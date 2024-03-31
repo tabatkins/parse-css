@@ -1,14 +1,15 @@
 "use strict";
 (function (global, factory) {
-  // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
-  // Rhino, and plain browser loading.
-  if (typeof define === 'function' && define.amd) {
-    define(['exports'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports);
+  if (typeof exports === 'object' && typeof module === 'object') {
+    // CommonJS/Node.js
+    Object.assign(exports, factory());
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD
+    define(factory);
   } else {
+    // browser global
     global = typeof globalThis !== 'undefined' ? globalThis : global || self;
-    factory(global);
+    global.parseCss = factory();
   }
 }(this, function (exports) {
 
@@ -816,35 +817,6 @@ function formatNumber(num, sign=undefined) {
   return (sign == "+" ? "+" : "") + String(num);
 }
 
-// Exportation.
-exports.tokenize = tokenize;
-exports.IdentToken = IdentToken;
-exports.FunctionToken = FunctionToken;
-exports.AtKeywordToken = AtKeywordToken;
-exports.HashToken = HashToken;
-exports.StringToken = StringToken;
-exports.BadStringToken = BadStringToken;
-exports.URLToken = URLToken;
-exports.BadURLToken = BadURLToken;
-exports.DelimToken = DelimToken;
-exports.NumberToken = NumberToken;
-exports.PercentageToken = PercentageToken;
-exports.DimensionToken = DimensionToken;
-exports.WhitespaceToken = WhitespaceToken;
-exports.CDOToken = CDOToken;
-exports.CDCToken = CDCToken;
-exports.ColonToken = ColonToken;
-exports.SemicolonToken = SemicolonToken;
-exports.CommaToken = CommaToken;
-exports.OpenParenToken = OpenParenToken;
-exports.CloseParenToken = CloseParenToken;
-exports.OpenSquareToken = OpenSquareToken;
-exports.CloseSquareToken = CloseSquareToken;
-exports.OpenCurlyToken = OpenCurlyToken;
-exports.CloseCurlyToken = CloseCurlyToken;
-exports.EOFToken = EOFToken;
-exports.CSSParserToken = CSSParserToken;
-
 class TokenStream {
   constructor(tokens) {
     // Assume that tokens is an array.
@@ -1410,22 +1382,49 @@ function printIndent(level) {
   return "\t".repeat(level);
 }
 
-
-// Exportation.
-exports.CSSParserRule = CSSParserRule;
-exports.Stylesheet = Stylesheet;
-exports.AtRule = AtRule;
-exports.QualifiedRule = QualifiedRule;
-exports.Declaration = Declaration;
-exports.SimpleBlock = SimpleBlock;
-exports.Func = Func;
-exports.parseAStylesheet = parseAStylesheet;
-exports.parseAStylesheetsContents = parseAStylesheetsContents;
-exports.parseABlocksContents = parseABlocksContents;
-exports.parseARule = parseARule;
-exports.parseADeclaration = parseADeclaration;
-exports.parseAComponentValue = parseAComponentValue;
-exports.parseAListOfComponentValues = parseAListOfComponentValues;
-exports.parseACommaSeparatedListOfComponentValues = parseACommaSeparatedListOfComponentValues;
+return {
+  tokenize,
+  IdentToken,
+  FunctionToken,
+  AtKeywordToken,
+  HashToken,
+  StringToken,
+  BadStringToken,
+  URLToken,
+  BadURLToken,
+  DelimToken,
+  NumberToken,
+  PercentageToken,
+  DimensionToken,
+  WhitespaceToken,
+  CDOToken,
+  CDCToken,
+  ColonToken,
+  SemicolonToken,
+  CommaToken,
+  OpenParenToken,
+  CloseParenToken,
+  OpenSquareToken,
+  CloseSquareToken,
+  OpenCurlyToken,
+  CloseCurlyToken,
+  EOFToken,
+  CSSParserToken,
+  CSSParserRule,
+  Stylesheet,
+  AtRule,
+  QualifiedRule,
+  Declaration,
+  SimpleBlock,
+  Func,
+  parseAStylesheet,
+  parseAStylesheetsContents,
+  parseABlocksContents,
+  parseARule,
+  parseADeclaration,
+  parseAComponentValue,
+  parseAListOfComponentValues,
+  parseACommaSeparatedListOfComponentValues,
+};
 
 }));

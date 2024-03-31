@@ -13,7 +13,7 @@
   } else {
     global = typeof globalThis !== 'undefined' ? globalThis : global || self;
     factory(
-      global,
+      global.parseCss,
       {lines: global.diffString, words: global.diffString},
       global.log,
     );
