@@ -1,75 +1,404 @@
+"use strict";
+(function (global, factory) {
+  if (typeof define === 'function' && define.amd) {
+    require(
+      ['./parse-css', 'ansidiff'],
+      factory,
+    );
+  } else if (typeof exports !== 'undefined') {
+    factory(
+      require('./parse-css'),
+      require('ansidiff'),
+    );
+  } else {
+    global = typeof globalThis !== 'undefined' ? globalThis : global || self;
+    factory(
+      global,
+      {lines: global.diffString, words: global.diffString},
+      global.log,
+    );
+  }
+}(this, function (parseCss, ansidiff, log) {
+
 var TESTS = [
   {
-    css: 'foo { bar: baz; }',
-    expected: {"type": "stylesheet", "value": [
-      {
-        "type": "selector",
-        "selector": ["IDENT(foo)", "WS"],
-        "value": [
-          {
-            "type": "declaration",
-            "name": "bar",
-            "value": ["WS", "IDENT(baz)"]}]}]
+    css: `foo {
+        bar: baz;
+    }`,
+    expected: {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "foo"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "bar",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "baz"
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        }
+      ]
     }
   }, {
     css: 'foo { bar: rgb(255, 0, 127); }',
-    expected: {"type": "stylesheet", "value": [
-      {
-        "type": "selector",
-        "selector": ["IDENT(foo)", "WS"],
-        "value": [
-          {
-            "type": "declaration",
-            "name": "bar",
-            "value": ["WS", {"type": "func", "name": "rgb", "value": [
-                ["INT(255)"], ["WS", "INT(0)"], ["WS", "INT(127)"]]}]}]}]
+    expected: {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "foo"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "bar",
+              "value": [
+                {
+                  "type": "FUNCTION",
+                  "name": "rgb",
+                  "value": [
+                    {
+                      "type": "NUMBER",
+                      "value": 255,
+                      "isInteger": true,
+                    },
+                    {
+                      "type": "COMMA"
+                    },
+                    {
+                      "type": "WHITESPACE"
+                    },
+                    {
+                      "type": "NUMBER",
+                      "value": 0,
+                      "isInteger": true,
+                    },
+                    {
+                      "type": "COMMA"
+                    },
+                    {
+                      "type": "WHITESPACE"
+                    },
+                    {
+                      "type": "NUMBER",
+                      "value": 127,
+                      "isInteger": true,
+                    }
+                  ]
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        }
+      ]
     }
   }, {
     css: '#foo {}',
-    expected: {"type": "stylesheet", "value": [
-      {
-        "type": "selector",
-        "selector": ["HASH(foo)", "WS"],
-        "value": []}]
+    expected: {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "HASH",
+              "value": "foo",
+              "type": "id"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [],
+          "rules": []
+        }
+      ]
     }
   }, {
     css: '@media{ }',
-    expected: {"type": "stylesheet", "value": [
-      {
-        "type": "at", "name": "media",
-        "prelude": [],
-        "value": []}]}
+    expected: {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "AT-RULE",
+          "name": "media",
+          "prelude": [],
+          "declarations": [],
+          "rules": []
+        }
+      ]
+    }
+  }, {
+    css: '.foo {color: red; @media { foo: bar } color: green }',
+    expected: {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "DELIM",
+              "value": "."
+            },
+            {
+              "type": "IDENT",
+              "value": "foo"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "color",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "red"
+                }
+              ],
+              "important": false
+            },
+            {
+              "type": "DECLARATION",
+              "name": "color",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "green"
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": [
+            {
+              "type": "AT-RULE",
+              "name": "media",
+              "prelude": [
+                {
+                  "type": "WHITESPACE"
+                }
+              ],
+              "declarations": [
+                {
+                  "type": "DECLARATION",
+                  "name": "foo",
+                  "value": [
+                    {
+                      "type": "IDENT",
+                      "value": "bar"
+                    }
+                  ],
+                  "important": false
+                }
+              ],
+              "rules": []
+            }
+          ]
+        }
+      ]
+    }
+  }, {
+    css: 'foo{div:hover; color:red{};}',
+    expected: {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "foo"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "div",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "hover"
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": [
+            {
+              "type": "QUALIFIED-RULE",
+              "prelude": [
+                {
+                  "type": "IDENT",
+                  "value": "color"
+                },
+                {
+                  "type": "COLON"
+                },
+                {
+                  "type": "IDENT",
+                  "value": "red"
+                }
+              ],
+              "declarations": [],
+              "rules": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    css: `@foo;;foo {}`,
+    expected: {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "AT-RULE",
+          "name": "foo",
+          "prelude": [],
+          "declarations": null,
+          "rules": null
+        }
+      ]
+    }
+  }, {
+    css: `foo{@foo;;foo {}}`,
+    expected: {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "foo"
+            }
+          ],
+          "declarations": [],
+          "rules": [
+            {
+              "type": "AT-RULE",
+              "name": "foo",
+              "prelude": [],
+              "declarations": null,
+              "rules": null
+            },
+            {
+              "type": "QUALIFIED-RULE",
+              "prelude": [
+                {
+                  "type": "IDENT",
+                  "value": "foo"
+                },
+                {
+                  "type": "WHITESPACE"
+                }
+              ],
+              "declarations": [],
+              "rules": []
+            }
+          ]
+        }
+      ]
+    }
+  }, {
+    css: `foo { --div:hover{}}`,
+    expected: {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "foo"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "--div",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "hover"
+                },
+                {
+                  "type": "BLOCK",
+                  "name": "{",
+                  "value": []
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        }
+      ]
+    }
   }
 ];
 
 
-var ansidiff = require('ansidiff'),
-    tokenize = require('./parse-css').tokenize,
-    parseAStylesheet = require('./parse-css').parseAStylesheet;
+var tokenize = parseCss.tokenize,
+    parseAStylesheet = parseCss.parseAStylesheet, 
+    log = log || console.log;
 
 var total = TESTS.length, failures = 0,
     i, test, tokens, sheet, dump, expected_dump;
 
 for (i = 0; i < total; i++) {
   test = TESTS[i];
-  sheet = parseAStylesheet(test.css);
+  tokens = tokenize(test.css);
+  sheet = parseAStylesheet(tokens);
   dump = sheet.toString('  ');
   expected_dump = JSON.stringify(test.expected, null, '  ');
   if (dump == expected_dump) {
-    console.log('Test %d of %d: PASS', i, total);
+    log(`Test ${i} of ${total}: PASS`);
   } else {
-    console.log('Test %d of %d: FAIL\nCSS: %s\nTokens: %s',
-        i, total, test.css, tokens.join(' '));
-    console.log(ansidiff.lines(expected_dump, dump));
+    log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
+    log(ansidiff.lines(expected_dump, dump));
     failures++;
   }
 }
 
 // Abuse the differ to get colored output
 if (failures == 0) {
-  console.log(ansidiff.words('%d tests, ', '%d tests, all passed :)'),
-              total);
+  log(ansidiff.words(`${total} tests, `, `${total} tests, all passed :)`));
 } else {
-  console.log(ansidiff.words('%d tests, %d failures :(', '%d tests, '),
-              total, failures);
+  log(ansidiff.words(`${total} tests, ${failures} failures :(`, `${total} tests, `));
 }
+
+}));
