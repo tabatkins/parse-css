@@ -498,7 +498,7 @@ class CSSParserToken {
 
   toJSON() { return {type:this.type}; }
   toString() { return this.type; }
-  toSource() { throw new Exception("Not implemented."); }
+  toSource() { throw new Error("Not implemented."); }
 }
 //toJSON()
 //toString()
