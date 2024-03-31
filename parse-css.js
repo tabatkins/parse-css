@@ -491,8 +491,12 @@ function tokenize(str) {
 
 
   var iterationCount = 0;
-  while(!eof(next())) {
-    tokens.push(consumeAToken());
+  while (true) {
+    var token = consumeAToken();
+    tokens.push(token);
+    if (token instanceof EOFToken) {
+      break;
+    }
     iterationCount++;
     if(iterationCount > str.length*2) return "I'm infinite-looping!";
   }
