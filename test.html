@@ -9,7 +9,7 @@ ins, del { text-decoration: none; }
 </style>
 <script>
 function log(str) {
-  document.querySelector('#log').innerHTML += str+'\n';
+  document.querySelector('#log').insertAdjacentHTML('beforeend', str+'\n');
 }
 </script>
 <pre id='log'></pre>
