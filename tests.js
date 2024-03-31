@@ -56,7 +56,8 @@ var TESTS = [
         }
       ]
     }
-  }, {
+  },
+  {
     css: 'foo { bar: rgb(255, 0, 127); }',
     expected: {
       "type": "STYLESHEET",
@@ -118,7 +119,8 @@ var TESTS = [
         }
       ]
     }
-  }, {
+  },
+  {
     css: '#foo {}',
     expected: {
       "type": "STYLESHEET",
@@ -140,7 +142,8 @@ var TESTS = [
         }
       ]
     }
-  }, {
+  },
+  {
     css: '@media{ }',
     expected: {
       "type": "STYLESHEET",
@@ -154,7 +157,8 @@ var TESTS = [
         }
       ]
     }
-  }, {
+  },
+  {
     css: '.foo {color: red; @media { foo: bar } color: green }',
     expected: {
       "type": "STYLESHEET",
@@ -226,7 +230,8 @@ var TESTS = [
         }
       ]
     }
-  }, {
+  },
+  {
     css: 'foo{div:hover; color:red{};}',
     expected: {
       "type": "STYLESHEET",
@@ -290,7 +295,8 @@ var TESTS = [
         }
       ]
     }
-  }, {
+  },
+  {
     css: `foo{@foo;;foo {}}`,
     expected: {
       "type": "STYLESHEET",
@@ -330,7 +336,8 @@ var TESTS = [
         }
       ]
     }
-  }, {
+  },
+  {
     css: `foo { --div:hover{}}`,
     expected: {
       "type": "STYLESHEET",
