@@ -498,7 +498,7 @@ function tokenize(str) {
       break;
     }
     iterationCount++;
-    if(iterationCount > str.length*2) return "I'm infinite-looping!";
+    if(iterationCount > str.length*2) throw new Error("I'm infinite-looping!");
   }
   return tokens;
 }
