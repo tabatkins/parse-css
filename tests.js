@@ -372,18 +372,17 @@ var TESTS = [
 ];
 
 
-var tokenize = parseCss.tokenize,
-    parseAStylesheet = parseCss.parseAStylesheet, 
-    log = log || console.log;
+var log = log || console.log;
 
 var total = TESTS.length, failures = 0,
-    i, test, tokens, sheet, dump, expected_dump;
+    i, test, tokens, parser, result, dump, expected_dump;
 
 for (i = 0; i < total; i++) {
   test = TESTS[i];
-  tokens = tokenize(test.css);
-  sheet = parseAStylesheet(tokens);
-  dump = sheet.toString('  ');
+  tokens = parseCss.tokenize(test.css);
+  parser = parseCss[typeof test.parser === 'string' ? test.parser : 'parseAStylesheet'];
+  result = (typeof parser === 'function') ? parser(tokens) : tokens;
+  dump = JSON.stringify(result, null, '  ');
   expected_dump = JSON.stringify(test.expected, null, '  ');
   if (dump == expected_dump) {
     log(`Test ${i} of ${total}: PASS`);
