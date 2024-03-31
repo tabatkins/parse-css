@@ -465,8 +465,12 @@ function tokenize(str) {
       }
       isInteger = false;
     }
-    let value = +numberPart;
-    if(exponentPart) value = value * Math.pow(10, +exponentPart);
+
+    // parse with native engine to prevent a precision issue
+    // (e.g. 12E-1 becomes 1.2000000000000002)
+    let value = Number(numberPart + (exponentPart ? 'e' + exponentPart : ''));
+    // let value = +numberPart;
+    // if(exponentPart) value = value * Math.pow(10, +exponentPart);
 
     return {value, isInteger, sign};
   };
