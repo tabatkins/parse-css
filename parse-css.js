@@ -362,7 +362,7 @@ function tokenize(str) {
       }
       if(whitespace(next())) consume();
       var value = parseInt(digits.map(function(x){return String.fromCharCode(x);}).join(''), 16);
-      if( value > maximumallowedcodepoint ) value = 0xfffd;
+      if (value === 0x0 || between(value, 0xd800, 0xdfff) || value > maximumallowedcodepoint ) value = 0xfffd;
       return value;
     } else if(eof()) {
       return 0xfffd;

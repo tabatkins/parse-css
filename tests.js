@@ -36,6 +36,15 @@ var TESTS = [
     ]
   },
 
+  // tokenize()
+
+  // -- Escapes
+  {
+    parser: "",
+    css: `\\20000 \\0 \\D800 \\DFFF \\110000 `,
+    expected: [{type: "IDENT", value: "\u{20000}\uFFFD\uFFFD\uFFFD\uFFFD"}],
+  },
+
   // parseAStylesheet()
   {
     css: `foo {
