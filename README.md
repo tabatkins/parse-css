@@ -82,17 +82,17 @@ A grammar is an object with one of the following four forms:
 
 ```js
 {
-	"qualified": <grammar>,
-	"@foo": <grammar>,
-	"unknown": <function>
+  "qualified": <grammar>,
+  "@foo": <grammar>,
+  "unknown": <function>
 }
 ```
 
 ```js
 {
-	"declarations": true,
-	"@foo": <grammar>
-	"unknown": <function>
+  "declarations": true,
+  "@foo": <grammar>
+  "unknown": <function>
 }
 ```
 
@@ -132,47 +132,47 @@ This is what it currently looks like:
 
 ```js
 {
-	qualified: {declarations:true},
-	"@media": {stylesheet:true},
-	"@keyframes": {qualified:{declarations:true}},
-	"@font-face": {declarations:true},
-	"@supports": {stylesheet:true},
-	"@scope": {stylesheet:true},
-	"@counter-style": {declarations:true},
-	"@import": null,
-	"@font-feature-values": {
-		// No qualified rules actually allowed,
-		// but have to declare it one way or the other.
-		qualified: true,
-		"@stylistic": {declarations:true},
-		"@styleset": {declarations:true},
-		"@character-variants": {declarations:true},
-		"@swash": {declarations:true},
-		"@ornaments": {declarations:true},
-		"@annotation": {declarations:true},
-	},
-	"@viewport": {declarations:true},
-	"@page": {
-		declarations: true,
-		"@top-left-corner": {declarations:true},
-		"@top-left": {declarations:true},
-		"@top-center": {declarations:true},
-		"@top-right": {declarations:true},
-		"@top-right-corner": {declarations:true},
-		"@right-top": {declarations:true},
-		"@right-middle": {declarations:true},
-		"@right-bottom": {declarations:true},
-		"@right-bottom-corner": {declarations:true},
-		"@bottom-right": {declarations:true},
-		"@bottom-center": {declarations:true},
-		"@bottom-left": {declarations:true},
-		"@bottom-left-corner": {declarations:true},
-		"@left-bottom": {declarations:true},
-		"@left-center": {declarations:true},
-		"@left-top": {declarations:true},
-	},
-	"@custom-selector": null,
-	"@custom-media": null
+  qualified: {declarations:true},
+  "@media": {stylesheet:true},
+  "@keyframes": {qualified:{declarations:true}},
+  "@font-face": {declarations:true},
+  "@supports": {stylesheet:true},
+  "@scope": {stylesheet:true},
+  "@counter-style": {declarations:true},
+  "@import": null,
+  "@font-feature-values": {
+    // No qualified rules actually allowed,
+    // but have to declare it one way or the other.
+    qualified: true,
+    "@stylistic": {declarations:true},
+    "@styleset": {declarations:true},
+    "@character-variants": {declarations:true},
+    "@swash": {declarations:true},
+    "@ornaments": {declarations:true},
+    "@annotation": {declarations:true},
+  },
+  "@viewport": {declarations:true},
+  "@page": {
+    declarations: true,
+    "@top-left-corner": {declarations:true},
+    "@top-left": {declarations:true},
+    "@top-center": {declarations:true},
+    "@top-right": {declarations:true},
+    "@top-right-corner": {declarations:true},
+    "@right-top": {declarations:true},
+    "@right-middle": {declarations:true},
+    "@right-bottom": {declarations:true},
+    "@right-bottom-corner": {declarations:true},
+    "@bottom-right": {declarations:true},
+    "@bottom-center": {declarations:true},
+    "@bottom-left": {declarations:true},
+    "@bottom-left-corner": {declarations:true},
+    "@left-bottom": {declarations:true},
+    "@left-center": {declarations:true},
+    "@left-top": {declarations:true},
+  },
+  "@custom-selector": null,
+  "@custom-media": null
 }
 ```
 
