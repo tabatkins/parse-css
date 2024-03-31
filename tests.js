@@ -452,12 +452,12 @@ var TESTS = [
   {
     parser: "",
     css: "\u2003",  // em-space
-    expected: [{type: "IDENT", value: "\u2003"}],
+    expected: [{type: "DELIM", value: "\u2003"}],
   },
   {
     parser: "",
     css: "\u{A0}",  // non-breaking space
-    expected: [{type: "IDENT", value: "\u{A0}"}],
+    expected: [{type: "DELIM", value: "\u{A0}"}],
   },
   {
     parser: "",
@@ -519,7 +519,7 @@ var TESTS = [
   {
     parser: "",
     css: "url(  \'bar.gif\'",
-    expected: [{type: "FUNCTION", value: "url"}, {type: "STRING", value: "bar.gif"}],
+    expected: [{type: "FUNCTION", value: "url"}, {type: "WHITESPACE"}, {type: "STRING", value: "bar.gif"}],
   },
 
   // -- AtKeywordToken
@@ -956,12 +956,12 @@ var TESTS = [
   {
     parser: "",
     css: "-12.0em",
-    expected: [{type: "DIMENSION", value: -12, isInteger: false, unit: "em"}],
+    expected: [{type: "DIMENSION", value: -12, isInteger: false, unit: "em", sign: "-"}],
   },
   {
     parser: "",
     css: "+45.6__qem",
-    expected: [{type: "DIMENSION", value: 45.6, isInteger: false, unit: "__qem"}],
+    expected: [{type: "DIMENSION", value: 45.6, isInteger: false, unit: "__qem", sign: "+"}],
   },
   {
     parser: "",
@@ -1028,12 +1028,12 @@ var TESTS = [
   {
     parser: "",
     css: "+12.0%",
-    expected: [{type: "PERCENTAGE", value: 12}],
+    expected: [{type: "PERCENTAGE", value: 12, sign: "+"}],
   },
   {
     parser: "",
     css: "-48.99%",
-    expected: [{type: "PERCENTAGE", value: -48.99}],
+    expected: [{type: "PERCENTAGE", value: -48.99, sign: "-"}],
   },
   {
     parser: "",
