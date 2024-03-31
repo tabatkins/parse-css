@@ -9,7 +9,7 @@ ins, del { text-decoration: none; }
 </style>
 <script>
 function log(str) {
-    document.querySelector('#log').innerHTML += str+'\n';
+  document.querySelector('#log').innerHTML += str+'\n';
 }
 </script>
 <pre id='log'></pre>
@@ -374,11 +374,11 @@ for(const [i, test] of enumerate(TESTS, 1)) {
   const dump = sheet.toString('  ');
   const expected_dump = JSON.stringify(test.expected, null, '  ');
   if (dump == expected_dump) {
-      log(`Test ${i} of ${TESTS.length}: PASS`);
+    log(`Test ${i} of ${TESTS.length}: PASS`);
   } else {
-      log(`Test ${i} of ${TESTS.length}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
-      log(diffString(expected_dump, dump));
-      failures++;
+    log(`Test ${i} of ${TESTS.length}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
+    log(diffString(expected_dump, dump));
+    failures++;
   }
 
 }
@@ -392,8 +392,8 @@ function* enumerate(iter, i=0) {
 
 // Abuse the differ to get colored output
 if (failures == 0) {
-    log(diffString(total+' tests, ', total+' tests, all passed :)'));
+  log(diffString(total+' tests, ', total+' tests, all passed :)'));
 } else {
-    log(diffString(total+' tests, '+failures+' failures :(', total+' tests, '));
+  log(diffString(total+' tests, '+failures+' failures :(', total+' tests, '));
 }
 </script>
