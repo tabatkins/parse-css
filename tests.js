@@ -131,7 +131,7 @@ var TESTS = [
             {
               "type": "HASH",
               "value": "foo",
-              "type": "id"
+              "isIdent": true
             },
             {
               "type": "WHITESPACE"
