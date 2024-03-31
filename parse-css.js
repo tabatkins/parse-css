@@ -55,6 +55,13 @@ class InvalidCharacterError extends Error {
   }
 }
 
+class SpecError extends Error {
+  constructor(...args) {
+    super(...args);
+    this.name = "SpecError";
+  }
+}
+
 function preprocess(str) {
   // Turn a string into an array of code points,
   // following the preprocessing cleanup rules.
@@ -110,7 +117,7 @@ function tokenize(str) {
     if(num === undefined)
       num = 1;
     if(num > 3)
-      throw "Spec Error: no more than three codepoints of lookahead.";
+      throw new SpecError("no more than three codepoints of lookahead.");
     return codepoint(i+num);
   };
   var consume = function(num) {
