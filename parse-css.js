@@ -258,7 +258,7 @@ function tokenize(str) {
     var {value, isInteger, sign} = consumeANumber();
     if(wouldStartAnIdentifier(next(1), next(2), next(3))) {
       const unit = consumeAName();
-      return new DimensionToken(value, unit, sign);
+      return new DimensionToken(value, isInteger, unit, sign);
     } else if(next() == 0x25) {
       consume();
       return new PercentageToken(value, sign);
@@ -737,9 +737,10 @@ class PercentageToken extends CSSParserToken {
 }
 
 class DimensionToken extends CSSParserToken {
-  constructor(val, unit, sign=undefined) {
+  constructor(val, isInteger, unit, sign=undefined) {
     super("DIMENSION");
     this.value = val;
+    this.isInteger = isInteger;
     this.unit = unit;
     this.sign = sign;
   }
@@ -747,7 +748,7 @@ class DimensionToken extends CSSParserToken {
     const sign = this.sign == "+" ? "+" : "";
     return `DIM(${sign}${this.value}, ${this.unit})`;
   }
-  toJSON() { return {type:this.type, value:this.value, unit:this.unit}; }
+  toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, unit:this.unit, sign:this.sign}; }
   toSource() {
     let unit = escapeIdent(this.unit);
     if(unit[0].toLowerCase() == "e" && (unit[1] == "-" || digit(unit[1].charCodeAt(0)))) {
