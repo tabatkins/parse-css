@@ -21,6 +21,22 @@
 }(this, function (parseCss, ansidiff, log) {
 
 var TESTS = [
+  // preprocess()
+  {
+    parser: "",
+    css: `\u{20000},\u{0},\uD800,\uDFFF`,
+    expected: [
+      {type: "IDENT", value: "\u{20000}"},
+      {type: "COMMA"},
+      {type: "IDENT", value: "\uFFFD"},
+      {type: "COMMA"},
+      {type: "IDENT", value: "\uFFFD"},
+      {type: "COMMA"},
+      {type: "IDENT", value: "\uFFFD"},
+    ]
+  },
+
+  // parseAStylesheet()
   {
     css: `foo {
         bar: baz;
