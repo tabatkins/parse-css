@@ -1,5 +1,5 @@
 "use strict";
-(function (root, factory) {
+(function (global, factory) {
   // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
   // Rhino, and plain browser loading.
   if (typeof define === 'function' && define.amd) {
@@ -7,7 +7,8 @@
   } else if (typeof exports !== 'undefined') {
     factory(exports);
   } else {
-    factory(root);
+    global = typeof globalThis !== 'undefined' ? globalThis : global || self;
+    factory(global);
   }
 }(this, function (exports) {
 
