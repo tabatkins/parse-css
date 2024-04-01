@@ -932,7 +932,7 @@ function consumeAnAtRule(s, nested=false) {
       if(nested) return filterValid(rule);
       else {
         parseerror(s, "Hit an unmatched } in the prelude of an at-rule.");
-        rule.prelude.push(consumeToken(s));
+        rule.prelude.push(s.consumeToken());
       }
     } else if(token instanceof OpenCurlyToken) {
       [rule.declarations, rule.rules] = consumeABlock(s);
@@ -951,10 +951,10 @@ function consumeAQualifiedRule(s, nested=false, stopToken=EOFToken) {
       parseerror(s, "Hit EOF or semicolon when trying to parse the prelude of a qualified rule.");
       return;
     } else if(token instanceof CloseCurlyToken) {
-      parseerror("Hit an unmatched } in the prelude of a qualified rule.");
+      parseerror(s, "Hit an unmatched } in the prelude of a qualified rule.");
       if(nested) return;
       else {
-        rule.prelude.push(consumeToken(s));
+        rule.prelude.push(s.consumeToken());
       }
     } else if(token instanceof OpenCurlyToken) {
       if(looksLikeACustomProperty(rule.prelude)) {
