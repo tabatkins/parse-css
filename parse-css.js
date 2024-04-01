@@ -527,7 +527,7 @@ class BadURLToken extends CSSParserToken {
   constructor() {
     super("BADURL");
   }
-  toSource() { return "url(BADURL '')"}
+  toSource() { return "url(BAD URL)"}
 }
 BadURLToken.prototype.tokenType = "BADURL";
 
