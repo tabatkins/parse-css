@@ -520,7 +520,7 @@ class BadStringToken extends CSSParserToken {
   constructor() {
     super("BADSTRING");
   }
-  toSource() { return '"\n"'; }
+  toSource() { return '"\n'; }
 }
 
 class BadURLToken extends CSSParserToken {
