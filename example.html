@@ -1,8 +1,8 @@
 <!doctype html>
 <div><!--
-	--><textarea id='css'>foo { bar: baz; }</textarea><!--
-	--><button id="parse" onclick='parseStuff()'>Parse</button><!--
-	--><textarea id='tokens' readonly placeholder="RESULT OF CSS TOKENIZATION GOES HERE"></textarea><!--
+  --><textarea id='css'>foo { bar: baz; }</textarea><!--
+  --><button id="parse" onclick='parseStuff()'>Parse</button><!--
+  --><textarea id='tokens' readonly placeholder="RESULT OF CSS TOKENIZATION GOES HERE"></textarea><!--
 --></div>
 <textarea id='tree' readonly placeholder="RESULT OF THE CSS PARSING GOES HERE"></textarea>
 <style>
@@ -10,57 +10,57 @@
 /* reset style */
 html,body { height: 100%; margin: 0px; padding: 0px; overflow: hidden; }
 * {
-	-o-box-sizing: border-box;
-	-ms-box-sizing: border-box;
-	-moz-box-sizing: border-box;
-	-webkit-box-sizing: border-box;
-	box-sizing: border-box;
+  -o-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 /* UI controls */
 textarea, button {
-	vertical-align: middle;
-	overflow: auto;
-	border: none;
+  vertical-align: middle;
+  overflow: auto;
+  border: none;
 }
 
 button {
-	background: orange;
-	color: white;
+  background: orange;
+  color: white;
 }
 
 /* layout */
 body > div {
-	height: 50%;
+  height: 50%;
 }
 #css, #tokens {
-	width: 45%;
-	height: 100%;
+  width: 45%;
+  height: 100%;
 }
 #parse {
-	width: 10%;
-	height: 100%;
+  width: 10%;
+  height: 100%;
 }
 #tree {
-	width: 100%;
-	height: 50%;
-	background: #fafaf0;
+  width: 100%;
+  height: 50%;
+  background: #fafaf0;
 }
 </style>
 <script src="parse-css.js"></script>
 <script>
 var debug;
 function parseStuff() {
-	var css = document.querySelector('#css').value;
+  var css = document.querySelector('#css').value;
 
-	var tokenlist = tokenize(css);
-	console.log(tokenlist);
-	var txt = document.querySelector('#tokens');
-	txt.value = tokenlist.join(' ');
+  var tokenlist = tokenize(css);
+  console.log(tokenlist);
+  var txt = document.querySelector('#tokens');
+  txt.value = tokenlist.join(' ');
 
-	var sheet = parseAStylesheet(tokenlist);
-	console.log(sheet);
-	var tree = document.querySelector('#tree');
-	tree.value = JSON.stringify(sheet, null, "  ");
+  var sheet = parseAStylesheet(tokenlist);
+  console.log(sheet);
+  var tree = document.querySelector('#tree');
+  tree.value = JSON.stringify(sheet, null, "  ");
 }
 </script>
