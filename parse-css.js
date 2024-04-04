@@ -529,7 +529,6 @@ class BadURLToken extends CSSParserToken {
   }
   toSource() { return "url(BAD URL)"}
 }
-BadURLToken.prototype.tokenType = "BADURL";
 
 class WhitespaceToken extends CSSParserToken {
   constructor() {
