@@ -156,8 +156,8 @@ function tokenize(str) {
     else if(code == 0x22) return consumeAStringToken();
     else if(code == 0x23) {
       if(namechar(next()) || areAValidEscape(next(1), next(2))) {
-        const isIdent = wouldStartAnIdentifier(next(1), next(2), next(3));
-        return new HashToken(consumeAName(), isIdent);
+        const type = wouldStartAnIdentifier(next(1), next(2), next(3)) ? 'id' : 'unrestricted';
+        return new HashToken(consumeAName(), type);
       } else {
         return new DelimToken(code);
       }
@@ -255,15 +255,15 @@ function tokenize(str) {
   };
 
   var consumeANumericToken = function() {
-    var {value, isInteger, sign} = consumeANumber();
+    var {value, type, sign} = consumeANumber();
     if(wouldStartAnIdentifier(next(1), next(2), next(3))) {
       const unit = consumeAName();
-      return new DimensionToken(value, isInteger, unit, sign);
+      return new DimensionToken(value, type, unit, sign);
     } else if(next() == 0x25) {
       consume();
       return new PercentageToken(value, sign);
     } else {
-      return new NumberToken(value, isInteger, sign);
+      return new NumberToken(value, type, sign);
     }
   };
 
@@ -428,7 +428,7 @@ function tokenize(str) {
   };
 
   var consumeANumber = function() {
-    let isInteger = true;
+    let type = 'integer';
     let sign;
     let numberPart = "";
     let exponentPart = "";
@@ -448,7 +448,7 @@ function tokenize(str) {
         consume();
         numberPart += String.fromCodePoint(code);
       }
-      isInteger = false;
+      type = 'number';
     }
     var c1 = next(1), c2 = next(2), c3 = next(3);
     const eDigit = (c1 == 0x45 || c1 == 0x65) && digit(c2);
@@ -463,7 +463,7 @@ function tokenize(str) {
         consume();
         exponentPart += String.fromCodePoint(code);
       }
-      isInteger = false;
+      type = 'number';
     }
 
     // parse with native engine to prevent a precision issue
@@ -472,7 +472,7 @@ function tokenize(str) {
     // let value = +numberPart;
     // if(exponentPart) value = value * Math.pow(10, +exponentPart);
 
-    return {value, isInteger, sign};
+    return {value, type, sign};
   };
 
   var consumeTheRemnantsOfABadURL = function() {
@@ -504,12 +504,12 @@ function tokenize(str) {
 }
 
 class CSSParserToken {
-  constructor(type) {
-    this.type = type;
+  constructor(TYPE) {
+    this.TYPE = TYPE;
   }
 
-  toJSON() { return {type:this.type}; }
-  toString() { return this.type; }
+  toJSON() { return {TYPE:this.TYPE}; }
+  toString() { return this.TYPE; }
   toSource() { throw new Error("Not implemented."); }
 }
 //toJSON()
@@ -640,7 +640,7 @@ class DelimToken extends CSSParserToken {
     this.value = val;
   }
   toString() { return `DELIM(${this.value})`; }
-  toJSON() { return {type:this.type, value:this.value}; }
+  toJSON() { return {TYPE:this.TYPE, value:this.value}; }
   toSource() {
     if(this.value == "\\") return "\\\n";
     return this.value;
@@ -653,7 +653,7 @@ class IdentToken extends CSSParserToken {
     this.value = val;
   }
   toString() { return `IDENT(${this.value})`; }
-  toJSON() { return {type:this.type, value:this.value}; }
+  toJSON() { return {TYPE:this.TYPE, value:this.value}; }
   toSource() { return escapeIdent(this.value); }
 }
 
@@ -664,7 +664,7 @@ class FunctionToken extends CSSParserToken {
     this.mirror = CloseParenToken;
   }
   toString() { return `FUNCTION(${this.value})`; }
-  toJSON() { return {type:this.type, value:this.value}; }
+  toJSON() { return {TYPE:this.TYPE, value:this.value}; }
   toSource() { return escapeIdent(this.value) + "("; }
 }
 
@@ -674,20 +674,20 @@ class AtKeywordToken extends CSSParserToken {
     this.value = val;
   }
   toString() { return `AT(${this.value})`; }
-  toJSON() { return {type:this.type, value:this.value }; }
+  toJSON() { return {TYPE:this.TYPE, value:this.value }; }
   toSource() { return "@" + escapeIdent(this.value); }
 }
 
 class HashToken extends CSSParserToken {
-  constructor(val, isIdent) {
+  constructor(val, type) {
     super("HASH");
     this.value = val;
-    this.isIdent = isIdent;
+    this.type = type;
   }
   toString() { return `HASH(${this.value})`; }
-  toJSON() { return {type:this.type, value:this.value, isIdent:this.isIdent}; }
+  toJSON() { return {TYPE:this.TYPE, value:this.value, type:this.type}; }
   toSource() {
-    if(this.isIdent) {
+    if(this.type === 'id') {
       return "#" + escapeIdent(this.value);
     }
     return "#" + escapeHash(this.value);
@@ -700,7 +700,7 @@ class StringToken extends CSSParserToken {
     this.value = val;
   }
   toString() { return `STRING(${this.value})`; }
-  toJSON() { return {type:this.type, value:this.value}; }
+  toJSON() { return {TYPE:this.TYPE, value:this.value}; }
   toSource() { return `"${escapeString(this.value)}"`; }
 }
 
@@ -710,23 +710,23 @@ class URLToken extends CSSParserToken {
     this.value = val;
   }
   toString() { return `URL(${this.value})`; }
-  toJSON() { return {type:this.type, value:this.value}; }
+  toJSON() { return {TYPE:this.TYPE, value:this.value}; }
   toSource() { return `url("${escapeString(this.value)}")`; }
 }
 
 class NumberToken extends CSSParserToken {
-  constructor(val, isInteger, sign=undefined) {
+  constructor(val, type, sign=undefined) {
     super("NUMBER");
     this.value = val;
-    this.isInteger = isInteger;
+    this.type = type;
     this.sign = sign;
   }
   toString() {
-    const name = this.isInteger ? "INT" : "NUMBER";
+    const name = this.type === 'integer' ? "INT" : "NUMBER";
     const sign = this.sign == "+" ? "+" : "";
     return `${name}(${sign}${this.value})`;
   }
-  toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, sign:this.sign}; }
+  toJSON() { return {TYPE:this.TYPE, value:this.value, type:this.type, sign:this.sign}; }
   toSource() { return formatNumber(this.value, this.sign); }
 }
 
@@ -740,15 +740,15 @@ class PercentageToken extends CSSParserToken {
     const sign = this.sign == "+" ? "+" : "";
     return `PERCENTAGE(${sign}${this.value})`;
   }
-  toJSON() { return {type:this.type, value:this.value, sign:this.sign}; }
+  toJSON() { return {TYPE:this.TYPE, value:this.value, sign:this.sign}; }
   toSource() { return `${formatNumber(this.value, this.sign)}%`; }
 }
 
 class DimensionToken extends CSSParserToken {
-  constructor(val, isInteger, unit, sign=undefined) {
+  constructor(val, type, unit, sign=undefined) {
     super("DIMENSION");
     this.value = val;
-    this.isInteger = isInteger;
+    this.type = type;
     this.unit = unit;
     this.sign = sign;
   }
@@ -756,7 +756,7 @@ class DimensionToken extends CSSParserToken {
     const sign = this.sign == "+" ? "+" : "";
     return `DIM(${sign}${this.value}, ${this.unit})`;
   }
-  toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, unit:this.unit, sign:this.sign}; }
+  toJSON() { return {TYPE:this.TYPE, value:this.value, type:this.type, unit:this.unit, sign:this.sign}; }
   toSource() {
     let unit = escapeIdent(this.unit);
     if(unit[0].toLowerCase() == "e" && (unit[1] == "-" || digit(unit[1].charCodeAt(0)))) {
@@ -1143,24 +1143,24 @@ function isValidInContext(construct, context) {
   // Trivial validator, without any special CSS knowledge.
 
   // All at-rules are valid, who cares.
-  if(construct.type == "AT-RULE") return true;
+  if(construct.TYPE == "AT-RULE") return true;
 
   // Exclude qualified rules that ended up with a semicolon
   // in their prelude.
   // (Can only happen at the top level of a stylesheet.)
-  if(construct.type == "QUALIFIED-RULE") {
+  if(construct.TYPE == "QUALIFIED-RULE") {
     for(const val of construct.prelude) {
-      if(val.type == "SEMICOLON") return false;
+      if(val.TYPE == "SEMICOLON") return false;
     }
     return true;
   }
 
   // Exclude properties that ended up with a {}-block
   // in their value, unless they're custom.
-  if(construct.type == "DECLARATION") {
+  if(construct.TYPE == "DECLARATION") {
     if(construct.name.slice(0, 2) == "--") return true;
     for(const val of construct.value) {
-      if(val.type == "BLOCK" && val.name == "{") return false;
+      if(val.TYPE == "BLOCK" && val.name == "{") return false;
     }
     return true;
   }
@@ -1249,7 +1249,7 @@ function parseACommaSeparatedListOfComponentValues(s) {
 
 
 class CSSParserRule {
-  constructor(type) { this.type = type; }
+  constructor(TYPE) { this.TYPE = TYPE; }
   toString(indent) {
     return JSON.stringify(this,null,indent);
   }
@@ -1263,7 +1263,7 @@ class Stylesheet extends CSSParserRule {
   }
   toJSON() {
     return {
-      type: this.type,
+      TYPE: this.TYPE,
       rules: this.rules,
     }
   }
@@ -1283,7 +1283,7 @@ class AtRule extends CSSParserRule {
   }
   toJSON() {
     return {
-      type: this.type,
+      TYPE: this.TYPE,
       name: this.name,
       prelude: this.prelude,
       declarations: this.declarations,
@@ -1319,7 +1319,7 @@ class QualifiedRule extends CSSParserRule {
   }
   toJSON() {
     return {
-      type: this.type,
+      TYPE: this.TYPE,
       prelude: this.prelude,
       declarations: this.declarations,
       rules: this.rules,
@@ -1350,7 +1350,7 @@ class Declaration extends CSSParserRule {
   }
   toJSON() {
     return {
-      type: this.type,
+      TYPE: this.TYPE,
       name: this.name,
       value: this.value,
       important: this.important,
@@ -1368,15 +1368,15 @@ class Declaration extends CSSParserRule {
 }
 
 class SimpleBlock extends CSSParserRule {
-  constructor(type) {
+  constructor(TYPE) {
     super("BLOCK");
-    this.name = type;
+    this.name = TYPE;
     this.value = [];
     return this;
   }
   toJSON() {
     return {
-      type: this.type,
+      TYPE: this.TYPE,
       name: this.name,
       value: this.value,
     }
@@ -1396,7 +1396,7 @@ class Func extends CSSParserRule {
   }
   toJSON() {
     return {
-      type: this.type,
+      TYPE: this.TYPE,
       name: this.name,
       value: this.value,
     }
