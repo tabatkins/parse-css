@@ -53,12 +53,12 @@ var debug;
 function parseStuff() {
   var css = document.querySelector('#css').value;
 
-  var tokenlist = tokenize(css);
+  var tokenlist = parseCss.tokenize(css);
   console.log(tokenlist);
   var txt = document.querySelector('#tokens');
   txt.value = tokenlist.join(' ');
 
-  var sheet = parseAStylesheet(tokenlist);
+  var sheet = parseCss.parseAStylesheet(tokenlist);
   console.log(sheet);
   var tree = document.querySelector('#tree');
   tree.value = JSON.stringify(sheet, null, "  ");
