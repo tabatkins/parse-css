@@ -33,16 +33,38 @@ var total = TESTS.length, failures = 0,
 for (i = 0; i < total; i++) {
   test = TESTS[i];
   tokens = parseCss.tokenize(test.css);
-  parser = parseCss[typeof test.parser === 'string' ? test.parser : 'parseAStylesheet'];
-  result = (typeof parser === 'function') ? parser(tokens) : tokens;
-  dump = JSON.stringify(result, null, '  ');
-  expected_dump = JSON.stringify(test.expected, null, '  ');
-  if (dump == expected_dump) {
-    log(`Test ${i} of ${total}: PASS`);
-  } else {
-    log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
-    log(ansidiff.lines(expected_dump, dump));
-    failures++;
+  try {
+    parser = parseCss[typeof test.parser === 'string' ? test.parser : 'parseAStylesheet'];
+    result = (typeof parser === 'function') ? parser(tokens) : tokens;
+    if (test.expectedThrow) {
+      log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
+      log(`Expected error not thrown: ` + ansidiff.words(test.expectedThrow.name, ''));
+      failures++;
+      continue;
+    }
+    dump = JSON.stringify(result, null, '  ');
+    expected_dump = JSON.stringify(test.expected, null, '  ');
+    if (dump == expected_dump) {
+      log(`Test ${i} of ${total}: PASS`);
+    } else {
+      log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
+      log(ansidiff.lines(expected_dump, dump));
+      failures++;
+    }
+  } catch (ex) {
+    if (test.expectedThrow) {
+      if (ex.name === test.expectedThrow.name) {
+        log(`Test ${i} of ${total}: PASS`);
+      } else {
+        log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
+        log(`Expected error not thrown: ` + ansidiff.words(test.expectedThrow.name, ex.name));
+        failures++;
+      }
+    } else {
+      log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
+      log(ansidiff.words(`Unexpected error: ${ex}`, ``));
+      failures++;
+    }
   }
 }
 
