@@ -1,26 +1,19 @@
 "use strict";
 (function (global, factory) {
-  if (typeof define === 'function' && define.amd) {
-    require(
-      ['./parse-css', 'ansidiff'],
-      factory,
-    );
-  } else if (typeof exports !== 'undefined') {
-    factory(
-      require('./parse-css'),
-      require('ansidiff'),
-    );
+  if (typeof exports === 'object' && typeof module === 'object') {
+    // CommonJS/Node.js
+    exports.TESTS = factory();
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD
+    define(factory);
   } else {
+    // browser global
     global = typeof globalThis !== 'undefined' ? globalThis : global || self;
-    factory(
-      global,
-      {lines: global.diffString, words: global.diffString},
-      global.log,
-    );
+    global.TESTS = factory();
   }
-}(this, function (parseCss, ansidiff, log) {
+}(this, function () {
 
-var TESTS = [
+return [
   // preprocess()
   {
     parser: "",
@@ -1646,34 +1639,5 @@ var TESTS = [
     }
   }
 ];
-
-
-var log = log || console.log;
-
-var total = TESTS.length, failures = 0,
-    i, test, tokens, parser, result, dump, expected_dump;
-
-for (i = 0; i < total; i++) {
-  test = TESTS[i];
-  tokens = parseCss.tokenize(test.css);
-  parser = parseCss[typeof test.parser === 'string' ? test.parser : 'parseAStylesheet'];
-  result = (typeof parser === 'function') ? parser(tokens) : tokens;
-  dump = JSON.stringify(result, null, '  ');
-  expected_dump = JSON.stringify(test.expected, null, '  ');
-  if (dump == expected_dump) {
-    log(`Test ${i} of ${total}: PASS`);
-  } else {
-    log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
-    log(ansidiff.lines(expected_dump, dump));
-    failures++;
-  }
-}
-
-// Abuse the differ to get colored output
-if (failures == 0) {
-  log(ansidiff.words(`${total} tests, `, `${total} tests, all passed :)`));
-} else {
-  log(ansidiff.words(`${total} tests, ${failures} failures :(`, `${total} tests, `));
-}
 
 }));
