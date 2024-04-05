@@ -1406,7 +1406,7 @@ class Func extends CSSParserRule {
 }
 
 function printIndent(level) {
-  return "\t".repeat(level);
+  return "  ".repeat(level);
 }
 
 
