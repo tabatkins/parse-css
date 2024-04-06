@@ -2005,6 +2005,86 @@ return [
       ]
     }
   },
+  {
+    "parser": "parseAStylesheet",
+    "css": `p { color: red; } @media print { p { color: green; } }`,
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "p"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "color",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "red"
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        },
+        {
+          "type": "AT-RULE",
+          "name": "media",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "print"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [],
+          "rules": [
+            {
+              "type": "QUALIFIED-RULE",
+              "prelude": [
+                {
+                  "type": "IDENT",
+                  "value": "p"
+                },
+                {
+                  "type": "WHITESPACE"
+                },
+              ],
+              "declarations": [
+                {
+                  "type": "DECLARATION",
+                  "name": "color",
+                  "value": [
+                    {
+                      "type": "IDENT",
+                      "value": "green"
+                    }
+                  ],
+                  "important": false
+                }
+              ],
+              "rules": []
+            }
+          ]
+        }
+      ]
+    }
+  },
 
   // parseAStylesheetsContents()
   {
@@ -2323,6 +2403,83 @@ return [
         "prelude": [],
         "declarations": null,
         "rules": null
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": `p { color: red; } @media print { p { color: green; } }`,
+    "expected": [
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [
+          {
+            "type": "IDENT",
+            "value": "p"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ],
+        "declarations": [
+          {
+            "type": "DECLARATION",
+            "name": "color",
+            "value": [
+              {
+                "type": "IDENT",
+                "value": "red"
+              }
+            ],
+            "important": false
+          }
+        ],
+        "rules": []
+      },
+      {
+        "type": "AT-RULE",
+        "name": "media",
+        "prelude": [
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "print"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ],
+        "declarations": [],
+        "rules": [
+          {
+            "type": "QUALIFIED-RULE",
+            "prelude": [
+              {
+                "type": "IDENT",
+                "value": "p"
+              },
+              {
+                "type": "WHITESPACE"
+              },
+            ],
+            "declarations": [
+              {
+                "type": "DECLARATION",
+                "name": "color",
+                "value": [
+                  {
+                    "type": "IDENT",
+                    "value": "green"
+                  }
+                ],
+                "important": false
+              }
+            ],
+            "rules": []
+          }
+        ]
       }
     ]
   },
@@ -2876,6 +3033,86 @@ return [
     "expected": [
       [],
       []
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": `p { color: red; } @media print { p { color: green; } }`,
+    "expected": [
+      [],
+      [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "p"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "color",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "red"
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        },
+        {
+          "type": "AT-RULE",
+          "name": "media",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "print"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [],
+          "rules": [
+            {
+              "type": "QUALIFIED-RULE",
+              "prelude": [
+                {
+                  "type": "IDENT",
+                  "value": "p"
+                },
+                {
+                  "type": "WHITESPACE"
+                },
+              ],
+              "declarations": [
+                {
+                  "type": "DECLARATION",
+                  "name": "color",
+                  "value": [
+                    {
+                      "type": "IDENT",
+                      "value": "green"
+                    }
+                  ],
+                  "important": false
+                }
+              ],
+              "rules": []
+            }
+          ]
+        }
+      ]
     ]
   },
 
@@ -6892,6 +7129,123 @@ return [
           }
         ]
       }
+    ]
+  },
+
+  // parseACommaSeparatedListOfComponentValues()
+  {
+    "parser": "parseACommaSeparatedListOfComponentValues",
+    "css": "",
+    "expected": []
+  },
+  {
+    "parser": "parseACommaSeparatedListOfComponentValues",
+    "css": "foo ,bar, baz",
+    "expected": [
+      [
+        {
+          "type": "IDENT",
+          "value": "foo"
+        },
+        {
+          "type": "WHITESPACE"
+        }
+      ],
+      [
+        {
+          "type": "IDENT",
+          "value": "bar"
+        }
+      ],
+      [
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "baz"
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseACommaSeparatedListOfComponentValues",
+    "css": "foo bar, baz qua",
+    "expected": [
+      [
+        {
+          "type": "IDENT",
+          "value": "foo"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "bar"
+        }
+      ],
+      [
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "baz"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "qua"
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseACommaSeparatedListOfComponentValues",
+    "css": "foo{}}",
+    "expected": [
+      [
+        {
+          "type": "IDENT",
+          "value": "foo"
+        },
+        {
+          "type": "BLOCK",
+          "name": "{",
+          "value": []
+        },
+        {
+          "type": "CLOSE-CURLY"
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseACommaSeparatedListOfComponentValues",
+    "css": "var(--abc,--def)",
+    "expected": [
+      [
+        {
+          "type": "FUNCTION",
+          "name": "var",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "--abc"
+            },
+            {
+              "type": "COMMA"
+            },
+            {
+              "type": "IDENT",
+              "value": "--def"
+            }
+          ]
+        }
+      ]
     ]
   }
 ];
