@@ -79,16 +79,16 @@ function asciiCaselessMatch(s1, s2) {
 }
 
 var tokenize = (function () {
-  let str;
+  let codepoints;
   let i;
   let tokens;
   let code;
 
   function codepoint(i) {
-    if(i >= str.length) {
+    if(i >= codepoints.length) {
       return 0;
     }
-    return str[i];
+    return codepoints[i];
   }
   function next(num) {
     if(num === undefined)
@@ -463,7 +463,7 @@ var tokenize = (function () {
 
 
   function tokenize(input) {
-    str = preprocess(input);
+    codepoints = preprocess(input);
     i = -1;
     tokens = [];
     code;
@@ -476,7 +476,7 @@ var tokenize = (function () {
         break;
       }
       iterationCount++;
-      if(iterationCount > str.length*2) throw new Error("I'm infinite-looping!");
+      if(iterationCount > codepoints.length*2) throw new Error("I'm infinite-looping!");
     }
     return tokens;
   }
