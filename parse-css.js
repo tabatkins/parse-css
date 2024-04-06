@@ -92,18 +92,6 @@ function tokenize(str) {
   var tokens = [];
   var code;
 
-  // Line number information.
-  var line = 0;
-  var column = 0;
-  // The only use of lastLineLength is in reconsume().
-  var lastLineLength = 0;
-  var incrLineno = function() {
-    line += 1;
-    lastLineLength = column;
-    column = 0;
-  };
-  var locStart = {line:line, column:column};
-
   var codepoint = function(i) {
     if(i >= str.length) {
       return 0;
@@ -122,21 +110,11 @@ function tokenize(str) {
       num = 1;
     i += num;
     code = codepoint(i);
-    if(newline(code)) incrLineno();
-    else column += num;
     //console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16));
     return true;
   };
   var reconsume = function() {
     i -= 1;
-    if (newline(code)) {
-      line -= 1;
-      column = lastLineLength;
-    } else {
-      column -= 1;
-    }
-    locStart.line = line;
-    locStart.column = column;
     return true;
   };
   var eof = function(codepoint) {
