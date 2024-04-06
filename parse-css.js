@@ -106,7 +106,7 @@ function tokenize(str) {
 
   var codepoint = function(i) {
     if(i >= str.length) {
-      return -1;
+      return 0;
     }
     return str[i];
   }
@@ -141,7 +141,7 @@ function tokenize(str) {
   };
   var eof = function(codepoint) {
     if(codepoint === undefined) codepoint = code;
-    return codepoint == -1;
+    return codepoint == 0;
   };
   var donothing = function() {};
   var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");return true; };
