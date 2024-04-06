@@ -864,7 +864,7 @@ class TokenStream {
     return tok;
   }
   discardToken() {
-    this.i++;
+    if (!this.empty()) this.i++;
   }
   mark() {
     this.marks.push(this.i);
