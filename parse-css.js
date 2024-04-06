@@ -1135,13 +1135,16 @@ function isValidInContext(construct, context) {
     return true;
   }
 
-  // Exclude properties that ended up with a {}-block
-  // in their value, unless they're custom.
+  // Exclude properties that ended up with a {}-block plus 
+  // a non-whitespace component in their value, unless they're custom.
   if(construct.type == "DECLARATION") {
     if(construct.name.slice(0, 2) == "--") return true;
-    for(const val of construct.value) {
-      if(val.type == "BLOCK" && val.name == "{") return false;
+
+    const block = construct.value.find(t => t.type === "BLOCK" && t.name === "{");
+    if (block && construct.value.some(t => t.type !== "WHITESPACE" && t !== block)) {
+      return false;
     }
+
     return true;
   }
 }
