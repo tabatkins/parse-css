@@ -6848,6 +6848,114 @@ return [
   },
   {
     "parser": "parseAListOfComponentValues",
+    "css": "3n+1",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": 3,
+        "isInteger": true,
+        "unit": "n"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "+3n+1",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": 3,
+        "isInteger": true,
+        "unit": "n",
+        "sign": "+"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "-3n+1",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": -3,
+        "isInteger": true,
+        "unit": "n",
+        "sign": "-"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "n+2",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "n"
+      },
+      {
+        "type": "NUMBER",
+        "value": 2,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "+n+2",
+    "expected": [
+      {
+        "type": "DELIM",
+        "value": "+"
+      },
+      {
+        "type": "IDENT",
+        "value": "n"
+      },
+      {
+        "type": "NUMBER",
+        "value": 2,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "-n+2",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "-n"
+      },
+      {
+        "type": "NUMBER",
+        "value": 2,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
     "css": "~=|=^=$=*=||<!------> |/**/| ~/**/=",
     "expected": [
       {
