@@ -3595,6 +3595,102 @@ return [
       "important": false
     }
   },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:{}",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "BLOCK",
+          "name": "{",
+          "value": []
+        }
+      ],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo: {}",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "BLOCK",
+          "name": "{",
+          "value": []
+        }
+      ],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:{} ",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "BLOCK",
+          "name": "{",
+          "value": []
+        }
+      ],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:bar{}",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:{}bar",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:{}{}",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "-foo:bar{}",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "--foo:bar{}",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "--foo",
+      "value": [
+        {
+          "type": "IDENT",
+          "value": "bar"
+        },
+        {
+          "type": "BLOCK",
+          "name": "{",
+          "value":  []
+        }
+      ],
+      "important": false
+    }
+  },
 
   // parseAComponentValue()
   {
