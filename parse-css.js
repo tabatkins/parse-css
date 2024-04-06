@@ -856,7 +856,7 @@ class TokenStream {
     return new EOFToken();
   }
   empty() {
-    return this.i >= this.tokens.length;
+    return this.nextToken() instanceof EOFToken;
   }
   consumeToken() {
     const tok = this.nextToken();
