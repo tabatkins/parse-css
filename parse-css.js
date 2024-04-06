@@ -47,14 +47,6 @@ function surrogate(code) { return between(code, 0xd800, 0xdfff); }
 
 var maximumallowedcodepoint = 0x10ffff;
 
-class InvalidCharacterError extends Error {
-  constructor(message) {
-    super();
-    this.name = "InvalidCharacterError";
-    this.message = message;
-  }
-}
-
 class SpecError extends Error {
   constructor(...args) {
     super(...args);
