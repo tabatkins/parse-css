@@ -893,7 +893,7 @@ class TokenStream {
 }
 
 function parseerror(s, msg) {
-  console.log("Parse error at token " + s.i + ": " + s.tokens[s.i] + ".\n" + msg);
+  console.log("Parse error at token " + s.i + ": " + s.nextToken() + ".\n" + msg);
   return true;
 }
 
