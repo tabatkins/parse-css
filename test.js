@@ -63,6 +63,16 @@ for (let i = 0; i < total; i++) {
       log(ansidiff.lines(expected_dump, dump || ''));
       failures++;
     }
+  } else if (test.expectedToSource) {
+    const source = Array.isArray(result) ? result.map(x => x.toSource()).join('') : result.toSource();
+    const expected_source = test.expectedToSource;
+    if (source == expected_source) {
+      log(`Test ${i} of ${total}: PASS`);
+    } else {
+      log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
+      log(`Unexpected toSource(): ` + ansidiff.lines(expected_source, source || ''));
+      failures++;
+    }
   } else {
     // no specified test, fallback to pass
     log(`Test ${i} of ${total}: PASS`);
