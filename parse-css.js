@@ -792,7 +792,9 @@ function escapeString(string) {
 
 function formatNumber(num, sign=undefined) {
   // TODO: Fix this to match CSS stringification behavior.
-  return (sign == "+" ? "+" : "") + String(num);
+  let n = String(num);
+  if (n[0] === '-') n = n.slice(1);
+  return (sign || "") + n;
 }
 
 // Exportation.
