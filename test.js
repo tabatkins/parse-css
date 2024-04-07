@@ -27,44 +27,45 @@
 
 log = log || console.log;
 
-var total = TESTS.length, failures = 0,
-    i, test, tokens, parser, result, dump, expected_dump;
+var total = TESTS.length, failures = 0;
 
-for (i = 0; i < total; i++) {
-  test = TESTS[i];
-  tokens = parseCss.tokenize(test.css);
+for (let i = 0; i < total; i++) {
+  const test = TESTS[i];
+  const tokens = parseCss.tokenize(test.css);
+  let result, error;
   try {
-    parser = parseCss[typeof test.parser === 'string' ? test.parser : 'parseAStylesheet'];
+    const parser = parseCss[typeof test.parser === 'string' ? test.parser : 'parseAStylesheet'];
     result = (typeof parser === 'function') ? parser(tokens) : tokens;
-    if (test.expectedThrow) {
+    if (test.expectedThrow) { throw null; }
+  } catch (ex) {
+    error = ex;
+  }
+
+  if (test.expectedThrow) {
+    if (error && error.name === test.expectedThrow.name) {
+      log(`Test ${i} of ${total}: PASS`);
+    } else {
       log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
-      log(`Expected error not thrown: ` + ansidiff.words(test.expectedThrow.name, ''));
+      log(`Expected error not thrown: ` + ansidiff.words(test.expectedThrow.name, error && error.name || ''));
       failures++;
-      continue;
     }
-    dump = JSON.stringify(result, null, '  ');
-    expected_dump = JSON.stringify(test.expected, null, '  ');
+  } else if (error) {
+    log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
+    log(ansidiff.words(`Unexpected error: ${error}`, ``));
+    failures++;
+  } else if (test.expected) {
+    const dump = JSON.stringify(result, null, '  ');
+    const expected_dump = JSON.stringify(test.expected, null, '  ');
     if (dump == expected_dump) {
       log(`Test ${i} of ${total}: PASS`);
     } else {
       log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
-      log(ansidiff.lines(expected_dump, dump));
+      log(ansidiff.lines(expected_dump, dump || ''));
       failures++;
     }
-  } catch (ex) {
-    if (test.expectedThrow) {
-      if (ex.name === test.expectedThrow.name) {
-        log(`Test ${i} of ${total}: PASS`);
-      } else {
-        log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
-        log(`Expected error not thrown: ` + ansidiff.words(test.expectedThrow.name, ex.name));
-        failures++;
-      }
-    } else {
-      log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
-      log(ansidiff.words(`Unexpected error: ${ex}`, ``));
-      failures++;
-    }
+  } else {
+    // no specified test, fallback to pass
+    log(`Test ${i} of ${total}: PASS`);
   }
 }
 
