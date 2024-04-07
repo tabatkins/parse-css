@@ -780,7 +780,7 @@ function escapeString(string) {
   // Escapes the contents (between the quotes) of a string
   return Array.from(String(string), e=>{
     const code = e.codePointAt(0);
-    if(between(code, 0x0, 0x1f) || code === 0x7f) {
+    if(between(code, 0x0, 0x8) || between(code, 0xa, 0x1f) || code === 0x7f) {
       return "\\" + code.toString(16) + " ";
     }
     if(code === 0x22 || code === 0x5c) {
