@@ -704,7 +704,7 @@ class NumberToken extends CSSParserToken {
   toString() {
     const name = this.isInteger ? "INT" : "NUMBER";
     const sign = this.sign == "+" ? "+" : "";
-    return `${name}(${sign}${this.value})`;
+    return `${name}(${formatNumber(this.value, this.sign)})`;
   }
   toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, sign:this.sign}; }
   toSource() { return formatNumber(this.value, this.sign); }
@@ -717,8 +717,7 @@ class PercentageToken extends CSSParserToken {
     this.sign = sign;
   }
   toString() {
-    const sign = this.sign == "+" ? "+" : "";
-    return `PERCENTAGE(${sign}${this.value})`;
+    return `PERCENTAGE(${formatNumber(this.value, this.sign)})`;
   }
   toJSON() { return {type:this.type, value:this.value, sign:this.sign}; }
   toSource() { return `${formatNumber(this.value, this.sign)}%`; }
@@ -733,8 +732,7 @@ class DimensionToken extends CSSParserToken {
     this.sign = sign;
   }
   toString() {
-    const sign = this.sign == "+" ? "+" : "";
-    return `DIM(${sign}${this.value}, ${this.unit})`;
+    return `DIM(${formatNumber(this.value, this.sign)}, ${this.unit})`;
   }
   toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, unit:this.unit, sign:this.sign}; }
   toSource() {
