@@ -619,7 +619,7 @@ class DelimToken extends CSSParserToken {
     }
     this.value = val;
   }
-  toString() { return `DELIM(${this.value})`; }
+  toString() { return `DELIM(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value}; }
   toSource() {
     if(this.value == "\\") return "\\\n";
@@ -632,7 +632,7 @@ class IdentToken extends CSSParserToken {
     super("IDENT");
     this.value = val;
   }
-  toString() { return `IDENT(${this.value})`; }
+  toString() { return `IDENT(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value}; }
   toSource() { return escapeIdent(this.value); }
 }
@@ -643,7 +643,7 @@ class FunctionToken extends CSSParserToken {
     this.value = val;
     this.mirror = CloseParenToken;
   }
-  toString() { return `FUNCTION(${this.value})`; }
+  toString() { return `FUNCTION(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value}; }
   toSource() { return escapeIdent(this.value) + "("; }
 }
@@ -653,7 +653,7 @@ class AtKeywordToken extends CSSParserToken {
     super("AT-KEYWORD");
     this.value = val;
   }
-  toString() { return `AT(${this.value})`; }
+  toString() { return `AT(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value }; }
   toSource() { return "@" + escapeIdent(this.value); }
 }
@@ -664,7 +664,7 @@ class HashToken extends CSSParserToken {
     this.value = val;
     this.isIdent = isIdent;
   }
-  toString() { return `HASH(${this.value})`; }
+  toString() { return `HASH(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value, isIdent:this.isIdent}; }
   toSource() {
     if(this.isIdent) {
@@ -679,7 +679,7 @@ class StringToken extends CSSParserToken {
     super("STRING");
     this.value = val;
   }
-  toString() { return `STRING(${this.value})`; }
+  toString() { return `STRING(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value}; }
   toSource() { return `"${escapeString(this.value)}"`; }
 }
@@ -689,7 +689,7 @@ class URLToken extends CSSParserToken {
     super("URL");
     this.value = val;
   }
-  toString() { return `URL(${this.value})`; }
+  toString() { return `URL(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value}; }
   toSource() { return `url("${escapeString(this.value)}")`; }
 }
@@ -732,7 +732,7 @@ class DimensionToken extends CSSParserToken {
     this.sign = sign;
   }
   toString() {
-    return `DIM(${formatNumber(this.value, this.sign)}, ${this.unit})`;
+    return `DIM(${formatNumber(this.value, this.sign)}, ${JSON.stringify(this.unit)})`;
   }
   toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, unit:this.unit, sign:this.sign}; }
   toSource() {
