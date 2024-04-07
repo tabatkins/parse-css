@@ -47,14 +47,6 @@ function surrogate(code) { return between(code, 0xd800, 0xdfff); }
 
 var maximumallowedcodepoint = 0x10ffff;
 
-class InvalidCharacterError extends Error {
-  constructor(message) {
-    super();
-    this.name = "InvalidCharacterError";
-    this.message = message;
-  }
-}
-
 class SpecError extends Error {
   constructor(...args) {
     super(...args);
@@ -86,67 +78,48 @@ function asciiCaselessMatch(s1, s2) {
   return s1.toLowerCase() == s2.toLowerCase();
 }
 
-function tokenize(str) {
-  str = preprocess(str);
-  var i = -1;
-  var tokens = [];
-  var code;
+var tokenize = (function () {
+  let codepoints;
+  let i;
+  let tokens;
+  let code;
 
-  // Line number information.
-  var line = 0;
-  var column = 0;
-  // The only use of lastLineLength is in reconsume().
-  var lastLineLength = 0;
-  var incrLineno = function() {
-    line += 1;
-    lastLineLength = column;
-    column = 0;
-  };
-  var locStart = {line:line, column:column};
-
-  var codepoint = function(i) {
-    if(i >= str.length) {
-      return -1;
+  function codepoint(i) {
+    if(i >= codepoints.length) {
+      return 0;
     }
-    return str[i];
+    return codepoints[i];
   }
-  var next = function(num) {
+  function next(num) {
     if(num === undefined)
       num = 1;
     if(num > 3)
       throw new SpecError("no more than three codepoints of lookahead.");
     return codepoint(i+num);
-  };
-  var consume = function(num) {
+  }
+  function consume(num) {
     if(num === undefined)
       num = 1;
     i += num;
     code = codepoint(i);
-    if(newline(code)) incrLineno();
-    else column += num;
     //console.log('Consume '+i+' '+String.fromCharCode(code) + ' 0x' + code.toString(16));
     return true;
-  };
-  var reconsume = function() {
+  }
+  function reconsume() {
     i -= 1;
-    if (newline(code)) {
-      line -= 1;
-      column = lastLineLength;
-    } else {
-      column -= 1;
-    }
-    locStart.line = line;
-    locStart.column = column;
     return true;
-  };
-  var eof = function(codepoint) {
+  }
+  function eof(codepoint) {
     if(codepoint === undefined) codepoint = code;
-    return codepoint == -1;
-  };
-  var donothing = function() {};
-  var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");return true; };
+    return codepoint == 0;
+  }
+  function donothing() {}
+  function parseerror() {
+    console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");
+    return true;
+  }
 
-  var consumeAToken = function() {
+  function consumeAToken() {
     consumeComments();
     consume();
     if(whitespace(code)) {
@@ -236,9 +209,9 @@ function tokenize(str) {
     }
     else if(eof()) return new EOFToken();
     else return new DelimToken(code);
-  };
+  }
 
-  var consumeComments = function() {
+  function consumeComments() {
     while(next(1) == 0x2f && next(2) == 0x2a) {
       consume(2);
       while(true) {
@@ -252,9 +225,9 @@ function tokenize(str) {
         }
       }
     }
-  };
+  }
 
-  var consumeANumericToken = function() {
+  function consumeANumericToken() {
     var {value, isInteger, sign} = consumeANumber();
     if(wouldStartAnIdentifier(next(1), next(2), next(3))) {
       const unit = consumeAName();
@@ -265,9 +238,9 @@ function tokenize(str) {
     } else {
       return new NumberToken(value, isInteger, sign);
     }
-  };
+  }
 
-  var consumeAnIdentlikeToken = function() {
+  function consumeAnIdentlikeToken() {
     var str = consumeAName();
     if(str.toLowerCase() == "url" && next() == 0x28) {
       consume();
@@ -285,9 +258,9 @@ function tokenize(str) {
     } else {
       return new IdentToken(str);
     }
-  };
+  }
 
-  var consumeAStringToken = function(endingCodePoint) {
+  function consumeAStringToken(endingCodePoint) {
     if(endingCodePoint === undefined) endingCodePoint = code;
     var string = "";
     while(consume()) {
@@ -309,9 +282,9 @@ function tokenize(str) {
         string += String.fromCodePoint(code);
       }
     }
-  };
+  }
 
-  var consumeAURLToken = function() {
+  function consumeAURLToken() {
     var token = new URLToken("");
     while(whitespace(next())) consume();
     if(eof(next())) return token;
@@ -343,9 +316,9 @@ function tokenize(str) {
         token.value += String.fromCodePoint(code);
       }
     }
-  };
+  }
 
-  var consumeEscape = function() {
+  function consumeEscape() {
     // Assume the the current character is the \
     // and the next code point is not a newline.
     consume();
@@ -369,18 +342,18 @@ function tokenize(str) {
     } else {
       return code;
     }
-  };
+  }
 
-  var areAValidEscape = function(c1, c2) {
+  function areAValidEscape(c1, c2) {
     if(c1 != 0x5c) return false;
     if(newline(c2)) return false;
     return true;
-  };
-  var startsWithAValidEscape = function() {
+  }
+  function startsWithAValidEscape() {
     return areAValidEscape(code, next());
-  };
+  }
 
-  var wouldStartAnIdentifier = function(c1, c2, c3) {
+  function wouldStartAnIdentifier(c1, c2, c3) {
     if(c1 == 0x2d) {
       return namestartchar(c2) || c2 == 0x2d || areAValidEscape(c2, c3);
     } else if(namestartchar(c1)) {
@@ -390,12 +363,12 @@ function tokenize(str) {
     } else {
       return false;
     }
-  };
-  var startsWithAnIdentifier = function() {
+  }
+  function startsWithAnIdentifier() {
     return wouldStartAnIdentifier(code, next(1), next(2));
-  };
+  }
 
-  var wouldStartANumber = function(c1, c2, c3) {
+  function wouldStartANumber(c1, c2, c3) {
     if(c1 == 0x2b || c1 == 0x2d) {
       if(digit(c2)) return true;
       if(c2 == 0x2e && digit(c3)) return true;
@@ -408,12 +381,12 @@ function tokenize(str) {
     } else {
       return false;
     }
-  };
-  var startsWithANumber = function() {
+  }
+  function startsWithANumber() {
     return wouldStartANumber(code, next(1), next(2));
-  };
+  }
 
-  var consumeAName = function() {
+  function consumeAName() {
     var result = "";
     while(consume()) {
       if(namechar(code)) {
@@ -425,9 +398,9 @@ function tokenize(str) {
         return result;
       }
     }
-  };
+  }
 
-  var consumeANumber = function() {
+  function consumeANumber() {
     let isInteger = true;
     let sign;
     let numberPart = "";
@@ -473,9 +446,9 @@ function tokenize(str) {
     // if(exponentPart) value = value * Math.pow(10, +exponentPart);
 
     return {value, isInteger, sign};
-  };
+  }
 
-  var consumeTheRemnantsOfABadURL = function() {
+  function consumeTheRemnantsOfABadURL() {
     while(consume()) {
       if(code == 0x29 || eof()) {
         return;
@@ -486,22 +459,30 @@ function tokenize(str) {
         donothing();
       }
     }
-  };
-
-
-
-  var iterationCount = 0;
-  while (true) {
-    var token = consumeAToken();
-    tokens.push(token);
-    if (token instanceof EOFToken) {
-      break;
-    }
-    iterationCount++;
-    if(iterationCount > str.length*2) throw new Error("I'm infinite-looping!");
   }
-  return tokens;
-}
+
+
+  function tokenize(input) {
+    codepoints = preprocess(input);
+    i = -1;
+    tokens = [];
+    code;
+
+    var iterationCount = 0;
+    while (true) {
+      var token = consumeAToken();
+      tokens.push(token);
+      if (token instanceof EOFToken) {
+        break;
+      }
+      iterationCount++;
+      if(iterationCount > codepoints.length*2) throw new Error("I'm infinite-looping!");
+    }
+    return tokens;
+  }
+
+  return tokenize;
+})();
 
 class CSSParserToken {
   constructor(type) {
@@ -529,7 +510,6 @@ class BadURLToken extends CSSParserToken {
   }
   toSource() { return "url(BAD URL)"}
 }
-BadURLToken.prototype.tokenType = "BADURL";
 
 class WhitespaceToken extends CSSParserToken {
   constructor() {
@@ -639,7 +619,7 @@ class DelimToken extends CSSParserToken {
     }
     this.value = val;
   }
-  toString() { return `DELIM(${this.value})`; }
+  toString() { return `DELIM(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value}; }
   toSource() {
     if(this.value == "\\") return "\\\n";
@@ -652,7 +632,7 @@ class IdentToken extends CSSParserToken {
     super("IDENT");
     this.value = val;
   }
-  toString() { return `IDENT(${this.value})`; }
+  toString() { return `IDENT(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value}; }
   toSource() { return escapeIdent(this.value); }
 }
@@ -663,7 +643,7 @@ class FunctionToken extends CSSParserToken {
     this.value = val;
     this.mirror = CloseParenToken;
   }
-  toString() { return `FUNCTION(${this.value})`; }
+  toString() { return `FUNCTION(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value}; }
   toSource() { return escapeIdent(this.value) + "("; }
 }
@@ -673,7 +653,7 @@ class AtKeywordToken extends CSSParserToken {
     super("AT-KEYWORD");
     this.value = val;
   }
-  toString() { return `AT(${this.value})`; }
+  toString() { return `AT(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value }; }
   toSource() { return "@" + escapeIdent(this.value); }
 }
@@ -684,7 +664,7 @@ class HashToken extends CSSParserToken {
     this.value = val;
     this.isIdent = isIdent;
   }
-  toString() { return `HASH(${this.value})`; }
+  toString() { return `HASH(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value, isIdent:this.isIdent}; }
   toSource() {
     if(this.isIdent) {
@@ -699,7 +679,7 @@ class StringToken extends CSSParserToken {
     super("STRING");
     this.value = val;
   }
-  toString() { return `STRING(${this.value})`; }
+  toString() { return `STRING(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value}; }
   toSource() { return `"${escapeString(this.value)}"`; }
 }
@@ -709,7 +689,7 @@ class URLToken extends CSSParserToken {
     super("URL");
     this.value = val;
   }
-  toString() { return `URL(${this.value})`; }
+  toString() { return `URL(${JSON.stringify(this.value)})`; }
   toJSON() { return {type:this.type, value:this.value}; }
   toSource() { return `url("${escapeString(this.value)}")`; }
 }
@@ -724,7 +704,7 @@ class NumberToken extends CSSParserToken {
   toString() {
     const name = this.isInteger ? "INT" : "NUMBER";
     const sign = this.sign == "+" ? "+" : "";
-    return `${name}(${sign}${this.value})`;
+    return `${name}(${formatNumber(this.value, this.sign)})`;
   }
   toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, sign:this.sign}; }
   toSource() { return formatNumber(this.value, this.sign); }
@@ -737,8 +717,7 @@ class PercentageToken extends CSSParserToken {
     this.sign = sign;
   }
   toString() {
-    const sign = this.sign == "+" ? "+" : "";
-    return `PERCENTAGE(${sign}${this.value})`;
+    return `PERCENTAGE(${formatNumber(this.value, this.sign)})`;
   }
   toJSON() { return {type:this.type, value:this.value, sign:this.sign}; }
   toSource() { return `${formatNumber(this.value, this.sign)}%`; }
@@ -753,8 +732,7 @@ class DimensionToken extends CSSParserToken {
     this.sign = sign;
   }
   toString() {
-    const sign = this.sign == "+" ? "+" : "";
-    return `DIM(${sign}${this.value}, ${this.unit})`;
+    return `DIM(${formatNumber(this.value, this.sign)},${JSON.stringify(this.unit)})`;
   }
   toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, unit:this.unit, sign:this.sign}; }
   toSource() {
@@ -772,7 +750,7 @@ function escapeIdent(string) {
   return Array.from(String(string), (e,i)=>{
     const code = e.codePointAt(0);
     if(i == 0) {
-      if(namestartchar(code)) return e;
+      if(namestartchar(code) || code === 0x2d) return e;
       return escapeIdentCode(code);
     }
     if(namechar(code)) return e;
@@ -781,7 +759,7 @@ function escapeIdent(string) {
 }
 
 function escapeIdentCode(code) {
-  if(digit(code) || letter(code)) {
+  if(digit(code) || letter(code) || between(code, 0, 0x1f) || code == 0x7f) {
     return `\\${code.toString(16)} `;
   }
   return "\\"+String.fromCodePoint(code);
@@ -800,12 +778,11 @@ function escapeString(string) {
   // Escapes the contents (between the quotes) of a string
   return Array.from(String(string), e=>{
     const code = e.codePointAt(0);
-    if(between(code, 0x0, 0x1f)
-      || code == 0x7f
-      || code == 0x22
-      || code == 0x5c
-    ) {
+    if(between(code, 0x0, 0x8) || between(code, 0xa, 0x1f) || code === 0x7f) {
       return "\\" + code.toString(16) + " ";
+    }
+    if(code === 0x22 || code === 0x5c) {
+      return "\\" + String.fromCodePoint(code);
     }
     return e;
   }).join("");
@@ -813,7 +790,9 @@ function escapeString(string) {
 
 function formatNumber(num, sign=undefined) {
   // TODO: Fix this to match CSS stringification behavior.
-  return (sign == "+" ? "+" : "") + String(num);
+  let n = String(num);
+  if (n[0] === '-') n = n.slice(1);
+  return (sign || "") + n;
 }
 
 // Exportation.
@@ -857,7 +836,7 @@ class TokenStream {
     return new EOFToken();
   }
   empty() {
-    return this.i >= this.tokens.length;
+    return this.nextToken() instanceof EOFToken;
   }
   consumeToken() {
     const tok = this.nextToken();
@@ -865,7 +844,7 @@ class TokenStream {
     return tok;
   }
   discardToken() {
-    this.i++;
+    if (!this.empty()) this.i++;
   }
   mark() {
     this.marks.push(this.i);
@@ -894,7 +873,7 @@ class TokenStream {
 }
 
 function parseerror(s, msg) {
-  console.log("Parse error at token " + s.i + ": " + s.tokens[s.i] + ".\n" + msg);
+  console.log("Parse error at token " + s.i + ": " + s.nextToken() + ".\n" + msg);
   return true;
 }
 
@@ -1155,13 +1134,16 @@ function isValidInContext(construct, context) {
     return true;
   }
 
-  // Exclude properties that ended up with a {}-block
-  // in their value, unless they're custom.
+  // Exclude properties that ended up with a {}-block plus 
+  // a non-whitespace component in their value, unless they're custom.
   if(construct.type == "DECLARATION") {
     if(construct.name.slice(0, 2) == "--") return true;
-    for(const val of construct.value) {
-      if(val.type == "BLOCK" && val.name == "{") return false;
+
+    const block = construct.value.find(t => t.type === "BLOCK" && t.name === "{");
+    if (block && construct.value.some(t => t.type !== "WHITESPACE" && t !== block)) {
+      return false;
     }
+
     return true;
   }
 }
@@ -1292,19 +1274,21 @@ class AtRule extends CSSParserRule {
   }
   toSource(indent=0) {
     let s = printIndent(indent) + "@" + escapeIdent(this.name);
-    s += this.prelude.map(x=>x.toSource()).join("");
-    if(this.declarations == null) {
-      s += ";\n";
+    let prelude = this.prelude.map(x => x.toSource()).join("");
+    while (prelude.endsWith(' ')) { prelude = prelude.slice(0, -1); }
+    if(this.declarations === null) {
+      s += prelude + ";";
       return s;
     }
-    s += "{\n";
-    if(this.declarations.length) {
-      s += this.declarations.map(x=>x.toSource(indent+1)).join("\n") + "\n";
+    s += prelude + " ";
+    if (this.declarations.length || this.rules.length) {
+      s += "{\n" +
+           this.declarations.map(x => x.toSource(indent+1) + "\n").join("") +
+           this.rules.map(x => x.toSource(indent+1) + "\n").join("") +
+           printIndent(indent) + "}";
+    } else {
+      s += "{ }";
     }
-    if(this.rules.length) {
-      s += this.rules.map(x=>x.toSource(indent+1)).join("\n") + "\n";
-    }
-    s += printIndent(indent) + "}";
     return s;
   }
 }
@@ -1327,15 +1311,17 @@ class QualifiedRule extends CSSParserRule {
   }
   toSource(indent=0) {
     let s = printIndent(indent);
-    s += this.prelude.map(x=>x.toSource()).join("");
-    s += "{\n";
-    if(this.declarations.length) {
-      s += this.declarations.map(x=>x.toSource(indent+1)).join("\n") + "\n";
+    let prelude = this.prelude.map(x => x.toSource()).join("");
+    while (prelude.endsWith(' ')) { prelude = prelude.slice(0, -1); }
+    s += prelude + " ";
+    if (this.declarations.length || this.rules.length) {
+      s += "{\n" +
+           this.declarations.map(x => x.toSource(indent+1) + "\n").join("") +
+           this.rules.map(x => x.toSource(indent+1) + "\n").join("") +
+           printIndent(indent) + "}";
+    } else {
+      s += "{ }";
     }
-    if(this.rules.length) {
-      s += this.rules.map(x=>x.toSource(indent+1)).join("\n") + "\n";
-    }
-    s += printIndent(indent) + "}";
     return s;
   }
 }
@@ -1360,7 +1346,7 @@ class Declaration extends CSSParserRule {
     let s = printIndent(indent) + escapeIdent(this.name) + ": ";
     s += this.value.map(x=>x.toSource()).join("");
     if(this.important) {
-      s += "!important";
+      s += " !important";
     }
     s += ";";
     return s;
@@ -1407,7 +1393,7 @@ class Func extends CSSParserRule {
 }
 
 function printIndent(level) {
-  return "\t".repeat(level);
+  return "  ".repeat(level);
 }
 
 
