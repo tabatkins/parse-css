@@ -761,7 +761,7 @@ function escapeIdent(string) {
 }
 
 function escapeIdentCode(code) {
-  if(digit(code) || letter(code)) {
+  if(digit(code) || letter(code) || between(code, 0, 0x1f) || code == 0x7f) {
     return `\\${code.toString(16)} `;
   }
   return "\\"+String.fromCodePoint(code);
