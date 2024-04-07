@@ -752,7 +752,7 @@ function escapeIdent(string) {
   return Array.from(String(string), (e,i)=>{
     const code = e.codePointAt(0);
     if(i == 0) {
-      if(namestartchar(code)) return e;
+      if(namestartchar(code) || code === 0x2d) return e;
       return escapeIdentCode(code);
     }
     if(namechar(code)) return e;
