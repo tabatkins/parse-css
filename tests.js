@@ -13,6 +13,8 @@
   }
 }(this, function () {
 
+const r = String.raw;
+
 return [
   // preprocess()
   {
@@ -7451,6 +7453,870 @@ return [
         }
       ]
     ]
+  },
+
+  // toSource()
+
+  // -- WHITESPACE
+  {
+    parser: "",
+    css: " ",
+    expectedToSource: " "
+  },
+  {
+    parser: "",
+    css: "\n",
+    expectedToSource: " "
+  },
+  {
+    parser: "",
+    css: " \t\r\n\f ",
+    expectedToSource: " "
+  },
+
+  // -- CDO
+  {
+    parser: "",
+    css: "<!--",
+    expectedToSource: "<!--"
+  },
+
+  // -- CDC
+  {
+    parser: "",
+    css: "-->",
+    expectedToSource: "-->"
+  },
+
+  // -- COLON
+  {
+    parser: "",
+    css: ":",
+    expectedToSource: ":"
+  },
+
+  // -- SEMICOLON
+  {
+    parser: "",
+    css: ";",
+    expectedToSource: ";"
+  },
+
+  // -- COMMA
+  {
+    parser: "",
+    css: ",",
+    expectedToSource: ","
+  },
+
+  // -- OPEN-CURLY
+  {
+    parser: "",
+    css: "{",
+    expectedToSource: "{"
+  },
+
+  // -- CLOSE-CURLY
+  {
+    parser: "",
+    css: "}",
+    expectedToSource: "}"
+  },
+
+  // -- OPEN-SQUARE
+  {
+    parser: "",
+    css: "[",
+    expectedToSource: "["
+  },
+
+  // -- CLOSE-SQUARE
+  {
+    parser: "",
+    css: "]",
+    expectedToSource: "]"
+  },
+
+  // -- OPEN-PAREN
+  {
+    parser: "",
+    css: "(",
+    expectedToSource: "("
+  },
+
+  // -- CLOSE-PAREN
+  {
+    parser: "",
+    css: ")",
+    expectedToSource: ")"
+  },
+
+  // -- DELIM
+  {
+    parser: "",
+    css: "#",
+    expectedToSource: "#"
+  },
+  {
+    parser: "",
+    css: ".",
+    expectedToSource: "."
+  },
+  {
+    parser: "",
+    css: "@",
+    expectedToSource: "@"
+  },
+  {
+    parser: "",
+    css: "*",
+    expectedToSource: "*"
+  },
+  {
+    parser: "",
+    css: "+",
+    expectedToSource: "+"
+  },
+  {
+    parser: "",
+    css: "|",
+    expectedToSource: "|"
+  },
+  {
+    parser: "",
+    css: "\\\n",
+    expectedToSource: "\\\n "
+  },
+  {
+    parser: "",
+    css: "\\\n ",
+    expectedToSource: "\\\n "
+  },
+
+  // -- IDENT
+  {
+    parser: "",
+    css: "foo_bar",
+    expectedToSource: "foo_bar"
+  },
+  {
+    parser: "",
+    css: "foo-bar",
+    expectedToSource: "foo-bar"
+  },
+  {
+    parser: "",
+    css: "-foo-bar",
+    expectedToSource: "-foo-bar"
+  },
+  {
+    parser: "",
+    css: "--foo-bar",
+    expectedToSource: "--foo-bar"
+  },
+  {
+    parser: "",
+    css: "\u4E00\u{20000}\u{10FFFF}",
+    expectedToSource: "\u4E00\u{20000}\u{10FFFF}"
+  },
+  {
+    parser: "",
+    css: r`\31-foo`,
+    expectedToSource: r`\31 -foo`
+  },
+  {
+    parser: "",
+    css: r`\39-foo`,
+    expectedToSource: r`\39 -foo`
+  },
+  {
+    parser: "",
+    css: r`\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~`,
+    expectedToSource: r`\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^_\`\{\|\}\~`
+  },
+  {
+    parser: "",
+    css: r`\1\2\3\4\5\6\7\8\9\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F`,
+    expectedToSource: r`\1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f `
+  },
+  {
+    parser: "",
+    css: r`\2000 \3000`,
+    expectedToSource: `\\\u2000\\\u3000`
+  },
+
+  // -- HASH
+  {
+    parser: "",
+    css: "#foo-bar",
+    expectedToSource: "#foo-bar"
+  },
+  {
+    parser: "",
+    css: "#-foo-bar",
+    expectedToSource: "#-foo-bar"
+  },
+  {
+    parser: "",
+    css: "#--foo-bar",
+    expectedToSource: "#--foo-bar"
+  },
+  {
+    parser: "",
+    css: "\u4E00\u{20000}\u{10FFFF}",
+    expectedToSource: "\u4E00\u{20000}\u{10FFFF}"
+  },
+  {
+    parser: "",
+    css: r`#\31-foo`,
+    expectedToSource: r`#\31 -foo`
+  },
+  {
+    parser: "",
+    css: r`#\39-foo`,
+    expectedToSource: r`#\39 -foo`
+  },
+  {
+    parser: "",
+    css: r`#\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~`,
+    expectedToSource: r`#\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^_\`\{\|\}\~`
+  },
+  {
+    parser: "",
+    css: r`#\1\2\3\4\5\6\7\8\9\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F`,
+    expectedToSource: r`#\1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f `
+  },
+  {
+    parser: "",
+    css: r`#\2000 \3000`,
+    expectedToSource: `#\\\u2000\\\u3000`
+  },
+  {
+    parser: "",
+    css: "#123-foo",
+    expectedToSource: "#123-foo"
+  },
+
+  // -- STRING ("")
+  {
+    parser: "",
+    css: '"foo bar"',
+    expectedToSource: '"foo bar"'
+  },
+  {
+    parser: "",
+    css: '" !#$%&()*+,./:;<=>?@[]^_`{|}~"',
+    expectedToSource: '" !#$%&()*+,./:;<=>?@[]^_`{|}~"'
+  },
+  {
+    parser: "",
+    css: '"\t"',
+    expectedToSource: '"\t"'
+  },
+  {
+    parser: "",
+    css: '"\u2000\u3000"',
+    expectedToSource: '"\u2000\u3000"'
+  },
+  {
+    parser: "",
+    css: `"'"`,
+    expectedToSource: r`"'"`
+  },
+  {
+    parser: "",
+    css: r`"\""`,
+    expectedToSource: r`"\""`
+  },
+  {
+    parser: "",
+    css: r`"\\"`,
+    expectedToSource: r`"\\"`
+  },
+  {
+    parser: "",
+    css: r`"\1\2\3\4\5\6\7\8\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F"`,
+    expectedToSource: r`"\1 \2 \3 \4 \5 \6 \7 \8 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f "`
+  },
+  {
+    parser: "",
+    css: '"abc',
+    expectedToSource: '"abc"'
+  },
+
+  // -- STRING ('')
+  {
+    parser: "",
+    css: "'foo bar'",
+    expectedToSource: '"foo bar"'
+  },
+  {
+    parser: "",
+    css: "' !#$%&()*+,./:;<=>?@[]^_`{|}~'",
+    expectedToSource: '" !#$%&()*+,./:;<=>?@[]^_`{|}~"'
+  },
+  {
+    parser: "",
+    css: "'\t'",
+    expectedToSource: '"\t"'
+  },
+  {
+    parser: "",
+    css: "'\u2000\u3000'",
+    expectedToSource: '"\u2000\u3000"'
+  },
+  {
+    parser: "",
+    css: `'"'`,
+    expectedToSource: r`"\""`
+  },
+  {
+    parser: "",
+    css: r`'\''`,
+    expectedToSource: r`"'"`
+  },
+  {
+    parser: "",
+    css: r`'\\'`,
+    expectedToSource: r`"\\"`
+  },
+  {
+    parser: "",
+    css: r`'\1\2\3\4\5\6\7\8\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F'`,
+    expectedToSource: r`"\1 \2 \3 \4 \5 \6 \7 \8 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f "`
+  },
+  {
+    parser: "",
+    css: "'abc",
+    expectedToSource: '"abc"'
+  },
+
+  // -- BADSTRING
+  {
+    parser: "",
+    css: '"\n',
+    expectedToSource: '"\n '
+  },
+  {
+    parser: "",
+    css: '"\n ',
+    expectedToSource: '"\n '
+  },
+  {
+    parser: "",
+    css: '"foo\n',
+    expectedToSource: '"\n '
+  },
+
+  // -- URL
+  {
+    parser: "",
+    css: "url(foo-bar)",
+    expectedToSource: 'url("foo-bar")'
+  },
+  {
+    parser: "",
+    css: "url(!#$%&*+,./:;<=>?@[]^_`{|}~)",
+    expectedToSource: 'url("!#$%&*+,./:;<=>?@[]^_`{|}~")'
+  },
+  {
+    parser: "",
+    css: r`url(\9)`,
+    expectedToSource: 'url("\t")'
+  },
+  {
+    parser: "",
+    css: "url(\u2000\u3000)",
+    expectedToSource: 'url("\u2000\u3000")'
+  },
+  {
+    parser: "",
+    css: r`url(\1\2\3\4\5\6\7\8\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F)`,
+    expectedToSource: r`url("\1 \2 \3 \4 \5 \6 \7 \8 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f ")`
+  },
+
+  // -- BADURL
+  {
+    parser: "",
+    css: "url(bad url)",
+    expectedToSource: "url(BAD URL)"
+  },
+  {
+    parser: "",
+    css: "url(foo'bar)",
+    expectedToSource: "url(BAD URL)"
+  },
+
+  // -- FUNCTION
+  {
+    parser: "",
+    css: "foo_bar(",
+    expectedToSource: "foo_bar("
+  },
+  {
+    parser: "",
+    css: "foo-bar(",
+    expectedToSource: "foo-bar("
+  },
+  {
+    parser: "",
+    css: "-foo-bar(",
+    expectedToSource: "-foo-bar("
+  },
+  {
+    parser: "",
+    css: "--foo-bar(",
+    expectedToSource: "--foo-bar("
+  },
+  {
+    parser: "",
+    css: "\u4E00\u{20000}\u{10FFFF}(",
+    expectedToSource: "\u4E00\u{20000}\u{10FFFF}("
+  },
+  {
+    parser: "",
+    css: r`\31-foo(`,
+    expectedToSource: r`\31 -foo(`
+  },
+  {
+    parser: "",
+    css: r`\39-foo(`,
+    expectedToSource: r`\39 -foo(`
+  },
+  {
+    parser: "",
+    css: r`\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~(`,
+    expectedToSource: r`\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^_\`\{\|\}\~(`
+  },
+  {
+    parser: "",
+    css: r`\1\2\3\4\5\6\7\8\9\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F(`,
+    expectedToSource: r`\1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f (`
+  },
+  {
+    parser: "",
+    css: r`\2000 \3000(`,
+    expectedToSource: `\\\u2000\\\u3000(`
+  },
+
+  // -- AT-KEYWORD
+  {
+    parser: "",
+    css: "@foo_bar",
+    expectedToSource: "@foo_bar"
+  },
+  {
+    parser: "",
+    css: "@foo-bar",
+    expectedToSource: "@foo-bar"
+  },
+  {
+    parser: "",
+    css: "@-foo-bar",
+    expectedToSource: "@-foo-bar"
+  },
+  {
+    parser: "",
+    css: "@--foo-bar",
+    expectedToSource: "@--foo-bar"
+  },
+  {
+    parser: "",
+    css: "@\u4E00\u{20000}\u{10FFFF}",
+    expectedToSource: "@\u4E00\u{20000}\u{10FFFF}"
+  },
+  {
+    parser: "",
+    css: r`@\31-foo`,
+    expectedToSource: r`@\31 -foo`
+  },
+  {
+    parser: "",
+    css: r`@\39-foo`,
+    expectedToSource: r`@\39 -foo`
+  },
+  {
+    parser: "",
+    css: r`@\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~`,
+    expectedToSource: r`@\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^_\`\{\|\}\~`
+  },
+  {
+    parser: "",
+    css: r`@\1\2\3\4\5\6\7\8\9\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F`,
+    expectedToSource: r`@\1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f `
+  },
+  {
+    parser: "",
+    css: r`@\2000 \3000`,
+    expectedToSource: `@\\\u2000\\\u3000`
+  },
+
+  // -- NUMBER
+  {
+    parser: "",
+    css: "123",
+    expectedToSource: "123"
+  },
+  {
+    parser: "",
+    css: "+123",
+    expectedToSource: "+123"
+  },
+  {
+    parser: "",
+    css: "-123",
+    expectedToSource: "-123"
+  },
+  {
+    parser: "",
+    css: "0",
+    expectedToSource: "0"
+  },
+  {
+    parser: "",
+    css: "+0",
+    expectedToSource: "+0"
+  },
+  {
+    parser: "",
+    css: "-0",
+    expectedToSource: "-0"
+  },
+  {
+    parser: "",
+    css: "1.5",
+    expectedToSource: "1.5"
+  },
+  {
+    parser: "",
+    css: "+1.5",
+    expectedToSource: "+1.5"
+  },
+  {
+    parser: "",
+    css: "-1.5",
+    expectedToSource: "-1.5"
+  },
+  {
+    parser: "",
+    css: "1.3e12",
+    expectedToSource: "1300000000000"
+  },
+  {
+    parser: "",
+    css: "+1.3e12",
+    expectedToSource: "+1300000000000"
+  },
+  {
+    parser: "",
+    css: "-1.3e12",
+    expectedToSource: "-1300000000000"
+  },
+  {
+    parser: "",
+    css: "1.3e-12",
+    expectedToSource: "1.3e-12"
+  },
+  {
+    parser: "",
+    css: "+1.3e-12",
+    expectedToSource: "+1.3e-12"
+  },
+  {
+    parser: "",
+    css: "-1.3e-12",
+    expectedToSource: "-1.3e-12"
+  },
+
+  // -- PERCENTAGE
+  {
+    parser: "",
+    css: "123%",
+    expectedToSource: "123%"
+  },
+  {
+    parser: "",
+    css: "+123%",
+    expectedToSource: "+123%"
+  },
+  {
+    parser: "",
+    css: "-123%",
+    expectedToSource: "-123%"
+  },
+  {
+    parser: "",
+    css: "0%",
+    expectedToSource: "0%"
+  },
+  {
+    parser: "",
+    css: "+0%",
+    expectedToSource: "+0%"
+  },
+  {
+    parser: "",
+    css: "-0%",
+    expectedToSource: "-0%"
+  },
+  {
+    parser: "",
+    css: "1.5%",
+    expectedToSource: "1.5%"
+  },
+  {
+    parser: "",
+    css: "+1.5%",
+    expectedToSource: "+1.5%"
+  },
+  {
+    parser: "",
+    css: "-1.5%",
+    expectedToSource: "-1.5%"
+  },
+
+  // -- DIMENSION
+  {
+    parser: "",
+    css: "123px",
+    expectedToSource: "123px"
+  },
+  {
+    parser: "",
+    css: "+123px",
+    expectedToSource: "+123px"
+  },
+  {
+    parser: "",
+    css: "-123px",
+    expectedToSource: "-123px"
+  },
+  {
+    parser: "",
+    css: "0px",
+    expectedToSource: "0px"
+  },
+  {
+    parser: "",
+    css: "+0px",
+    expectedToSource: "+0px"
+  },
+  {
+    parser: "",
+    css: "-0px",
+    expectedToSource: "-0px"
+  },
+  {
+    parser: "",
+    css: "1.5px",
+    expectedToSource: "1.5px"
+  },
+  {
+    parser: "",
+    css: "+1.5px",
+    expectedToSource: "+1.5px"
+  },
+  {
+    parser: "",
+    css: "-1.5px",
+    expectedToSource: "-1.5px"
+  },
+  {
+    parser: "",
+    css: "123-px",
+    expectedToSource: "123-px"
+  },
+  {
+    parser: "",
+    css: r`123\65 5`,
+    expectedToSource: r`123\65 5`
+  },
+  {
+    parser: "",
+    css: r`123\65-5`,
+    expectedToSource: r`123\65 -5`
+  },
+
+  // -- STYLESHEET
+  {
+    parser: "parseAStylesheet",
+    css: `@import "myfile.css";p{color:red}@media print{p{color:green}}`,
+    expectedToSource: `\
+@import "myfile.css";
+p {
+  color: red;
+}
+@media print {
+  p {
+    color: green;
+  }
+}`
+  },
+
+  // -- AT-RULE
+  {
+    parser: "parseARule",
+    css: "@import 'myfile.css'",
+    expectedToSource: '@import "myfile.css";'
+  },
+  {
+    parser: "parseARule",
+    css: "@media all{}",
+    expectedToSource: `@media all { }`
+  },
+  {
+    parser: "parseARule",
+    css: "@media all{p{}}",
+    expectedToSource: `@media all {
+  p { }
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "@media all{@media print{}}",
+    expectedToSource: `@media all {
+  @media print { }
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "@font-face{font-family:monospace;src:url(myfile.woff)}",
+    expectedToSource: `\
+@font-face {
+  font-family: monospace;
+  src: url("myfile.woff");
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "@media all{@media print{div{color:yellow}}p{color:red}}",
+    expectedToSource: `\
+@media all {
+  @media print {
+    div {
+      color: yellow;
+    }
+  }
+  p {
+    color: red;
+  }
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "@media all { @media print { div { color: yellow; } } p { color: red; } }",
+    expectedToSource: `\
+@media all {
+  @media print {
+    div {
+      color: yellow;
+    }
+  }
+  p {
+    color: red;
+  }
+}`
+  },
+
+  // -- QUALIFIED-RULE
+  {
+    parser: "parseARule",
+    css: "div{}",
+    expectedToSource: `div { }`
+  },
+  {
+    parser: "parseARule",
+    css: "div{color:green}",
+    expectedToSource: `\
+div {
+  color: green;
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "div{p{color:red}}",
+    expectedToSource: `\
+div {
+  p {
+    color: red;
+  }
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "div{p{color:red}color:green;background:blue;div{color:yellow}}",
+    expectedToSource: `\
+div {
+  color: green;
+  background: blue;
+  p {
+    color: red;
+  }
+  div {
+    color: yellow;
+  }
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "div { p { color: red; } color: green; background: blue; div { color: yellow } }",
+    expectedToSource: `\
+div {
+  color: green;
+  background: blue;
+  p {
+    color: red;
+  }
+  div {
+    color: yellow;
+  }
+}`
+  },
+
+  // -- DECLARATION
+  {
+    parser: "parseADeclaration",
+    css: "font-family:1.2em/1.5 monospace",
+    expectedToSource: "font-family: 1.2em/1.5 monospace;"
+  },
+  {
+    parser: "parseADeclaration",
+    css: "font-family  :  1.2em/1.5  monospace ; ",
+    expectedToSource: "font-family: 1.2em/1.5 monospace;"
+  },
+  {
+    parser: "parseADeclaration",
+    css: "font-family:1.2em/1.5 monospace!IMPORTANT",
+    expectedToSource: "font-family: 1.2em/1.5 monospace !important;"
+  },
+  {
+    parser: "parseADeclaration",
+    css: "font-family  :  1.2em/1.5  monospace  ! IMPORTant; ",
+    expectedToSource: "font-family: 1.2em/1.5 monospace !important;"
+  },
+
+  // -- BLOCK
+  {
+    parser: "parseAComponentValue",
+    css: "{p{color:red;} display: block; font-family: 1.2em/1.5 monospace}",
+    expectedToSource: "{p{color:red;} display: block; font-family: 1.2em/1.5 monospace}"
+  },
+  {
+    parser: "parseAComponentValue",
+    css: '[myattr="myvalue"]',
+    expectedToSource: '[myattr="myvalue"]'
+  },
+  {
+    parser: "parseAComponentValue",
+    css: "(not (color: #fff))",
+    expectedToSource: "(not (color: #fff))"
+  },
+
+  // -- FUNCTION
+  {
+    parser: "parseAComponentValue",
+    css: "var(--foo, var(--bar, 1.2em/1.5 monospace))",
+    expectedToSource: "var(--foo, var(--bar, 1.2em/1.5 monospace))"
   }
 ];
 
