@@ -732,7 +732,7 @@ class DimensionToken extends CSSParserToken {
     this.sign = sign;
   }
   toString() {
-    return `DIM(${formatNumber(this.value, this.sign)}, ${JSON.stringify(this.unit)})`;
+    return `DIM(${formatNumber(this.value, this.sign)},${JSON.stringify(this.unit)})`;
   }
   toJSON() { return {type:this.type, value:this.value, isInteger:this.isInteger, unit:this.unit, sign:this.sign}; }
   toSource() {
