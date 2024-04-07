@@ -1344,7 +1344,7 @@ class Declaration extends CSSParserRule {
     let s = printIndent(indent) + escapeIdent(this.name) + ": ";
     s += this.value.map(x=>x.toSource()).join("");
     if(this.important) {
-      s += "!important";
+      s += " !important";
     }
     s += ";";
     return s;
