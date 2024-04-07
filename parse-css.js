@@ -1276,19 +1276,21 @@ class AtRule extends CSSParserRule {
   }
   toSource(indent=0) {
     let s = printIndent(indent) + "@" + escapeIdent(this.name);
-    s += this.prelude.map(x=>x.toSource()).join("");
-    if(this.declarations == null) {
-      s += ";\n";
+    let prelude = this.prelude.map(x => x.toSource()).join("");
+    while (prelude.endsWith(' ')) { prelude = prelude.slice(0, -1); }
+    if(this.declarations === null) {
+      s += prelude + ";";
       return s;
     }
-    s += "{\n";
-    if(this.declarations.length) {
-      s += this.declarations.map(x=>x.toSource(indent+1)).join("\n") + "\n";
+    s += prelude + " ";
+    if (this.declarations.length || this.rules.length) {
+      s += "{\n" +
+           this.declarations.map(x => x.toSource(indent+1) + "\n").join("") +
+           this.rules.map(x => x.toSource(indent+1) + "\n").join("") +
+           printIndent(indent) + "}";
+    } else {
+      s += "{ }";
     }
-    if(this.rules.length) {
-      s += this.rules.map(x=>x.toSource(indent+1)).join("\n") + "\n";
-    }
-    s += printIndent(indent) + "}";
     return s;
   }
 }
