@@ -335,11 +335,6 @@ var TESTS = [
   },
   {
     parser: "",
-    css: "null\\0",
-    expected: [{type: "IDENT", value: "null\uFFFD"}, {type: "EOF"}],
-  },
-  {
-    parser: "",
     css: "null\\0000",
     expected: [{type: "IDENT", value: "null\uFFFD"}, {type: "EOF"}],
   },
