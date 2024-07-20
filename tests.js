@@ -1,26 +1,21 @@
 "use strict";
 (function (global, factory) {
-  if (typeof define === 'function' && define.amd) {
-    require(
-      ['./parse-css', 'ansidiff'],
-      factory,
-    );
-  } else if (typeof exports !== 'undefined') {
-    factory(
-      require('./parse-css'),
-      require('ansidiff'),
-    );
+  if (typeof exports === 'object' && typeof module === 'object') {
+    // CommonJS/Node.js
+    exports.TESTS = factory();
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD
+    define(factory);
   } else {
+    // browser global
     global = typeof globalThis !== 'undefined' ? globalThis : global || self;
-    factory(
-      global,
-      {lines: global.diffString, words: global.diffString},
-      global.log,
-    );
+    global.TESTS = factory();
   }
-}(this, function (parseCss, ansidiff, log) {
+}(this, function () {
 
-var TESTS = [
+const r = String.raw;
+
+return [
   // preprocess()
   {
     parser: "",
@@ -1291,6 +1286,373 @@ var TESTS = [
 
   // parseAStylesheet()
   {
+    "parser": "parseAStylesheet",
+    "css": "",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": []
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": "foo",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": []
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": "foo 4",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": []
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": "@foo",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "AT-RULE",
+          "name": "foo",
+          "prelude": [],
+          "declarations": null,
+          "rules": null
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": "@foo bar; \t/* comment */",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "AT-RULE",
+          "name": "foo",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "bar"
+            }
+          ],
+          "declarations": null,
+          "rules": null
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": " /**/ @foo bar{[(4",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "AT-RULE",
+          "name": "foo",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "bar"
+            }
+          ],
+          "declarations": [],
+          "rules": []
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": "@foo { bar",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "AT-RULE",
+          "name": "foo",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [],
+          "rules": []
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": "@foo [ bar",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "AT-RULE",
+          "name": "foo",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "BLOCK",
+              "name": "[",
+              "value": [
+                {
+                  "type": "WHITESPACE"
+                },
+                {
+                  "type": "IDENT",
+                  "value": "bar"
+                }
+              ]
+            }
+          ],
+          "declarations": null,
+          "rules": null
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": " /**/ div > p { color: #aaa;  } /**/ ",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "div"
+            },
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "DELIM",
+              "value": ">"
+            },
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "p"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "color",
+              "value": [
+                {
+                  "type": "HASH",
+                  "value": "aaa",
+                  "isIdent": true
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": " /**/ { color: #aaa  ",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "color",
+              "value": [
+                {
+                  "type": "HASH",
+                  "value": "aaa",
+                  "isIdent": true
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": " /* CDO/CDC are ignored between rules */ <!-- --> {",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [],
+          "declarations": [],
+          "rules": []
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": " <!-- --> a<!---->{",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "a"
+            },
+            {
+              "type": "CDO"
+            },
+            {
+              "type": "CDC"
+            }
+          ],
+          "declarations": [],
+          "rules": []
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": "div { color: #aaa; } p{}",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "div"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "color",
+              "value": [
+                {
+                  "type": "HASH",
+                  "value": "aaa",
+                  "isIdent": true
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        },
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "p"
+            }
+          ],
+          "declarations": [],
+          "rules": []
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": "div {} -->",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "div"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [],
+          "rules": []
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": "{}a",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [],
+          "declarations": [],
+          "rules": []
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": "{}@a",
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [],
+          "declarations": [],
+          "rules": []
+        },
+        {
+          "type": "AT-RULE",
+          "name": "a",
+          "prelude": [],
+          "declarations": null,
+          "rules": null
+        }
+      ]
+    }
+  },
+  {
     css: `foo {
         bar: baz;
     }`,
@@ -1644,36 +2006,6318 @@ var TESTS = [
         }
       ]
     }
+  },
+  {
+    "parser": "parseAStylesheet",
+    "css": `p { color: red; } @media print { p { color: green; } }`,
+    "expected": {
+      "type": "STYLESHEET",
+      "rules": [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "p"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "color",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "red"
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        },
+        {
+          "type": "AT-RULE",
+          "name": "media",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "print"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [],
+          "rules": [
+            {
+              "type": "QUALIFIED-RULE",
+              "prelude": [
+                {
+                  "type": "IDENT",
+                  "value": "p"
+                },
+                {
+                  "type": "WHITESPACE"
+                },
+              ],
+              "declarations": [
+                {
+                  "type": "DECLARATION",
+                  "name": "color",
+                  "value": [
+                    {
+                      "type": "IDENT",
+                      "value": "green"
+                    }
+                  ],
+                  "important": false
+                }
+              ],
+              "rules": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  // parseAStylesheetsContents()
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "",
+    "expected": []
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "foo",
+    "expected": []
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "foo 4",
+    "expected": []
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "@foo",
+    "expected": [
+      {
+        "type": "AT-RULE",
+        "name": "foo",
+        "prelude": [],
+        "declarations": null,
+        "rules": null
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "@foo bar; \t/* comment */",
+    "expected": [
+      {
+        "type": "AT-RULE",
+        "name": "foo",
+        "prelude": [
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "bar"
+          }
+        ],
+        "declarations": null,
+        "rules": null
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": " /**/ @foo bar{[(4",
+    "expected": [
+      {
+        "type": "AT-RULE",
+        "name": "foo",
+        "prelude": [
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "bar"
+          }
+        ],
+        "declarations": [],
+        "rules": []
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "@foo { bar",
+    "expected": [
+      {
+        "type": "AT-RULE",
+        "name": "foo",
+        "prelude": [
+          {
+            "type": "WHITESPACE"
+          }
+        ],
+        "declarations": [],
+        "rules": []
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "@foo [ bar",
+    "expected": [
+      {
+        "type": "AT-RULE",
+        "name": "foo",
+        "prelude": [
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "BLOCK",
+            "name": "[",
+            "value": [
+              {
+                "type": "WHITESPACE"
+              },
+              {
+                "type": "IDENT",
+                "value": "bar"
+              }
+            ]
+          }
+        ],
+        "declarations": null,
+        "rules": null
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": " /**/ div > p { color: #aaa;  } /**/ ",
+    "expected": [
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [
+          {
+            "type": "IDENT",
+            "value": "div"
+          },
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "DELIM",
+            "value": ">"
+          },
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "p"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ],
+        "declarations": [
+          {
+            "type": "DECLARATION",
+            "name": "color",
+            "value": [
+              {
+                "type": "HASH",
+                "value": "aaa",
+                "isIdent": true
+              }
+            ],
+            "important": false
+          }
+        ],
+        "rules": []
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": " /**/ { color: #aaa  ",
+    "expected": [
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [],
+        "declarations": [
+          {
+            "type": "DECLARATION",
+            "name": "color",
+            "value": [
+              {
+                "type": "HASH",
+                "value": "aaa",
+                "isIdent": true
+              }
+            ],
+            "important": false
+          }
+        ],
+        "rules": []
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": " /* CDO/CDC are ignored between rules */ <!-- --> {",
+    "expected": [
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [],
+        "declarations": [],
+        "rules": []
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": " <!-- --> a<!---->{",
+    "expected": [
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [
+          {
+            "type": "IDENT",
+            "value": "a"
+          },
+          {
+            "type": "CDO"
+          },
+          {
+            "type": "CDC"
+          }
+        ],
+        "declarations": [],
+        "rules": []
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "div { color: #aaa; } p{}",
+    "expected": [
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [
+          {
+            "type": "IDENT",
+            "value": "div"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ],
+        "declarations": [
+          {
+            "type": "DECLARATION",
+            "name": "color",
+            "value": [
+              {
+                "type": "HASH",
+                "value": "aaa",
+                "isIdent": true
+              }
+            ],
+            "important": false
+          }
+        ],
+        "rules": []
+      },
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [
+          {
+            "type": "IDENT",
+            "value": "p"
+          }
+        ],
+        "declarations": [],
+        "rules": []
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "div {} -->",
+    "expected": [
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [
+          {
+            "type": "IDENT",
+            "value": "div"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ],
+        "declarations": [],
+        "rules": []
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "{}a",
+    "expected": [
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [],
+        "declarations": [],
+        "rules": []
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": "{}@a",
+    "expected": [
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [],
+        "declarations": [],
+        "rules": []
+      },
+      {
+        "type": "AT-RULE",
+        "name": "a",
+        "prelude": [],
+        "declarations": null,
+        "rules": null
+      }
+    ]
+  },
+  {
+    "parser": "parseAStylesheetsContents",
+    "css": `p { color: red; } @media print { p { color: green; } }`,
+    "expected": [
+      {
+        "type": "QUALIFIED-RULE",
+        "prelude": [
+          {
+            "type": "IDENT",
+            "value": "p"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ],
+        "declarations": [
+          {
+            "type": "DECLARATION",
+            "name": "color",
+            "value": [
+              {
+                "type": "IDENT",
+                "value": "red"
+              }
+            ],
+            "important": false
+          }
+        ],
+        "rules": []
+      },
+      {
+        "type": "AT-RULE",
+        "name": "media",
+        "prelude": [
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "print"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ],
+        "declarations": [],
+        "rules": [
+          {
+            "type": "QUALIFIED-RULE",
+            "prelude": [
+              {
+                "type": "IDENT",
+                "value": "p"
+              },
+              {
+                "type": "WHITESPACE"
+              },
+            ],
+            "declarations": [
+              {
+                "type": "DECLARATION",
+                "name": "color",
+                "value": [
+                  {
+                    "type": "IDENT",
+                    "value": "green"
+                  }
+                ],
+                "important": false
+              }
+            ],
+            "rules": []
+          }
+        ]
+      }
+    ]
+  },
+
+  // parseABlocksContents()
+  {
+    "parser": "parseABlocksContents",
+    "css": ";; /**/ ; ;",
+    "expected": [
+      [],
+      []
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "a:b; c:d 42!important;\n",
+    "expected": [
+      [
+        {
+          "type": "DECLARATION",
+          "name": "a",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "b"
+            }
+          ],
+          "important": false
+        },
+        {
+          "type": "DECLARATION",
+          "name": "c",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "d"
+            },
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "NUMBER",
+              "value": 42,
+              "isInteger": true
+            }
+          ],
+          "important": true
+        }
+      ],
+      []
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "z;a:b",
+    "expected": [
+      [
+        {
+          "type": "DECLARATION",
+          "name": "a",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "b"
+            }
+          ],
+          "important": false
+        }
+      ],
+      []
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "z:x!;a:b",
+    "expected": [
+      [
+        {
+          "type": "DECLARATION",
+          "name": "z",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "x"
+            },
+            {
+              "type": "DELIM",
+              "value": "!"
+            }
+          ],
+          "important": false
+        },
+        {
+          "type": "DECLARATION",
+          "name": "a",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "b"
+            }
+          ],
+          "important": false
+        }
+      ],
+      []
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "a:b; c+:d",
+    "expected": [
+      [
+        {
+          "type": "DECLARATION",
+          "name": "a",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "b"
+            }
+          ],
+          "important": false
+        }
+      ],
+      []
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "@import 'foo.css'; a:b; @import 'bar.css'",
+    "expected": [
+      [
+        {
+          "type": "DECLARATION",
+          "name": "a",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "b"
+            }
+          ],
+          "important": false
+        }
+      ],
+      [
+        {
+          "type": "AT-RULE",
+          "name": "import",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "STRING",
+              "value": "foo.css"
+            }
+          ],
+          "declarations": null,
+          "rules": null
+        },
+        {
+          "type": "AT-RULE",
+          "name": "import",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "STRING",
+              "value": "bar.css"
+            }
+          ],
+          "declarations": null,
+          "rules": null
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "@media screen { div{;}} a:b;; @media print{div{",
+    "expected": [
+      [
+        {
+          "type": "DECLARATION",
+          "name": "a",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "b"
+            }
+          ],
+          "important": false
+        }
+      ],
+      [
+        {
+          "type": "AT-RULE",
+          "name": "media",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "screen"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [],
+          "rules": [
+            {
+              "type": "QUALIFIED-RULE",
+              "prelude": [
+                {
+                  "type": "IDENT",
+                  "value": "div"
+                }
+              ],
+              "declarations": [],
+              "rules": []
+            }
+          ]
+        },
+        {
+          "type": "AT-RULE",
+          "name": "media",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "print"
+            }
+          ],
+          "declarations": [],
+          "rules": [
+            {
+              "type": "QUALIFIED-RULE",
+              "prelude": [
+                {
+                  "type": "IDENT",
+                  "value": "div"
+                }
+              ],
+              "declarations": [],
+              "rules": []
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "@ media screen { div{;}} a:b;; @media print{div{",
+    "expected": [
+      [
+        {
+          "type": "DECLARATION",
+          "name": "a",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "b"
+            }
+          ],
+          "important": false
+        }
+      ],
+      [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "DELIM",
+              "value": "@"
+            },
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "media"
+            },
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "screen"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [],
+          "rules": [
+            {
+              "type": "QUALIFIED-RULE",
+              "prelude": [
+                {
+                  "type": "IDENT",
+                  "value": "div"
+                }
+              ],
+              "declarations": [],
+              "rules": []
+            }
+          ]
+        },
+        {
+          "type": "AT-RULE",
+          "name": "media",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "print"
+            }
+          ],
+          "declarations": [],
+          "rules": [
+            {
+              "type": "QUALIFIED-RULE",
+              "prelude": [
+                {
+                  "type": "IDENT",
+                  "value": "div"
+                }
+              ],
+              "declarations": [],
+              "rules": []
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "z:x;a b{c:d;;e:f}",
+    "expected": [
+      [
+        {
+          "type": "DECLARATION",
+          "name": "z",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "x"
+            }
+          ],
+          "important": false
+        }
+      ],
+      [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "a"
+            },
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "b"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "c",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "d"
+                }
+              ],
+              "important": false
+            },
+            {
+              "type": "DECLARATION",
+              "name": "e",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "f"
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "a {c:1}",
+    "expected": [
+      [],
+      [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "a"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "c",
+              "value": [
+                {
+                  "type": "NUMBER",
+                  "value": 1,
+                  "isInteger": true
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "a:hover {c:1}",
+    "expected": [
+      [],
+      [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "a"
+            },
+            {
+              "type": "COLON"
+            },
+            {
+              "type": "IDENT",
+              "value": "hover"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "c",
+              "value": [
+                {
+                  "type": "NUMBER",
+                  "value": 1,
+                  "isInteger": true
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "z:x;a b{c:d}e:f",
+    "expected": [
+      [
+        {
+          "type": "DECLARATION",
+          "name": "z",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "x"
+            }
+          ],
+          "important": false
+        },
+        {
+          "type": "DECLARATION",
+          "name": "e",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "f"
+            }
+          ],
+          "important": false
+        }
+      ],
+      [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "a"
+            },
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "b"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "c",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "d"
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": "",
+    "expected": [
+      [],
+      []
+    ]
+  },
+  {
+    "parser": "parseABlocksContents",
+    "css": `p { color: red; } @media print { p { color: green; } }`,
+    "expected": [
+      [],
+      [
+        {
+          "type": "QUALIFIED-RULE",
+          "prelude": [
+            {
+              "type": "IDENT",
+              "value": "p"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [
+            {
+              "type": "DECLARATION",
+              "name": "color",
+              "value": [
+                {
+                  "type": "IDENT",
+                  "value": "red"
+                }
+              ],
+              "important": false
+            }
+          ],
+          "rules": []
+        },
+        {
+          "type": "AT-RULE",
+          "name": "media",
+          "prelude": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "print"
+            },
+            {
+              "type": "WHITESPACE"
+            }
+          ],
+          "declarations": [],
+          "rules": [
+            {
+              "type": "QUALIFIED-RULE",
+              "prelude": [
+                {
+                  "type": "IDENT",
+                  "value": "p"
+                },
+                {
+                  "type": "WHITESPACE"
+                },
+              ],
+              "declarations": [
+                {
+                  "type": "DECLARATION",
+                  "name": "color",
+                  "value": [
+                    {
+                      "type": "IDENT",
+                      "value": "green"
+                    }
+                  ],
+                  "important": false
+                }
+              ],
+              "rules": []
+            }
+          ]
+        }
+      ]
+    ]
+  },
+
+  // parseARule()
+  {
+    "parser": "parseARule",
+    "css": "",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": "foo",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": "foo 4",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": "@foo",
+    "expected": {
+      "type": "AT-RULE",
+      "name": "foo",
+      "prelude": [],
+      "declarations": null,
+      "rules": null
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": "@foo bar; \t/* comment */",
+    "expected": {
+      "type": "AT-RULE",
+      "name": "foo",
+      "prelude": [
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "bar"
+        }
+      ],
+      "declarations": null,
+      "rules": null
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": " /**/ @foo bar{[(4",
+    "expected": {
+      "type": "AT-RULE",
+      "name": "foo",
+      "prelude": [
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "bar"
+        }
+      ],
+      "declarations": [],
+      "rules": []
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": "@foo { bar",
+    "expected": {
+      "type": "AT-RULE",
+      "name": "foo",
+      "prelude": [
+        {
+          "type": "WHITESPACE"
+        }
+      ],
+      "declarations": [],
+      "rules": []
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": "@foo [ bar",
+    "expected": {
+      "type": "AT-RULE",
+      "name": "foo",
+      "prelude": [
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "BLOCK",
+          "name": "[",
+          "value": [
+            {
+              "type": "WHITESPACE"
+            },
+            {
+              "type": "IDENT",
+              "value": "bar"
+            }
+          ]
+        }
+      ],
+      "declarations": null,
+      "rules": null
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": " /**/ div > p { color: #aaa;  } /**/ ",
+    "expected": {
+      "type": "QUALIFIED-RULE",
+      "prelude": [
+        {
+          "type": "IDENT",
+          "value": "div"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "DELIM",
+          "value": ">"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "p"
+        },
+        {
+          "type": "WHITESPACE"
+        }
+      ],
+      "declarations": [
+        {
+          "type": "DECLARATION",
+          "name": "color",
+          "value": [
+            {
+              "type": "HASH",
+              "value": "aaa",
+              "isIdent": true
+            }
+          ],
+          "important": false
+        }
+      ],
+      "rules": []
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": " /**/ { color: #aaa  ",
+    "expected": {
+      "type": "QUALIFIED-RULE",
+      "prelude": [],
+      "declarations": [
+        {
+          "type": "DECLARATION",
+          "name": "color",
+          "value": [
+            {
+              "type": "HASH",
+              "value": "aaa",
+              "isIdent": true
+            }
+          ],
+          "important": false
+        }
+      ],
+      "rules": []
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": " /* CDO/CDC are not special */ <!-- --> {",
+    "expected": {
+      "type": "QUALIFIED-RULE",
+      "prelude": [
+        {
+          "type": "CDO"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "CDC"
+        },
+        {
+          "type": "WHITESPACE"
+        }
+      ],
+      "declarations": [],
+      "rules": []
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": "div { color: #aaa; } p{}",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": "div {} -->",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseARule",
+    "css": "{}a",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+
+  // parseADeclaration()
+  {
+    "parser": "parseADeclaration",
+    "css": "",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "  /**/\n",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": " ;",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "@foo:",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "#foo:",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": ".foo:",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo*:",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo.. 9000",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo :",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "\n/**/ foo: ",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:;",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": " /**/ foo /**/ :",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:;bar:;",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo: 9000  !Important",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "NUMBER",
+          "value": 9000,
+          "isInteger": true
+        }
+      ],
+      "important": true
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo: 9000  ! /**/\t IMPORTant /**/\f",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "NUMBER",
+          "value": 9000,
+          "isInteger": true
+        }
+      ],
+      "important": true
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo: 9000  /* Dotted capital I */!İmportant",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "NUMBER",
+          "value": 9000,
+          "isInteger": true
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "DELIM",
+          "value": "!"
+        },
+        {
+          "type": "IDENT",
+          "value": "İmportant"
+        }
+      ],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo: 9000  !important!",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "NUMBER",
+          "value": 9000,
+          "isInteger": true
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "DELIM",
+          "value": "!"
+        },
+        {
+          "type": "IDENT",
+          "value": "important"
+        },
+        {
+          "type": "DELIM",
+          "value": "!"
+        }
+      ],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo: 9000  important",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "NUMBER",
+          "value": 9000,
+          "isInteger": true
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "important"
+        }
+      ],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:important",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "IDENT",
+          "value": "important"
+        }
+      ],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:{}",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "BLOCK",
+          "name": "{",
+          "value": []
+        }
+      ],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo: {}",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "BLOCK",
+          "name": "{",
+          "value": []
+        }
+      ],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:{} ",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "foo",
+      "value": [
+        {
+          "type": "BLOCK",
+          "name": "{",
+          "value": []
+        }
+      ],
+      "important": false
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:bar{}",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:{}bar",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "foo:{}{}",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "-foo:bar{}",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseADeclaration",
+    "css": "--foo:bar{}",
+    "expected": {
+      "type": "DECLARATION",
+      "name": "--foo",
+      "value": [
+        {
+          "type": "IDENT",
+          "value": "bar"
+        },
+        {
+          "type": "BLOCK",
+          "name": "{",
+          "value":  []
+        }
+      ],
+      "important": false
+    }
+  },
+
+  // parseAComponentValue()
+  {
+    "parser": "parseAComponentValue",
+    "css": "",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseAComponentValue",
+    "css": " ",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseAComponentValue",
+    "css": "/**/",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseAComponentValue",
+    "css": "  /**/\t/* a */\n\n",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+  {
+    "parser": "parseAComponentValue",
+    "css": ".",
+    "expected": {
+      "type": "DELIM",
+      "value": "."
+    }
+  },
+  {
+    "parser": "parseAComponentValue",
+    "css": "a",
+    "expected": {
+      "type": "IDENT",
+      "value": "a"
+    }
+  },
+  {
+    "parser": "parseAComponentValue",
+    "css": "/**/ 4px",
+    "expected": {
+      "type": "DIMENSION",
+      "value": 4,
+      "isInteger": true,
+      "unit": "px"
+    }
+  },
+  {
+    "parser": "parseAComponentValue",
+    "css": "rgba(100%, 0%, 50%, .5)",
+    "expected": {
+      "type": "FUNCTION",
+      "name": "rgba",
+      "value": [
+        {
+          "type": "PERCENTAGE",
+          "value": 100
+        },
+        {
+          "type": "COMMA"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "PERCENTAGE",
+          "value": 0
+        },
+        {
+          "type": "COMMA"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "PERCENTAGE",
+          "value": 50
+        },
+        {
+          "type": "COMMA"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "NUMBER",
+          "value": 0.5,
+          "isInteger": false
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAComponentValue",
+    "css": " /**/ { foo: bar; @baz [)",
+    "expected": {
+      "type": "BLOCK",
+      "name": "{",
+      "value": [
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "foo"
+        },
+        {
+          "type": "COLON"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "bar"
+        },
+        {
+          "type": "SEMICOLON"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "AT-KEYWORD",
+          "value": "baz"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "BLOCK",
+          "name": "[",
+          "value": [
+            {
+              "type": "CLOSE-PAREN"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "parser": "parseAComponentValue",
+    "css": ".foo",
+    "expectedThrow": {
+      "name": "SyntaxError"
+    }
+  },
+
+  // parseAListOfComponentValues()
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "",
+    "expected": []
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "/*/*///** /* **/*//* ",
+    "expected": [
+      {
+        "type": "DELIM",
+        "value": "/"
+      },
+      {
+        "type": "DELIM",
+        "value": "*"
+      },
+      {
+        "type": "DELIM",
+        "value": "/"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "red",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "red"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "  \t\t\r\n\nRed ",
+    "expected": [
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "Red"
+      },
+      {
+        "type": "WHITESPACE"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "red/* CDC */-->",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "red"
+      },
+      {
+        "type": "CDC"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "red-->/* Not CDC */",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "red--"
+      },
+      {
+        "type": "DELIM",
+        "value": ">"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "\\- red0 -red --red -\\-red\\ blue 0red -0red \x00red _Red .red rêd r\\êd \x7f\x80\x81",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "red0"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "-red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "--red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "--red blue"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 0,
+        "isInteger": true,
+        "unit": "red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 0,
+        "isInteger": true,
+        "unit": "red",
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "\uFFFDred"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "_Red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "."
+      },
+      {
+        "type": "IDENT",
+        "value": "red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "rêd"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "rêd"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "\x7f"
+      },
+      {
+        "type": "DELIM",
+        "value": "\x80"
+      },
+      {
+        "type": "DELIM",
+        "value": "\x81"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "\\30red \\00030 red \\30\r\nred \\0000000red \\1100000red \\red \\r ed \\.red \\ red \\\nred \\376\\37 6\\000376\\0000376\\",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "0red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "0red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "0red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "\uFFFD0red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "\uFFFD0red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "r"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "ed"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": ".red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": " red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "\\"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "\u{0376}76\u{0376}76\uFFFD"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "rgba0('a' rgba1(a b rgba2(rgba3('b",
+    "expected": [
+      {
+        "type": "FUNCTION",
+        "name": "rgba0",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "a"
+          },
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "FUNCTION",
+            "name": "rgba1",
+            "value": [
+              {
+                "type": "IDENT",
+                "value": "a"
+              },
+              {
+                "type": "WHITESPACE"
+              },
+              {
+                "type": "IDENT",
+                "value": "b"
+              },
+              {
+                "type": "WHITESPACE"
+              },
+              {
+                "type": "FUNCTION",
+                "name": "rgba2",
+                "value": [
+                  {
+                    "type": "FUNCTION",
+                    "name": "rgba3",
+                    "value": [
+                      {
+                        "type": "STRING",
+                        "value": "b"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "rgba0() -rgba() --rgba() -\\-rgba() 0rgba() -0rgba() _rgba() .rgba() rgbâ() \\30rgba() rgba () @rgba() #rgba()",
+    "expected": [
+      {
+        "type": "FUNCTION",
+        "name": "rgba0",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "-rgba",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "--rgba",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "--rgba",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 0,
+        "isInteger": true,
+        "unit": "rgba"
+      },
+      {
+        "type": "BLOCK",
+        "name": "(",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 0,
+        "isInteger": true,
+        "unit": "rgba",
+        "sign": "-"
+      },
+      {
+        "type": "BLOCK",
+        "name": "(",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "_rgba",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "."
+      },
+      {
+        "type": "FUNCTION",
+        "name": "rgba",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "rgbâ",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "0rgba",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "rgba"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BLOCK",
+        "name": "(",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "AT-KEYWORD",
+        "value": "rgba"
+      },
+      {
+        "type": "BLOCK",
+        "name": "(",
+        "value": []
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "HASH",
+        "value": "rgba",
+        "isIdent": true
+      },
+      {
+        "type": "BLOCK",
+        "name": "(",
+        "value": []
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "@media0 @-Media @--media @-\\-media @0media @-0media @_media @.media @medİa @\\30 media\\",
+    "expected": [
+      {
+        "type": "AT-KEYWORD",
+        "value": "media0"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "AT-KEYWORD",
+        "value": "-Media"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "AT-KEYWORD",
+        "value": "--media"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "AT-KEYWORD",
+        "value": "--media"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "@"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 0,
+        "isInteger": true,
+        "unit": "media"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "@"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 0,
+        "isInteger": true,
+        "unit": "media",
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "AT-KEYWORD",
+        "value": "_media"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "@"
+      },
+      {
+        "type": "DELIM",
+        "value": "."
+      },
+      {
+        "type": "IDENT",
+        "value": "media"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "AT-KEYWORD",
+        "value": "medİa"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "AT-KEYWORD",
+        "value": "0media\uFFFD"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "#red0 #-Red #--red #-\\-red #0red #-0red #_Red #.red #rêd #êrd #\\.red\\",
+    "expected": [
+      {
+        "type": "HASH",
+        "value": "red0",
+        "isIdent": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "HASH",
+        "value": "-Red",
+        "isIdent": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "HASH",
+        "value": "--red",
+        "isIdent": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "HASH",
+        "value": "--red",
+        "isIdent": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "HASH",
+        "value": "0red",
+        "isIdent": false
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "HASH",
+        "value": "-0red",
+        "isIdent": false
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "HASH",
+        "value": "_Red",
+        "isIdent": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "#"
+      },
+      {
+        "type": "DELIM",
+        "value": "."
+      },
+      {
+        "type": "IDENT",
+        "value": "red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "HASH",
+        "value": "rêd",
+        "isIdent": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "HASH",
+        "value": "êrd",
+        "isIdent": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "HASH",
+        "value": ".red\uFFFD",
+        "isIdent": true
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "p[example=\"\\\nfoo(int x) {\\\n   this.x = x;\\\n}\\\n\"]",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "p"
+      },
+      {
+        "type": "BLOCK",
+        "name": "[",
+        "value": [
+          {
+            "type": "IDENT",
+            "value": "example"
+          },
+          {
+            "type": "DELIM",
+            "value": "="
+          },
+          {
+            "type": "STRING",
+            "value": "foo(int x) {   this.x = x;}"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "'' 'Lorem \"îpsum\"' 'a\\\nb' 'a\nb 'eof",
+    "expected": [
+      {
+        "type": "STRING",
+        "value": ""
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "STRING",
+        "value": "Lorem \"îpsum\""
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "STRING",
+        "value": "ab"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADSTRING"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "b"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "STRING",
+        "value": "eof"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "\"\" \"Lorem 'îpsum'\" \"a\\\nb\" \"a\nb \"eof",
+    "expected": [
+      {
+        "type": "STRING",
+        "value": ""
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "STRING",
+        "value": "Lorem 'îpsum'"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "STRING",
+        "value": "ab"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADSTRING"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "b"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "STRING",
+        "value": "eof"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "\"Lo\\rem \\130 ps\\u m\" '\\376\\37 6\\000376\\0000376\\",
+    "expected": [
+      {
+        "type": "STRING",
+        "value": "Lorem İpsu m"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "STRING",
+        "value": "\u{0376}76\u{0376}76"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "url( '') url('Lorem \"îpsum\"'\n) url('a\\\nb' ) url('a\nb) url('eof",
+    "expected": [
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "STRING",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "Lorem \"îpsum\""
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "ab"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "BADSTRING"
+          },
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "b"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "eof"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "url(",
+    "expected": [
+      {
+        "type": "URL",
+        "value": ""
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "url( \t",
+    "expected": [
+      {
+        "type": "URL",
+        "value": ""
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "url(\"\") url(\"Lorem 'îpsum'\"\n) url(\"a\\\nb\" ) url(\"a\nb) url(\"eof",
+    "expected": [
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "Lorem 'îpsum'"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "ab"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "BADSTRING"
+          },
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "b"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "eof"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "url(\"Lo\\rem \\130 ps\\u m\") url('\\376\\37 6\\000376\\0000376\\",
+    "expected": [
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "Lorem İpsu m"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "\u{0376}76\u{0376}76"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "URL(foo) Url(foo) ûrl(foo) url (foo) url\\ (foo) url(\t 'foo' ",
+    "expected": [
+      {
+        "type": "URL",
+        "value": "foo"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "URL",
+        "value": "foo"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "ûrl",
+        "value": [
+          {
+            "type": "IDENT",
+            "value": "foo"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "url"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BLOCK",
+        "name": "(",
+        "value": [
+          {
+            "type": "IDENT",
+            "value": "foo"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url ",
+        "value": [
+          {
+            "type": "IDENT",
+            "value": "foo"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "STRING",
+            "value": "foo"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "url('a' b) url('c' d)",
+    "expected": [
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "a"
+          },
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "b"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "STRING",
+            "value": "c"
+          },
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "d"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "url('a\nb) url('c\n",
+    "expected": [
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "BADSTRING"
+          },
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "b"
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "url",
+        "value": [
+          {
+            "type": "BADSTRING"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "url() url( \t) url(\n Foô\\030\n!\n) url(\na\nb\n) url(a\\ b) url(a(b) url(a\\(b) url(a'b) url(a\\'b) url(a\"b) url(a\\\"b) url(a\nb) url(a\\\nb) url(a\\a b) url(a\\",
+    "expected": [
+      {
+        "type": "URL",
+        "value": ""
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "URL",
+        "value": ""
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "URL",
+        "value": "Foô0!"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "URL",
+        "value": "a b"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "URL",
+        "value": "a(b"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "URL",
+        "value": "a'b"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "URL",
+        "value": "a\"b"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "URL",
+        "value": "a\nb"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "URL",
+        "value": "a\uFFFD"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "url(\x00!#$%&*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~\x80\x81 ¡¢",
+    "expected": [
+      {
+        "type": "URL",
+        "value": "\uFFFD!#$%&*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~\x80\x81 ¡¢"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "url(\x01) url(\x02) url(\x03) url(\x04) url(\x05) url(\x06) url(\x07) url(\x08) url(\x0b) url(\x0e) url(\x0f) url(\x10) url(\x11) url(\x12) url(\x13) url(\x14) url(\x15) url(\x16) url(\x17) url(\x18) url(\x19) url(\x1a) url(\x1b) url(\x1c) url(\x1d) url(\x1e) url(\x1f) url(\x7f)",
+    "expected": [
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BADURL"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "12 +34 -45 .67 +.89 -.01 2.3 +45.0 -0.67",
+    "expected": [
+      {
+        "type": "NUMBER",
+        "value": 12,
+        "isInteger": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 34,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": -45,
+        "isInteger": true,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 0.67,
+        "isInteger": false
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 0.89,
+        "isInteger": false,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": -0.01,
+        "isInteger": false,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 2.3,
+        "isInteger": false
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 45,
+        "isInteger": false,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": -0.67,
+        "isInteger": false,
+        "sign": "-"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "12e2 +34e+1 -45E-0 .68e+3 +.79e-1 -.01E2 2.3E+1 +45.0e6 -0.67e0",
+    "expected": [
+      {
+        "type": "NUMBER",
+        "value": 1200,
+        "isInteger": false
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 340,
+        "isInteger": false,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": -45,
+        "isInteger": false,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 680,
+        "isInteger": false
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 0.079,
+        "isInteger": false,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": -1,
+        "isInteger": false,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 23,
+        "isInteger": false
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 45000000,
+        "isInteger": false,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": -0.67,
+        "isInteger": false,
+        "sign": "-"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "3. /* Decimal point must have following digits */",
+    "expected": [
+      {
+        "type": "NUMBER",
+        "value": 3,
+        "isInteger": true
+      },
+      {
+        "type": "DELIM",
+        "value": "."
+      },
+      {
+        "type": "WHITESPACE"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "3\\65-2 /* Scientific notation E can not be escaped */",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": 3,
+        "isInteger": true,
+        "unit": "e-2"
+      },
+      {
+        "type": "WHITESPACE"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "3e-2.1 /* Integer exponents only */",
+    "expected": [
+      {
+        "type": "NUMBER",
+        "value": 0.03,
+        "isInteger": false
+      },
+      {
+        "type": "NUMBER",
+        "value": 0.1,
+        "isInteger": false
+      },
+      {
+        "type": "WHITESPACE"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "12% +34% -45% .67% +.89% -.01% 2.3% +45.0% -0.67%",
+    "expected": [
+      {
+        "type": "PERCENTAGE",
+        "value": 12
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": 34,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": -45,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": 0.67
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": 0.89,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": -0.01,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": 2.3
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": 45,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": -0.67,
+        "sign": "-"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "12e2% +34e+1% -45E-0% .68e+3% +.79e-1% -.01E2% 2.3E+1% +45.0e6% -0.67e0%",
+    "expected": [
+      {
+        "type": "PERCENTAGE",
+        "value": 1200
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": 340,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": -45,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": 680
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": 0.079,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": -1,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": 23
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": 45000000,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "PERCENTAGE",
+        "value": -0.67,
+        "sign": "-"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "12\\% /* Percent sign can not be escaped */",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": 12,
+        "isInteger": true,
+        "unit": "%"
+      },
+      {
+        "type": "WHITESPACE"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "12px +34px -45px .67px +.89px -.01px 2.3px +45.0px -0.67px",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": 12,
+        "isInteger": true,
+        "unit": "px"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 34,
+        "isInteger": true,
+        "unit": "px",
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": -45,
+        "isInteger": true,
+        "unit": "px",
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 0.67,
+        "isInteger": false,
+        "unit": "px"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 0.89,
+        "isInteger": false,
+        "unit": "px",
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": -0.01,
+        "isInteger": false,
+        "unit": "px",
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 2.3,
+        "isInteger": false,
+        "unit": "px"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 45,
+        "isInteger": false,
+        "unit": "px",
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": -0.67,
+        "isInteger": false,
+        "unit": "px",
+        "sign": "-"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "12e2px +34e+1px -45E-0px .68e+3px +.79e-1px -.01E2px 2.3E+1px +45.0e6px -0.67e0px",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": 1200,
+        "isInteger": false,
+        "unit": "px"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 340,
+        "isInteger": false,
+        "unit": "px",
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": -45,
+        "isInteger": false,
+        "unit": "px",
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 680,
+        "isInteger": false,
+        "unit": "px"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 0.079,
+        "isInteger": false,
+        "unit": "px",
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": -1,
+        "isInteger": false,
+        "unit": "px",
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 23,
+        "isInteger": false,
+        "unit": "px"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 45000000,
+        "isInteger": false,
+        "unit": "px",
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": -0.67,
+        "isInteger": false,
+        "unit": "px",
+        "sign": "-"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "12red0 12.0-red 12--red 12-\\-red 120red 12-0red 12\x00red 12_Red 12.red 12rêd",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": 12,
+        "isInteger": true,
+        "unit": "red0"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 12,
+        "isInteger": false,
+        "unit": "-red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 12,
+        "isInteger": true,
+        "unit": "--red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 12,
+        "isInteger": true,
+        "unit": "--red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 120,
+        "isInteger": true,
+        "unit": "red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 12,
+        "isInteger": true
+      },
+      {
+        "type": "DIMENSION",
+        "value": 0,
+        "isInteger": true,
+        "unit": "red",
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 12,
+        "isInteger": true,
+        "unit": "\uFFFDred"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 12,
+        "isInteger": true,
+        "unit": "_Red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 12,
+        "isInteger": true
+      },
+      {
+        "type": "DELIM",
+        "value": "."
+      },
+      {
+        "type": "IDENT",
+        "value": "red"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DIMENSION",
+        "value": 12,
+        "isInteger": true,
+        "unit": "rêd"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "u+1 U+10 U+100 U+1000 U+10000 U+100000 U+1000000",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "u"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 10,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 100,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 10000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 100000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1000000,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "u+? u+1? U+10? U+100? U+1000? U+10000? U+100000?",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "u"
+      },
+      {
+        "type": "DELIM",
+        "value": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "u"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 10,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 100,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 10000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 100000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "u+?? U+1?? U+10?? U+100?? U+1000?? U+10000??",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "u"
+      },
+      {
+        "type": "DELIM",
+        "value": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 10,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 100,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 10000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "u+??? U+1??? U+10??? U+100??? U+1000???",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "u"
+      },
+      {
+        "type": "DELIM",
+        "value": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 10,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 100,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "u+???? U+1???? U+10???? U+100????",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "u"
+      },
+      {
+        "type": "DELIM",
+        "value": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 10,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 100,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "u+????? U+1????? U+10?????",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "u"
+      },
+      {
+        "type": "DELIM",
+        "value": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 10,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "u+?????? U+1??????",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "u"
+      },
+      {
+        "type": "DELIM",
+        "value": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "u+1-2 U+100000-2 U+1000000-2 U+10-200000",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "u"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "NUMBER",
+        "value": -2,
+        "isInteger": true,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 100000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "NUMBER",
+        "value": -2,
+        "isInteger": true,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1000000,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "NUMBER",
+        "value": -2,
+        "isInteger": true,
+        "sign": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 10,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "NUMBER",
+        "value": -200000,
+        "isInteger": true,
+        "sign": "-"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "ù+12 Ü+12 u +12 U+ 12 U+12 - 20 U+1?2 U+1?-50",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "ù"
+      },
+      {
+        "type": "NUMBER",
+        "value": 12,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "Ü"
+      },
+      {
+        "type": "NUMBER",
+        "value": 12,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "u"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 12,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "DELIM",
+        "value": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 12,
+        "isInteger": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 12,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "-"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "NUMBER",
+        "value": 20,
+        "isInteger": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "NUMBER",
+        "value": 2,
+        "isInteger": true
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "U"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      },
+      {
+        "type": "DELIM",
+        "value": "?"
+      },
+      {
+        "type": "NUMBER",
+        "value": -50,
+        "isInteger": true,
+        "sign": "-"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "3n+1",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": 3,
+        "isInteger": true,
+        "unit": "n"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "+3n+1",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": 3,
+        "isInteger": true,
+        "unit": "n",
+        "sign": "+"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "-3n+1",
+    "expected": [
+      {
+        "type": "DIMENSION",
+        "value": -3,
+        "isInteger": true,
+        "unit": "n",
+        "sign": "-"
+      },
+      {
+        "type": "NUMBER",
+        "value": 1,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "n+2",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "n"
+      },
+      {
+        "type": "NUMBER",
+        "value": 2,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "+n+2",
+    "expected": [
+      {
+        "type": "DELIM",
+        "value": "+"
+      },
+      {
+        "type": "IDENT",
+        "value": "n"
+      },
+      {
+        "type": "NUMBER",
+        "value": 2,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "-n+2",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "-n"
+      },
+      {
+        "type": "NUMBER",
+        "value": 2,
+        "isInteger": true,
+        "sign": "+"
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "~=|=^=$=*=||<!------> |/**/| ~/**/=",
+    "expected": [
+      {
+        "type": "DELIM",
+        "value": "~"
+      },
+      {
+        "type": "DELIM",
+        "value": "="
+      },
+      {
+        "type": "DELIM",
+        "value": "|"
+      },
+      {
+        "type": "DELIM",
+        "value": "="
+      },
+      {
+        "type": "DELIM",
+        "value": "^"
+      },
+      {
+        "type": "DELIM",
+        "value": "="
+      },
+      {
+        "type": "DELIM",
+        "value": "$"
+      },
+      {
+        "type": "DELIM",
+        "value": "="
+      },
+      {
+        "type": "DELIM",
+        "value": "*"
+      },
+      {
+        "type": "DELIM",
+        "value": "="
+      },
+      {
+        "type": "DELIM",
+        "value": "|"
+      },
+      {
+        "type": "DELIM",
+        "value": "|"
+      },
+      {
+        "type": "CDO"
+      },
+      {
+        "type": "IDENT",
+        "value": "----"
+      },
+      {
+        "type": "DELIM",
+        "value": ">"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "|"
+      },
+      {
+        "type": "DELIM",
+        "value": "|"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "DELIM",
+        "value": "~"
+      },
+      {
+        "type": "DELIM",
+        "value": "="
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "a:not([href^=http\\:],  [href ^=\t'https\\:'\n]) { color: rgba(0%, 100%, 50%); }",
+    "expected": [
+      {
+        "type": "IDENT",
+        "value": "a"
+      },
+      {
+        "type": "COLON"
+      },
+      {
+        "type": "FUNCTION",
+        "name": "not",
+        "value": [
+          {
+            "type": "BLOCK",
+            "name": "[",
+            "value": [
+              {
+                "type": "IDENT",
+                "value": "href"
+              },
+              {
+                "type": "DELIM",
+                "value": "^"
+              },
+              {
+                "type": "DELIM",
+                "value": "="
+              },
+              {
+                "type": "IDENT",
+                "value": "http:"
+              }
+            ]
+          },
+          {
+            "type": "COMMA"
+          },
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "BLOCK",
+            "name": "[",
+            "value": [
+              {
+                "type": "IDENT",
+                "value": "href"
+              },
+              {
+                "type": "WHITESPACE"
+              },
+              {
+                "type": "DELIM",
+                "value": "^"
+              },
+              {
+                "type": "DELIM",
+                "value": "="
+              },
+              {
+                "type": "WHITESPACE"
+              },
+              {
+                "type": "STRING",
+                "value": "https:"
+              },
+              {
+                "type": "WHITESPACE"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BLOCK",
+        "name": "{",
+        "value": [
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "IDENT",
+            "value": "color"
+          },
+          {
+            "type": "COLON"
+          },
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "FUNCTION",
+            "name": "rgba",
+            "value": [
+              {
+                "type": "PERCENTAGE",
+                "value": 0
+              },
+              {
+                "type": "COMMA"
+              },
+              {
+                "type": "WHITESPACE"
+              },
+              {
+                "type": "PERCENTAGE",
+                "value": 100
+              },
+              {
+                "type": "COMMA"
+              },
+              {
+                "type": "WHITESPACE"
+              },
+              {
+                "type": "PERCENTAGE",
+                "value": 50
+              }
+            ]
+          },
+          {
+            "type": "SEMICOLON"
+          },
+          {
+            "type": "WHITESPACE"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "parser": "parseAListOfComponentValues",
+    "css": "@media print { (foo]{bar) }baz",
+    "expected": [
+      {
+        "type": "AT-KEYWORD",
+        "value": "media"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "IDENT",
+        "value": "print"
+      },
+      {
+        "type": "WHITESPACE"
+      },
+      {
+        "type": "BLOCK",
+        "name": "{",
+        "value": [
+          {
+            "type": "WHITESPACE"
+          },
+          {
+            "type": "BLOCK",
+            "name": "(",
+            "value": [
+              {
+                "type": "IDENT",
+                "value": "foo"
+              },
+              {
+                "type": "CLOSE-SQUARE"
+              },
+              {
+                "type": "BLOCK",
+                "name": "{",
+                "value": [
+                  {
+                    "type": "IDENT",
+                    "value": "bar"
+                  },
+                  {
+                    "type": "CLOSE-PAREN"
+                  },
+                  {
+                    "type": "WHITESPACE"
+                  }
+                ]
+              },
+              {
+                "type": "IDENT",
+                "value": "baz"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  // parseACommaSeparatedListOfComponentValues()
+  {
+    "parser": "parseACommaSeparatedListOfComponentValues",
+    "css": "",
+    "expected": []
+  },
+  {
+    "parser": "parseACommaSeparatedListOfComponentValues",
+    "css": "foo ,bar, baz",
+    "expected": [
+      [
+        {
+          "type": "IDENT",
+          "value": "foo"
+        },
+        {
+          "type": "WHITESPACE"
+        }
+      ],
+      [
+        {
+          "type": "IDENT",
+          "value": "bar"
+        }
+      ],
+      [
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "baz"
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseACommaSeparatedListOfComponentValues",
+    "css": "foo bar, baz qua",
+    "expected": [
+      [
+        {
+          "type": "IDENT",
+          "value": "foo"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "bar"
+        }
+      ],
+      [
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "baz"
+        },
+        {
+          "type": "WHITESPACE"
+        },
+        {
+          "type": "IDENT",
+          "value": "qua"
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseACommaSeparatedListOfComponentValues",
+    "css": "foo{}}",
+    "expected": [
+      [
+        {
+          "type": "IDENT",
+          "value": "foo"
+        },
+        {
+          "type": "BLOCK",
+          "name": "{",
+          "value": []
+        },
+        {
+          "type": "CLOSE-CURLY"
+        }
+      ]
+    ]
+  },
+  {
+    "parser": "parseACommaSeparatedListOfComponentValues",
+    "css": "var(--abc,--def)",
+    "expected": [
+      [
+        {
+          "type": "FUNCTION",
+          "name": "var",
+          "value": [
+            {
+              "type": "IDENT",
+              "value": "--abc"
+            },
+            {
+              "type": "COMMA"
+            },
+            {
+              "type": "IDENT",
+              "value": "--def"
+            }
+          ]
+        }
+      ]
+    ]
+  },
+
+  // toSource()
+
+  // -- WHITESPACE
+  {
+    parser: "",
+    css: " ",
+    expectedToSource: " "
+  },
+  {
+    parser: "",
+    css: "\n",
+    expectedToSource: " "
+  },
+  {
+    parser: "",
+    css: " \t\r\n\f ",
+    expectedToSource: " "
+  },
+
+  // -- CDO
+  {
+    parser: "",
+    css: "<!--",
+    expectedToSource: "<!--"
+  },
+
+  // -- CDC
+  {
+    parser: "",
+    css: "-->",
+    expectedToSource: "-->"
+  },
+
+  // -- COLON
+  {
+    parser: "",
+    css: ":",
+    expectedToSource: ":"
+  },
+
+  // -- SEMICOLON
+  {
+    parser: "",
+    css: ";",
+    expectedToSource: ";"
+  },
+
+  // -- COMMA
+  {
+    parser: "",
+    css: ",",
+    expectedToSource: ","
+  },
+
+  // -- OPEN-CURLY
+  {
+    parser: "",
+    css: "{",
+    expectedToSource: "{"
+  },
+
+  // -- CLOSE-CURLY
+  {
+    parser: "",
+    css: "}",
+    expectedToSource: "}"
+  },
+
+  // -- OPEN-SQUARE
+  {
+    parser: "",
+    css: "[",
+    expectedToSource: "["
+  },
+
+  // -- CLOSE-SQUARE
+  {
+    parser: "",
+    css: "]",
+    expectedToSource: "]"
+  },
+
+  // -- OPEN-PAREN
+  {
+    parser: "",
+    css: "(",
+    expectedToSource: "("
+  },
+
+  // -- CLOSE-PAREN
+  {
+    parser: "",
+    css: ")",
+    expectedToSource: ")"
+  },
+
+  // -- DELIM
+  {
+    parser: "",
+    css: "#",
+    expectedToSource: "#"
+  },
+  {
+    parser: "",
+    css: ".",
+    expectedToSource: "."
+  },
+  {
+    parser: "",
+    css: "@",
+    expectedToSource: "@"
+  },
+  {
+    parser: "",
+    css: "*",
+    expectedToSource: "*"
+  },
+  {
+    parser: "",
+    css: "+",
+    expectedToSource: "+"
+  },
+  {
+    parser: "",
+    css: "|",
+    expectedToSource: "|"
+  },
+  {
+    parser: "",
+    css: "\\\n",
+    expectedToSource: "\\\n "
+  },
+  {
+    parser: "",
+    css: "\\\n ",
+    expectedToSource: "\\\n "
+  },
+
+  // -- IDENT
+  {
+    parser: "",
+    css: "foo_bar",
+    expectedToSource: "foo_bar"
+  },
+  {
+    parser: "",
+    css: "foo-bar",
+    expectedToSource: "foo-bar"
+  },
+  {
+    parser: "",
+    css: "-foo-bar",
+    expectedToSource: "-foo-bar"
+  },
+  {
+    parser: "",
+    css: "--foo-bar",
+    expectedToSource: "--foo-bar"
+  },
+  {
+    parser: "",
+    css: "\u4E00\u{20000}\u{10FFFF}",
+    expectedToSource: "\u4E00\u{20000}\u{10FFFF}"
+  },
+  {
+    parser: "",
+    css: r`\31-foo`,
+    expectedToSource: r`\31 -foo`
+  },
+  {
+    parser: "",
+    css: r`\39-foo`,
+    expectedToSource: r`\39 -foo`
+  },
+  {
+    parser: "",
+    css: r`\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~`,
+    expectedToSource: r`\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^_\`\{\|\}\~`
+  },
+  {
+    parser: "",
+    css: r`\1\2\3\4\5\6\7\8\9\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F`,
+    expectedToSource: r`\1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f `
+  },
+  {
+    parser: "",
+    css: r`\2000 \3000`,
+    expectedToSource: `\\\u2000\\\u3000`
+  },
+
+  // -- HASH
+  {
+    parser: "",
+    css: "#foo-bar",
+    expectedToSource: "#foo-bar"
+  },
+  {
+    parser: "",
+    css: "#-foo-bar",
+    expectedToSource: "#-foo-bar"
+  },
+  {
+    parser: "",
+    css: "#--foo-bar",
+    expectedToSource: "#--foo-bar"
+  },
+  {
+    parser: "",
+    css: "\u4E00\u{20000}\u{10FFFF}",
+    expectedToSource: "\u4E00\u{20000}\u{10FFFF}"
+  },
+  {
+    parser: "",
+    css: r`#\31-foo`,
+    expectedToSource: r`#\31 -foo`
+  },
+  {
+    parser: "",
+    css: r`#\39-foo`,
+    expectedToSource: r`#\39 -foo`
+  },
+  {
+    parser: "",
+    css: r`#\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~`,
+    expectedToSource: r`#\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^_\`\{\|\}\~`
+  },
+  {
+    parser: "",
+    css: r`#\1\2\3\4\5\6\7\8\9\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F`,
+    expectedToSource: r`#\1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f `
+  },
+  {
+    parser: "",
+    css: r`#\2000 \3000`,
+    expectedToSource: `#\\\u2000\\\u3000`
+  },
+  {
+    parser: "",
+    css: "#123-foo",
+    expectedToSource: "#123-foo"
+  },
+
+  // -- STRING ("")
+  {
+    parser: "",
+    css: '"foo bar"',
+    expectedToSource: '"foo bar"'
+  },
+  {
+    parser: "",
+    css: '" !#$%&()*+,./:;<=>?@[]^_`{|}~"',
+    expectedToSource: '" !#$%&()*+,./:;<=>?@[]^_`{|}~"'
+  },
+  {
+    parser: "",
+    css: '"\t"',
+    expectedToSource: '"\t"'
+  },
+  {
+    parser: "",
+    css: '"\u2000\u3000"',
+    expectedToSource: '"\u2000\u3000"'
+  },
+  {
+    parser: "",
+    css: `"'"`,
+    expectedToSource: r`"'"`
+  },
+  {
+    parser: "",
+    css: r`"\""`,
+    expectedToSource: r`"\""`
+  },
+  {
+    parser: "",
+    css: r`"\\"`,
+    expectedToSource: r`"\\"`
+  },
+  {
+    parser: "",
+    css: r`"\1\2\3\4\5\6\7\8\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F"`,
+    expectedToSource: r`"\1 \2 \3 \4 \5 \6 \7 \8 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f "`
+  },
+  {
+    parser: "",
+    css: '"abc',
+    expectedToSource: '"abc"'
+  },
+
+  // -- STRING ('')
+  {
+    parser: "",
+    css: "'foo bar'",
+    expectedToSource: '"foo bar"'
+  },
+  {
+    parser: "",
+    css: "' !#$%&()*+,./:;<=>?@[]^_`{|}~'",
+    expectedToSource: '" !#$%&()*+,./:;<=>?@[]^_`{|}~"'
+  },
+  {
+    parser: "",
+    css: "'\t'",
+    expectedToSource: '"\t"'
+  },
+  {
+    parser: "",
+    css: "'\u2000\u3000'",
+    expectedToSource: '"\u2000\u3000"'
+  },
+  {
+    parser: "",
+    css: `'"'`,
+    expectedToSource: r`"\""`
+  },
+  {
+    parser: "",
+    css: r`'\''`,
+    expectedToSource: r`"'"`
+  },
+  {
+    parser: "",
+    css: r`'\\'`,
+    expectedToSource: r`"\\"`
+  },
+  {
+    parser: "",
+    css: r`'\1\2\3\4\5\6\7\8\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F'`,
+    expectedToSource: r`"\1 \2 \3 \4 \5 \6 \7 \8 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f "`
+  },
+  {
+    parser: "",
+    css: "'abc",
+    expectedToSource: '"abc"'
+  },
+
+  // -- BADSTRING
+  {
+    parser: "",
+    css: '"\n',
+    expectedToSource: '"\n '
+  },
+  {
+    parser: "",
+    css: '"\n ',
+    expectedToSource: '"\n '
+  },
+  {
+    parser: "",
+    css: '"foo\n',
+    expectedToSource: '"\n '
+  },
+
+  // -- URL
+  {
+    parser: "",
+    css: "url(foo-bar)",
+    expectedToSource: 'url("foo-bar")'
+  },
+  {
+    parser: "",
+    css: "url(!#$%&*+,./:;<=>?@[]^_`{|}~)",
+    expectedToSource: 'url("!#$%&*+,./:;<=>?@[]^_`{|}~")'
+  },
+  {
+    parser: "",
+    css: r`url(\9)`,
+    expectedToSource: 'url("\t")'
+  },
+  {
+    parser: "",
+    css: "url(\u2000\u3000)",
+    expectedToSource: 'url("\u2000\u3000")'
+  },
+  {
+    parser: "",
+    css: r`url(\1\2\3\4\5\6\7\8\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F)`,
+    expectedToSource: r`url("\1 \2 \3 \4 \5 \6 \7 \8 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f ")`
+  },
+
+  // -- BADURL
+  {
+    parser: "",
+    css: "url(bad url)",
+    expectedToSource: "url(BAD URL)"
+  },
+  {
+    parser: "",
+    css: "url(foo'bar)",
+    expectedToSource: "url(BAD URL)"
+  },
+
+  // -- FUNCTION
+  {
+    parser: "",
+    css: "foo_bar(",
+    expectedToSource: "foo_bar("
+  },
+  {
+    parser: "",
+    css: "foo-bar(",
+    expectedToSource: "foo-bar("
+  },
+  {
+    parser: "",
+    css: "-foo-bar(",
+    expectedToSource: "-foo-bar("
+  },
+  {
+    parser: "",
+    css: "--foo-bar(",
+    expectedToSource: "--foo-bar("
+  },
+  {
+    parser: "",
+    css: "\u4E00\u{20000}\u{10FFFF}(",
+    expectedToSource: "\u4E00\u{20000}\u{10FFFF}("
+  },
+  {
+    parser: "",
+    css: r`\31-foo(`,
+    expectedToSource: r`\31 -foo(`
+  },
+  {
+    parser: "",
+    css: r`\39-foo(`,
+    expectedToSource: r`\39 -foo(`
+  },
+  {
+    parser: "",
+    css: r`\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~(`,
+    expectedToSource: r`\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^_\`\{\|\}\~(`
+  },
+  {
+    parser: "",
+    css: r`\1\2\3\4\5\6\7\8\9\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F(`,
+    expectedToSource: r`\1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f (`
+  },
+  {
+    parser: "",
+    css: r`\2000 \3000(`,
+    expectedToSource: `\\\u2000\\\u3000(`
+  },
+
+  // -- AT-KEYWORD
+  {
+    parser: "",
+    css: "@foo_bar",
+    expectedToSource: "@foo_bar"
+  },
+  {
+    parser: "",
+    css: "@foo-bar",
+    expectedToSource: "@foo-bar"
+  },
+  {
+    parser: "",
+    css: "@-foo-bar",
+    expectedToSource: "@-foo-bar"
+  },
+  {
+    parser: "",
+    css: "@--foo-bar",
+    expectedToSource: "@--foo-bar"
+  },
+  {
+    parser: "",
+    css: "@\u4E00\u{20000}\u{10FFFF}",
+    expectedToSource: "@\u4E00\u{20000}\u{10FFFF}"
+  },
+  {
+    parser: "",
+    css: r`@\31-foo`,
+    expectedToSource: r`@\31 -foo`
+  },
+  {
+    parser: "",
+    css: r`@\39-foo`,
+    expectedToSource: r`@\39 -foo`
+  },
+  {
+    parser: "",
+    css: r`@\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~`,
+    expectedToSource: r`@\ \!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\<\=\>\?\@\[\\\]\^_\`\{\|\}\~`
+  },
+  {
+    parser: "",
+    css: r`@\1\2\3\4\5\6\7\8\9\A\B\C\D\E\F\10\11\12\13\14\15\16\17\18\19\1A\1B\1C\1D\1E\1F\7F`,
+    expectedToSource: r`@\1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f \10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f `
+  },
+  {
+    parser: "",
+    css: r`@\2000 \3000`,
+    expectedToSource: `@\\\u2000\\\u3000`
+  },
+
+  // -- NUMBER
+  {
+    parser: "",
+    css: "123",
+    expectedToSource: "123"
+  },
+  {
+    parser: "",
+    css: "+123",
+    expectedToSource: "+123"
+  },
+  {
+    parser: "",
+    css: "-123",
+    expectedToSource: "-123"
+  },
+  {
+    parser: "",
+    css: "0",
+    expectedToSource: "0"
+  },
+  {
+    parser: "",
+    css: "+0",
+    expectedToSource: "+0"
+  },
+  {
+    parser: "",
+    css: "-0",
+    expectedToSource: "-0"
+  },
+  {
+    parser: "",
+    css: "1.5",
+    expectedToSource: "1.5"
+  },
+  {
+    parser: "",
+    css: "+1.5",
+    expectedToSource: "+1.5"
+  },
+  {
+    parser: "",
+    css: "-1.5",
+    expectedToSource: "-1.5"
+  },
+  {
+    parser: "",
+    css: "1.3e12",
+    expectedToSource: "1300000000000"
+  },
+  {
+    parser: "",
+    css: "+1.3e12",
+    expectedToSource: "+1300000000000"
+  },
+  {
+    parser: "",
+    css: "-1.3e12",
+    expectedToSource: "-1300000000000"
+  },
+  {
+    parser: "",
+    css: "1.3e-12",
+    expectedToSource: "1.3e-12"
+  },
+  {
+    parser: "",
+    css: "+1.3e-12",
+    expectedToSource: "+1.3e-12"
+  },
+  {
+    parser: "",
+    css: "-1.3e-12",
+    expectedToSource: "-1.3e-12"
+  },
+
+  // -- PERCENTAGE
+  {
+    parser: "",
+    css: "123%",
+    expectedToSource: "123%"
+  },
+  {
+    parser: "",
+    css: "+123%",
+    expectedToSource: "+123%"
+  },
+  {
+    parser: "",
+    css: "-123%",
+    expectedToSource: "-123%"
+  },
+  {
+    parser: "",
+    css: "0%",
+    expectedToSource: "0%"
+  },
+  {
+    parser: "",
+    css: "+0%",
+    expectedToSource: "+0%"
+  },
+  {
+    parser: "",
+    css: "-0%",
+    expectedToSource: "-0%"
+  },
+  {
+    parser: "",
+    css: "1.5%",
+    expectedToSource: "1.5%"
+  },
+  {
+    parser: "",
+    css: "+1.5%",
+    expectedToSource: "+1.5%"
+  },
+  {
+    parser: "",
+    css: "-1.5%",
+    expectedToSource: "-1.5%"
+  },
+
+  // -- DIMENSION
+  {
+    parser: "",
+    css: "123px",
+    expectedToSource: "123px"
+  },
+  {
+    parser: "",
+    css: "+123px",
+    expectedToSource: "+123px"
+  },
+  {
+    parser: "",
+    css: "-123px",
+    expectedToSource: "-123px"
+  },
+  {
+    parser: "",
+    css: "0px",
+    expectedToSource: "0px"
+  },
+  {
+    parser: "",
+    css: "+0px",
+    expectedToSource: "+0px"
+  },
+  {
+    parser: "",
+    css: "-0px",
+    expectedToSource: "-0px"
+  },
+  {
+    parser: "",
+    css: "1.5px",
+    expectedToSource: "1.5px"
+  },
+  {
+    parser: "",
+    css: "+1.5px",
+    expectedToSource: "+1.5px"
+  },
+  {
+    parser: "",
+    css: "-1.5px",
+    expectedToSource: "-1.5px"
+  },
+  {
+    parser: "",
+    css: "123-px",
+    expectedToSource: "123-px"
+  },
+  {
+    parser: "",
+    css: r`123\65 5`,
+    expectedToSource: r`123\65 5`
+  },
+  {
+    parser: "",
+    css: r`123\65-5`,
+    expectedToSource: r`123\65 -5`
+  },
+
+  // -- STYLESHEET
+  {
+    parser: "parseAStylesheet",
+    css: `@import "myfile.css";p{color:red}@media print{p{color:green}}`,
+    expectedToSource: `\
+@import "myfile.css";
+p {
+  color: red;
+}
+@media print {
+  p {
+    color: green;
+  }
+}`
+  },
+
+  // -- AT-RULE
+  {
+    parser: "parseARule",
+    css: "@import 'myfile.css'",
+    expectedToSource: '@import "myfile.css";'
+  },
+  {
+    parser: "parseARule",
+    css: "@media all{}",
+    expectedToSource: `@media all { }`
+  },
+  {
+    parser: "parseARule",
+    css: "@media all{p{}}",
+    expectedToSource: `@media all {
+  p { }
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "@media all{@media print{}}",
+    expectedToSource: `@media all {
+  @media print { }
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "@font-face{font-family:monospace;src:url(myfile.woff)}",
+    expectedToSource: `\
+@font-face {
+  font-family: monospace;
+  src: url("myfile.woff");
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "@media all{@media print{div{color:yellow}}p{color:red}}",
+    expectedToSource: `\
+@media all {
+  @media print {
+    div {
+      color: yellow;
+    }
+  }
+  p {
+    color: red;
+  }
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "@media all { @media print { div { color: yellow; } } p { color: red; } }",
+    expectedToSource: `\
+@media all {
+  @media print {
+    div {
+      color: yellow;
+    }
+  }
+  p {
+    color: red;
+  }
+}`
+  },
+
+  // -- QUALIFIED-RULE
+  {
+    parser: "parseARule",
+    css: "div{}",
+    expectedToSource: `div { }`
+  },
+  {
+    parser: "parseARule",
+    css: "div{color:green}",
+    expectedToSource: `\
+div {
+  color: green;
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "div{p{color:red}}",
+    expectedToSource: `\
+div {
+  p {
+    color: red;
+  }
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "div{p{color:red}color:green;background:blue;div{color:yellow}}",
+    expectedToSource: `\
+div {
+  color: green;
+  background: blue;
+  p {
+    color: red;
+  }
+  div {
+    color: yellow;
+  }
+}`
+  },
+  {
+    parser: "parseARule",
+    css: "div { p { color: red; } color: green; background: blue; div { color: yellow } }",
+    expectedToSource: `\
+div {
+  color: green;
+  background: blue;
+  p {
+    color: red;
+  }
+  div {
+    color: yellow;
+  }
+}`
+  },
+
+  // -- DECLARATION
+  {
+    parser: "parseADeclaration",
+    css: "font-family:1.2em/1.5 monospace",
+    expectedToSource: "font-family: 1.2em/1.5 monospace;"
+  },
+  {
+    parser: "parseADeclaration",
+    css: "font-family  :  1.2em/1.5  monospace ; ",
+    expectedToSource: "font-family: 1.2em/1.5 monospace;"
+  },
+  {
+    parser: "parseADeclaration",
+    css: "font-family:1.2em/1.5 monospace!IMPORTANT",
+    expectedToSource: "font-family: 1.2em/1.5 monospace !important;"
+  },
+  {
+    parser: "parseADeclaration",
+    css: "font-family  :  1.2em/1.5  monospace  ! IMPORTant; ",
+    expectedToSource: "font-family: 1.2em/1.5 monospace !important;"
+  },
+
+  // -- BLOCK
+  {
+    parser: "parseAComponentValue",
+    css: "{p{color:red;} display: block; font-family: 1.2em/1.5 monospace}",
+    expectedToSource: "{p{color:red;} display: block; font-family: 1.2em/1.5 monospace}"
+  },
+  {
+    parser: "parseAComponentValue",
+    css: '[myattr="myvalue"]',
+    expectedToSource: '[myattr="myvalue"]'
+  },
+  {
+    parser: "parseAComponentValue",
+    css: "(not (color: #fff))",
+    expectedToSource: "(not (color: #fff))"
+  },
+
+  // -- FUNCTION
+  {
+    parser: "parseAComponentValue",
+    css: "var(--foo, var(--bar, 1.2em/1.5 monospace))",
+    expectedToSource: "var(--foo, var(--bar, 1.2em/1.5 monospace))"
   }
 ];
-
-
-var log = log || console.log;
-
-var total = TESTS.length, failures = 0,
-    i, test, tokens, parser, result, dump, expected_dump;
-
-for (i = 0; i < total; i++) {
-  test = TESTS[i];
-  tokens = parseCss.tokenize(test.css);
-  parser = parseCss[typeof test.parser === 'string' ? test.parser : 'parseAStylesheet'];
-  result = (typeof parser === 'function') ? parser(tokens) : tokens;
-  dump = JSON.stringify(result, null, '  ');
-  expected_dump = JSON.stringify(test.expected, null, '  ');
-  if (dump == expected_dump) {
-    log(`Test ${i} of ${total}: PASS`);
-  } else {
-    log(`Test ${i} of ${total}: FAIL\nCSS: ${test.css}\nTokens: ${tokens.join(' ')}`);
-    log(ansidiff.lines(expected_dump, dump));
-    failures++;
-  }
-}
-
-// Abuse the differ to get colored output
-if (failures == 0) {
-  log(ansidiff.words(`${total} tests, `, `${total} tests, all passed :)`));
-} else {
-  log(ansidiff.words(`${total} tests, ${failures} failures :(`, `${total} tests, `));
-}
 
 }));
