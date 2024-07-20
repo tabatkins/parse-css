@@ -1,16 +1,22 @@
 "use strict";
 (function (global, factory) {
-  // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
-  // Rhino, and plain browser loading.
-  if (typeof define === 'function' && define.amd) {
-    define(['exports'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports);
+  if (typeof exports === 'object' && typeof module === 'object') {
+    // CommonJS/Node.js
+    Object.assign(exports, factory());
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD
+    define(factory);
   } else {
+    // browser global
     global = typeof globalThis !== 'undefined' ? globalThis : global || self;
-    factory(global);
+    global.parseCss = factory();
   }
 }(this, function (exports) {
+
+const config = {
+  tokenizeErrorHandler: null,
+  parseErrorHandler: null,
+};
 
 function between(num, first, last) { return num >= first && num <= last; }
 function digit(code) { return between(code, 0x30,0x39); }
@@ -144,7 +150,13 @@ function tokenize(str) {
     return codepoint == -1;
   };
   var donothing = function() {};
-  var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");return true; };
+  var parseerror = function() {
+    if (typeof config.tokenizeErrorHandler === 'function') {
+      return config.tokenizeErrorHandler(i, code);
+    }
+    console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");
+    return true;
+  };
 
   var consumeAToken = function() {
     consumeComments();
@@ -816,35 +828,6 @@ function formatNumber(num, sign=undefined) {
   return (sign == "+" ? "+" : "") + String(num);
 }
 
-// Exportation.
-exports.tokenize = tokenize;
-exports.IdentToken = IdentToken;
-exports.FunctionToken = FunctionToken;
-exports.AtKeywordToken = AtKeywordToken;
-exports.HashToken = HashToken;
-exports.StringToken = StringToken;
-exports.BadStringToken = BadStringToken;
-exports.URLToken = URLToken;
-exports.BadURLToken = BadURLToken;
-exports.DelimToken = DelimToken;
-exports.NumberToken = NumberToken;
-exports.PercentageToken = PercentageToken;
-exports.DimensionToken = DimensionToken;
-exports.WhitespaceToken = WhitespaceToken;
-exports.CDOToken = CDOToken;
-exports.CDCToken = CDCToken;
-exports.ColonToken = ColonToken;
-exports.SemicolonToken = SemicolonToken;
-exports.CommaToken = CommaToken;
-exports.OpenParenToken = OpenParenToken;
-exports.CloseParenToken = CloseParenToken;
-exports.OpenSquareToken = OpenSquareToken;
-exports.CloseSquareToken = CloseSquareToken;
-exports.OpenCurlyToken = OpenCurlyToken;
-exports.CloseCurlyToken = CloseCurlyToken;
-exports.EOFToken = EOFToken;
-exports.CSSParserToken = CSSParserToken;
-
 class TokenStream {
   constructor(tokens) {
     // Assume that tokens is an array.
@@ -893,8 +876,13 @@ class TokenStream {
   }
 }
 
-function parseerror(s, msg) {
-  console.log("Parse error at token " + s.i + ": " + s.tokens[s.i] + ".\n" + msg);
+function parseerror(stream, msg) {
+  const index = stream.i;
+  const token = stream.tokens[index];
+  if (typeof config.parseErrorHandler === 'function') {
+    return config.parseErrorHandler(index, token, msg);
+  }
+  console.log("Parse error at token " + index + ": " + token + ".\n" + msg);
   return true;
 }
 
@@ -1410,22 +1398,50 @@ function printIndent(level) {
   return "\t".repeat(level);
 }
 
-
-// Exportation.
-exports.CSSParserRule = CSSParserRule;
-exports.Stylesheet = Stylesheet;
-exports.AtRule = AtRule;
-exports.QualifiedRule = QualifiedRule;
-exports.Declaration = Declaration;
-exports.SimpleBlock = SimpleBlock;
-exports.Func = Func;
-exports.parseAStylesheet = parseAStylesheet;
-exports.parseAStylesheetsContents = parseAStylesheetsContents;
-exports.parseABlocksContents = parseABlocksContents;
-exports.parseARule = parseARule;
-exports.parseADeclaration = parseADeclaration;
-exports.parseAComponentValue = parseAComponentValue;
-exports.parseAListOfComponentValues = parseAListOfComponentValues;
-exports.parseACommaSeparatedListOfComponentValues = parseACommaSeparatedListOfComponentValues;
+return {
+  config,
+  tokenize,
+  IdentToken,
+  FunctionToken,
+  AtKeywordToken,
+  HashToken,
+  StringToken,
+  BadStringToken,
+  URLToken,
+  BadURLToken,
+  DelimToken,
+  NumberToken,
+  PercentageToken,
+  DimensionToken,
+  WhitespaceToken,
+  CDOToken,
+  CDCToken,
+  ColonToken,
+  SemicolonToken,
+  CommaToken,
+  OpenParenToken,
+  CloseParenToken,
+  OpenSquareToken,
+  CloseSquareToken,
+  OpenCurlyToken,
+  CloseCurlyToken,
+  EOFToken,
+  CSSParserToken,
+  CSSParserRule,
+  Stylesheet,
+  AtRule,
+  QualifiedRule,
+  Declaration,
+  SimpleBlock,
+  Func,
+  parseAStylesheet,
+  parseAStylesheetsContents,
+  parseABlocksContents,
+  parseARule,
+  parseADeclaration,
+  parseAComponentValue,
+  parseAListOfComponentValues,
+  parseACommaSeparatedListOfComponentValues,
+};
 
 }));
